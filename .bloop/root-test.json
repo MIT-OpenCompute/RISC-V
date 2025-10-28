@@ -1,0 +1,860 @@
+{
+    "version": "1.4.0",
+    "project": {
+        "name": "root-test",
+        "directory": "/Users/ryantang/Documents/GitHub/RISC-V",
+        "workspaceDir": "/Users/ryantang/Documents/GitHub/RISC-V",
+        "sources": [
+            "/Users/ryantang/Documents/GitHub/RISC-V/src/test/scala",
+            "/Users/ryantang/Documents/GitHub/RISC-V/src/test/scala-2.13",
+            "/Users/ryantang/Documents/GitHub/RISC-V/src/test/scala-2",
+            "/Users/ryantang/Documents/GitHub/RISC-V/src/test/java",
+            "/Users/ryantang/Documents/GitHub/RISC-V/target/scala-2.13/src_managed/test"
+        ],
+        "dependencies": [
+            "root"
+        ],
+        "classpath": [
+            "/Users/ryantang/Documents/GitHub/RISC-V/.bloop/root/scala-2.13/classes",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/chisel_2.13/7.0.0/chisel_2.13-7.0.0.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_2.13/3.2.19/scalatest_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/github/scopt/scopt_2.13/4.1.0/scopt_2.13-4.1.0.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-text/1.13.1/commons-text-1.13.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/os-lib_2.13/0.10.7/os-lib_2.13-0.10.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native_2.13/4.0.7/json4s-native_2.13-4.0.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/github/alexarchambault/data-class_2.13/0.2.7/data-class_2.13-0.2.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.16/scala-reflect-2.13.16.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_2.13/3.3.1/upickle_2.13-3.3.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/firtool-resolver_2.13/2.0.1/firtool-resolver_2.13-2.0.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_2.13/3.2.19/scalatest-core_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_2.13/3.2.19/scalatest-featurespec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_2.13/3.2.19/scalatest-flatspec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_2.13/3.2.19/scalatest-freespec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_2.13/3.2.19/scalatest-funsuite_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_2.13/3.2.19/scalatest-funspec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_2.13/3.2.19/scalatest-propspec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_2.13/3.2.19/scalatest-refspec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_2.13/3.2.19/scalatest-wordspec_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_2.13/3.2.19/scalatest-diagrams_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_2.13/3.2.19/scalatest-matchers-core_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_2.13/3.2.19/scalatest-shouldmatchers_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_2.13/3.2.19/scalatest-mustmatchers_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.17.0/commons-lang3-3.17.0.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_2.13/1.1.1/geny_2.13-1.1.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-core_2.13/4.0.7/json4s-core_2.13-4.0.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native-core_2.13/4.0.7/json4s-native-core_2.13-4.0.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_2.13/3.3.1/ujson_2.13-3.3.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_2.13/3.3.1/upack_2.13-3.3.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_2.13/3.3.1/upickle-implicits_2.13-3.3.1.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_2.13/2.2.0/scala-xml_2.13-2.2.0.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-collection-compat_2.13/2.11.0/scala-collection-compat_2.13-2.11.0.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-compatible/3.2.19/scalatest-compatible-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_2.13/3.2.19/scalactic_2.13-3.2.19.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-ast_2.13/4.0.7/json4s-ast_2.13-4.0.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-scalap_2.13/4.0.7/json4s-scalap_2.13-4.0.7.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.jar",
+            "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_2.13/3.3.1/upickle-core_2.13-3.3.1.jar"
+        ],
+        "out": "/Users/ryantang/Documents/GitHub/RISC-V/.bloop/root",
+        "classesDir": "/Users/ryantang/Documents/GitHub/RISC-V/.bloop/root/scala-2.13/test-classes",
+        "resources": [
+            "/Users/ryantang/Documents/GitHub/RISC-V/src/test/resources",
+            "/Users/ryantang/Documents/GitHub/RISC-V/target/scala-2.13/resource_managed/test"
+        ],
+        "scala": {
+            "organization": "org.scala-lang",
+            "name": "scala-compiler",
+            "version": "2.13.16",
+            "options": [
+                "-language:reflectiveCalls",
+                "-deprecation",
+                "-feature",
+                "-Xcheckinit",
+                "-Ymacro-annotations",
+                "-Xplugin:/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/chisel-plugin_2.13.16/7.0.0/chisel-plugin_2.13.16-7.0.0.jar"
+            ],
+            "jars": [
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar",
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.16/scala-compiler-2.13.16.jar",
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.16/scala-reflect-2.13.16.jar",
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.15/java-diff-utils-4.15.jar",
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.27.1/jline-3.27.1-jdk8.jar"
+            ],
+            "setup": {
+                "order": "mixed",
+                "addLibraryToBootClasspath": true,
+                "addCompilerToClasspath": false,
+                "addExtraJarsToClasspath": false,
+                "manageBootClasspath": true,
+                "filterLibraryFromClasspath": true
+            },
+            "bridgeJars": [
+                "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala2-sbt-bridge/2.13.16/scala2-sbt-bridge-2.13.16.jar"
+            ]
+        },
+        "java": {
+            "options": [
+                
+            ]
+        },
+        "test": {
+            "frameworks": [
+                {
+                    "names": [
+                        "org.scalacheck.ScalaCheckFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.specs2.runner.Specs2Framework",
+                        "org.specs2.runner.SpecsFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.specs.runner.SpecsFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.scalatest.tools.Framework",
+                        "org.scalatest.tools.ScalaTestFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "com.novocode.junit.JUnitFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "munit.Framework"
+                    ]
+                },
+                {
+                    "names": [
+                        "zio.test.sbt.ZTestFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "weaver.framework.CatsEffect"
+                    ]
+                },
+                {
+                    "names": [
+                        "hedgehog.sbt.Framework"
+                    ]
+                }
+            ],
+            "options": {
+                "excludes": [
+                    
+                ],
+                "arguments": [
+                    
+                ]
+            }
+        },
+        "platform": {
+            "name": "jvm",
+            "config": {
+                "home": "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home",
+                "options": [
+                    "-Duser.dir=/Users/ryantang/Documents/GitHub/RISC-V"
+                ]
+            },
+            "mainClass": [
+                
+            ]
+        },
+        "resolution": {
+            "modules": [
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala-library",
+                    "version": "2.13.16",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-library",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar"
+                        },
+                        {
+                            "name": "scala-library",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.chipsalliance",
+                    "name": "chisel_2.13",
+                    "version": "7.0.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "chisel_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/chisel_2.13/7.0.0/chisel_2.13-7.0.0.jar"
+                        },
+                        {
+                            "name": "chisel_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/chisel_2.13/7.0.0/chisel_2.13-7.0.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.github.scopt",
+                    "name": "scopt_2.13",
+                    "version": "4.1.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scopt_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/github/scopt/scopt_2.13/4.1.0/scopt_2.13-4.1.0.jar"
+                        },
+                        {
+                            "name": "scopt_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/github/scopt/scopt_2.13/4.1.0/scopt_2.13-4.1.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.apache.commons",
+                    "name": "commons-text",
+                    "version": "1.13.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "commons-text",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-text/1.13.1/commons-text-1.13.1.jar"
+                        },
+                        {
+                            "name": "commons-text",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-text/1.13.1/commons-text-1.13.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "os-lib_2.13",
+                    "version": "0.10.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "os-lib_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/os-lib_2.13/0.10.7/os-lib_2.13-0.10.7.jar"
+                        },
+                        {
+                            "name": "os-lib_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/os-lib_2.13/0.10.7/os-lib_2.13-0.10.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.json4s",
+                    "name": "json4s-native_2.13",
+                    "version": "4.0.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "json4s-native_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native_2.13/4.0.7/json4s-native_2.13-4.0.7.jar"
+                        },
+                        {
+                            "name": "json4s-native_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native_2.13/4.0.7/json4s-native_2.13-4.0.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "io.github.alexarchambault",
+                    "name": "data-class_2.13",
+                    "version": "0.2.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "data-class_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/github/alexarchambault/data-class_2.13/0.2.7/data-class_2.13-0.2.7.jar"
+                        },
+                        {
+                            "name": "data-class_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/github/alexarchambault/data-class_2.13/0.2.7/data-class_2.13-0.2.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala-reflect",
+                    "version": "2.13.16",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-reflect",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.16/scala-reflect-2.13.16.jar"
+                        },
+                        {
+                            "name": "scala-reflect",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.16/scala-reflect-2.13.16-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle_2.13",
+                    "version": "3.3.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_2.13/3.3.1/upickle_2.13-3.3.1.jar"
+                        },
+                        {
+                            "name": "upickle_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_2.13/3.3.1/upickle_2.13-3.3.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.chipsalliance",
+                    "name": "firtool-resolver_2.13",
+                    "version": "2.0.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "firtool-resolver_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/firtool-resolver_2.13/2.0.1/firtool-resolver_2.13-2.0.1.jar"
+                        },
+                        {
+                            "name": "firtool-resolver_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/chipsalliance/firtool-resolver_2.13/2.0.1/firtool-resolver_2.13-2.0.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.apache.commons",
+                    "name": "commons-lang3",
+                    "version": "3.17.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "commons-lang3",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.17.0/commons-lang3-3.17.0.jar"
+                        },
+                        {
+                            "name": "commons-lang3",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.17.0/commons-lang3-3.17.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "geny_2.13",
+                    "version": "1.1.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "geny_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_2.13/1.1.1/geny_2.13-1.1.1.jar"
+                        },
+                        {
+                            "name": "geny_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_2.13/1.1.1/geny_2.13-1.1.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.json4s",
+                    "name": "json4s-core_2.13",
+                    "version": "4.0.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "json4s-core_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-core_2.13/4.0.7/json4s-core_2.13-4.0.7.jar"
+                        },
+                        {
+                            "name": "json4s-core_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-core_2.13/4.0.7/json4s-core_2.13-4.0.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.json4s",
+                    "name": "json4s-native-core_2.13",
+                    "version": "4.0.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "json4s-native-core_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native-core_2.13/4.0.7/json4s-native-core_2.13-4.0.7.jar"
+                        },
+                        {
+                            "name": "json4s-native-core_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-native-core_2.13/4.0.7/json4s-native-core_2.13-4.0.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "ujson_2.13",
+                    "version": "3.3.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "ujson_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_2.13/3.3.1/ujson_2.13-3.3.1.jar"
+                        },
+                        {
+                            "name": "ujson_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_2.13/3.3.1/ujson_2.13-3.3.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upack_2.13",
+                    "version": "3.3.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upack_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_2.13/3.3.1/upack_2.13-3.3.1.jar"
+                        },
+                        {
+                            "name": "upack_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_2.13/3.3.1/upack_2.13-3.3.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle-implicits_2.13",
+                    "version": "3.3.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle-implicits_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_2.13/3.3.1/upickle-implicits_2.13-3.3.1.jar"
+                        },
+                        {
+                            "name": "upickle-implicits_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_2.13/3.3.1/upickle-implicits_2.13-3.3.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang.modules",
+                    "name": "scala-xml_2.13",
+                    "version": "2.2.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-xml_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_2.13/2.2.0/scala-xml_2.13-2.2.0.jar"
+                        },
+                        {
+                            "name": "scala-xml_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_2.13/2.2.0/scala-xml_2.13-2.2.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang.modules",
+                    "name": "scala-collection-compat_2.13",
+                    "version": "2.11.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-collection-compat_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-collection-compat_2.13/2.11.0/scala-collection-compat_2.13-2.11.0.jar"
+                        },
+                        {
+                            "name": "scala-collection-compat_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-collection-compat_2.13/2.11.0/scala-collection-compat_2.13-2.11.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.json4s",
+                    "name": "json4s-ast_2.13",
+                    "version": "4.0.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "json4s-ast_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-ast_2.13/4.0.7/json4s-ast_2.13-4.0.7.jar"
+                        },
+                        {
+                            "name": "json4s-ast_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-ast_2.13/4.0.7/json4s-ast_2.13-4.0.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.json4s",
+                    "name": "json4s-scalap_2.13",
+                    "version": "4.0.7",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "json4s-scalap_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-scalap_2.13/4.0.7/json4s-scalap_2.13-4.0.7.jar"
+                        },
+                        {
+                            "name": "json4s-scalap_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/json4s/json4s-scalap_2.13/4.0.7/json4s-scalap_2.13-4.0.7-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.thoughtworks.paranamer",
+                    "name": "paranamer",
+                    "version": "2.8",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "paranamer",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.jar"
+                        },
+                        {
+                            "name": "paranamer",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle-core_2.13",
+                    "version": "3.3.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle-core_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_2.13/3.3.1/upickle-core_2.13-3.3.1.jar"
+                        },
+                        {
+                            "name": "upickle-core_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_2.13/3.3.1/upickle-core_2.13-3.3.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala-library",
+                    "version": "2.13.16",
+                    "configurations": "optional",
+                    "artifacts": [
+                        {
+                            "name": "scala-library",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar"
+                        },
+                        {
+                            "name": "scala-library",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_2.13/3.2.19/scalatest_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_2.13/3.2.19/scalatest_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-core_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-core_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_2.13/3.2.19/scalatest-core_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-core_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_2.13/3.2.19/scalatest-core_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-featurespec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-featurespec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_2.13/3.2.19/scalatest-featurespec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-featurespec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_2.13/3.2.19/scalatest-featurespec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-flatspec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-flatspec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_2.13/3.2.19/scalatest-flatspec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-flatspec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_2.13/3.2.19/scalatest-flatspec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-freespec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-freespec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_2.13/3.2.19/scalatest-freespec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-freespec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_2.13/3.2.19/scalatest-freespec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-funsuite_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-funsuite_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_2.13/3.2.19/scalatest-funsuite_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-funsuite_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_2.13/3.2.19/scalatest-funsuite_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-funspec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-funspec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_2.13/3.2.19/scalatest-funspec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-funspec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_2.13/3.2.19/scalatest-funspec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-propspec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-propspec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_2.13/3.2.19/scalatest-propspec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-propspec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_2.13/3.2.19/scalatest-propspec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-refspec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-refspec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_2.13/3.2.19/scalatest-refspec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-refspec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_2.13/3.2.19/scalatest-refspec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-wordspec_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-wordspec_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_2.13/3.2.19/scalatest-wordspec_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-wordspec_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_2.13/3.2.19/scalatest-wordspec_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-diagrams_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-diagrams_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_2.13/3.2.19/scalatest-diagrams_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-diagrams_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_2.13/3.2.19/scalatest-diagrams_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-matchers-core_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-matchers-core_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_2.13/3.2.19/scalatest-matchers-core_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-matchers-core_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_2.13/3.2.19/scalatest-matchers-core_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-shouldmatchers_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-shouldmatchers_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_2.13/3.2.19/scalatest-shouldmatchers_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-shouldmatchers_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_2.13/3.2.19/scalatest-shouldmatchers_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-mustmatchers_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-mustmatchers_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_2.13/3.2.19/scalatest-mustmatchers_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-mustmatchers_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_2.13/3.2.19/scalatest-mustmatchers_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-compatible",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-compatible",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-compatible/3.2.19/scalatest-compatible-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-compatible",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-compatible/3.2.19/scalatest-compatible-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalactic",
+                    "name": "scalactic_2.13",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalactic_2.13",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_2.13/3.2.19/scalactic_2.13-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalactic_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/ryantang/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_2.13/3.2.19/scalactic_2.13-3.2.19-sources.jar"
+                        }
+                    ]
+                }
+            ]
+        },
+        "tags": [
+            "test"
+        ]
+    }
+}
