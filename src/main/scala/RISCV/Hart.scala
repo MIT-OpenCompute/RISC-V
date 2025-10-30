@@ -9,6 +9,7 @@ import scala.math._
   *
   * @param width Bit width (default: 32 bits)
   */
+  
 class Hart(val width: Int = 32) extends Module {
     val io = IO(new Bundle {})
 

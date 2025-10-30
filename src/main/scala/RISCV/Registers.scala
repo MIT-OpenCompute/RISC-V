@@ -34,18 +34,3 @@ class Registers(val width: Int = 32, val nreg: Int = 5) extends Module {
         regs(io.select) := io.in
     }
 }
-
-/**
-  * Object to generate Verilog/SystemVerilog for the module.
-  * Customize firtoolOpts if needed.
-  */
-object Registers extends App {
-  ChiselStage.emitSystemVerilogFile(
-    new Registers(),
-    firtoolOpts = Array(
-      "-disable-all-randomization",
-      "-strip-debug-info",
-      "-default-layer-specialization=enable"
-    )
-  )
-}
