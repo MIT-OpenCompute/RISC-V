@@ -9,29 +9,29 @@ import scala.math._
 
 /**
   * A simple register file module with parameterizable width and number of registers.
-  *
-  * @param width Width of each register (default: 32 bits)
-  * @param nreg Number of registers (default: 32 registers)
+  * 
+  * TODO: Set up two simultaneous read ports
   */
 
-class Registers(val width: Int = 32, val nreg: Int = 5) extends Module {
+class Registers() extends Module {
     // Define input/output interface
     val io = IO(new Bundle {
-        val in  = Input(UInt(width.W))
-        val select = Input(UInt(nreg.W))
+        val in  = Input(UInt(32.W))
+        val write_addr = Input(UInt(5.W))
+        val read_addr = Input(UInt(5.W))
         val write_enable = Input(Bool())
-        val enable = Input(Bool())
-        val out = Output(UInt(width.W))
+        val out = Output(UInt(32.W))
     })
 
     // Internal register array
-    val regs = RegInit(VecInit(Seq.fill(pow(2,nreg).toInt)(0.U(width.W))))
+    val regs = RegInit(VecInit(Seq.fill(32.toInt)(0.U(32.W))))
 
     // Default output
-    io.out := regs(io.select)
+    io.out := regs(io.read_addr)
 
-    when(io.enable && io.write_enable && (io.select =/= 0.U)) { // Write operation; Register 0 is hardwired to 0
-        regs(io.select) := io.in
+    when(io.write_enable && (io.write_addr =/= 0.U)) { // Write operation; Register 0 is hardwired to 0
+        regs(io.write_addr) := io.in
+        //printf(p"Writing value ${io.in} to register ${io.write_addr}\n")
     }
 }
 
