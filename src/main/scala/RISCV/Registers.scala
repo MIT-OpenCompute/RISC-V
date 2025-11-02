@@ -34,18 +34,3 @@ class Registers() extends Module {
         //printf(p"Writing value ${io.in} to register ${io.write_addr}\n")
     }
 }
-
-/**
-  * Object to generate Verilog/SystemVerilog for the module.
-  * Customize firtoolOpts if needed.
-  */
-object Registers extends App {
-  ChiselStage.emitSystemVerilogFile(
-    new Registers(),
-    firtoolOpts = Array(
-      "-disable-all-randomization",
-      "-strip-debug-info",
-      "-default-layer-specialization=enable"
-    )
-  )
-}
