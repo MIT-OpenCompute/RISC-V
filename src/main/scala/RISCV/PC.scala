@@ -28,6 +28,7 @@ object PC extends App {
       "-disable-all-randomization",
       "-strip-debug-info",
       "-default-layer-specialization=enable"
-    )
+    ),
+    args = Array("--target-dir", "generated")
   )
 }

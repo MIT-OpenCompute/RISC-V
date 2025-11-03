@@ -344,3 +344,6 @@ hs_err_pid*
 # Misc
 .metals/
 .bloop/
+
+# Emitted Verilog
+generated/
