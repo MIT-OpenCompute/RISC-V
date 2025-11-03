@@ -17,10 +17,7 @@ class PC() extends Module {
     io.pc_out := pc_reg
 }
 
-/**
-  * Object to generate Verilog/SystemVerilog for the module.
-  * Customize firtoolOpts if needed.
-  */
+
 object PC extends App {
   ChiselStage.emitSystemVerilogFile(
     new PC(),

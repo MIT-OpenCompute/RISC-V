@@ -174,10 +174,6 @@ class Main() extends Module {
     }
 }
 
-/**
-  * Object to generate Verilog/SystemVerilog for the module.
-  * Customize firtoolOpts if needed.
-  */
 object Main extends App {
   ChiselStage.emitSystemVerilogFile(
     new Main(),
