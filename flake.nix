@@ -52,6 +52,7 @@
               gcc
               gnumake
               python3
+              jdk21
             ];
           };
         }
