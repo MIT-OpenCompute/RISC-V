@@ -15,5 +15,5 @@ class Hart(val width: Int = 32) extends Module {
 
     val program_pointer = RegInit(0.U(width.W))
 
-    val registers = Module(new Registers(width, 32));
+    val registers = Module(new Registers());
 }
