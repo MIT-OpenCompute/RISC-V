@@ -1,9 +1,6 @@
-// See README.md for license details.
-
 package RISCV
 
 import chisel3._
-// _root_ disambiguates from packages like chisel3.util.circt if imported
 import _root_.circt.stage.ChiselStage
 import scala.math._
 

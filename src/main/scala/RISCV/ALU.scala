@@ -4,6 +4,9 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
+/**
+  * @param width Bit width (default: 32 bits)
+  */
 class ALU(val width: Int = 32) extends Module {
     val io = IO(new Bundle {
         val add = Input(Bool());

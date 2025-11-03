@@ -1,5 +1,3 @@
-// See README.md for license details.
-
 package RISCV
 
 import chisel3._
