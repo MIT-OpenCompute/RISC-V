@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "Test",
-            "command": "sbt run test",
+            "command": "sbt test",
             "type": "shell",
             "args": [],
             "problemMatcher": [],
