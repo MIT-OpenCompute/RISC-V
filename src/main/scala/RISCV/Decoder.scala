@@ -45,7 +45,7 @@ class Decoder(val width: Int = 32) extends Module {
 		is(0b1101111.U) { format := InstructionFormat.U; } // jal
 		is(0b1100111.U) { format := InstructionFormat.I; } // jalr
 		is(0b1100011.U) { format := InstructionFormat.B; } // beq, bne, blt, bge, bltu, bgeu
-		
+	}
 
 	io.operation := 0.U;
 	io.immediate := 0.U;
