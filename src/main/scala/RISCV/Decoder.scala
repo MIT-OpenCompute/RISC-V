@@ -9,12 +9,6 @@ object InstructionFormat extends ChiselEnum {
   val R, I, S, B, U, J = Value
 }
 
-object Opcode extends ChiselEnum {
-  val ADDI  = Value(0b0010011.U)
-  val AUIPC = Value(0b0010111.U)
-  val LUI   = Value(0b0110111.U)
-}
-
 /**
 * @param width Bit width (default: 32 bits)
 */
@@ -36,12 +30,22 @@ class Decoder(val width: Int = 32) extends Module {
 	format := InstructionFormat.R;
 
 	val opcode = io.instruction(6,0);
+	val func3 = io.instruction(14,12);
+	val func7 = io.instruction(31,25);
 
 	switch(opcode) {
-		is(Opcode.LUI.asUInt) { format := InstructionFormat.U; }
-		is(Opcode.AUIPC.asUInt) { format := InstructionFormat.U; }
-		is(Opcode.ADDI.asUInt) { format := InstructionFormat.I; }
-	}
+		is(0b0110111.U) { format := InstructionFormat.U; } // lui
+		is(0b0010111.U) { format := InstructionFormat.U; } // auipc
+		is(0b0010011.U) { format := InstructionFormat.I; } // addi, slti, sltiu, xori, ori, andi, slli, srli, srai
+		is(0b0110011.U) { format := InstructionFormat.R; } // add, sub, sll, slt, sltu, xor, srl, sra, or, and
+		is(0b0001111.U) { format := InstructionFormat.I; } // fence, fence.i
+		is(0b1110011.U) { format := InstructionFormat.S; } // ecall, ebreak, sret, mret, wfi, sfence.vma | the format for these is not within the standard formats but we can basically achieve the same thing with S type and then using the immediate, rs2, and rs1 to differentiate the calls. Also technically sret, mret, and wfi come from the privelleged spec but we'll just include them here.
+		is(0b0000011.U) { format := InstructionFormat.I; } // lb, lh, lw, lbu, lhu
+		is(0b0100011.U) { format := InstructionFormat.S; } // sb, sh, sw
+		is(0b1101111.U) { format := InstructionFormat.U; } // jal
+		is(0b1100111.U) { format := InstructionFormat.I; } // jalr
+		is(0b1100011.U) { format := InstructionFormat.B; } // beq, bne, blt, bge, bltu, bgeu
+		
 
 	io.operation := 0.U;
 	io.immediate := 0.U;
