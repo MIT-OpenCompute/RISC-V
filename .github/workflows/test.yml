@@ -29,5 +29,3 @@ jobs:
           verilator --version
       - name: SBT Test
         run: sbt test
-      - name: mill Test
-        run: ./mill _.test
