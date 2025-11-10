@@ -1,112 +1,119 @@
-Chisel Project Template
-=======================
+# MIT OpenCompute RISC-V Project
 
-You've done the [Chisel Bootcamp](https://github.com/freechipsproject/chisel-bootcamp), and now you
-are ready to start your own Chisel project.  The following procedure should get you started
-with a clean running [Chisel3](https://www.chisel-lang.org/) project.
+This is the MIT OpenCompute Laboratory’s RISC-V Project.  
+We are designing a 32-bit CPU that implements the RV32I RISC-V ISA.
 
-## Make your own Chisel3 project
+---
 
-### Dependencies
+## Project Structure
 
-#### JDK 11 or newer
-
-We recommend using Java 11 or later LTS releases. While Chisel itself works with Java 8, our preferred build tool Mill requires Java 11. You can install the JDK as your operating system recommends, or use the prebuilt binaries from [Adoptium](https://adoptium.net/) (formerly AdoptOpenJDK).
-
-#### SBT or mill
-
-SBT is the most common build tool in the Scala community. You can download it [here](https://www.scala-sbt.org/download.html).
-Mill is another Scala/Java build tool preferred by Chisel's developers.
-This repository includes a bootstrap script `./mill` so that no installation is necessary.
-You can read more about Mill on its website: https://mill-build.org.
-
-#### Verilator
-
-The test with `svsim` needs Verilator installed.
-See Verilator installation instructions [here](https://verilator.org/guide/latest/install.html).
-
-### How to get started
-
-#### Create a repository from the template
-
-This repository is a Github template. You can create your own repository from it by clicking the green `Use this template` in the top right.
-Please leave `Include all branches` **unchecked**; checking it will pollute the history of your new repository.
-For more information, see ["Creating a repository from a template"](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template).
-
-#### Wait for the template cleanup workflow to complete
-
-After using the template to create your own blank project, please wait a minute or two for the `Template cleanup` workflow to run which will removes some template-specific stuff from the repository (like the LICENSE).
-Refresh the repository page in your browser until you see a 2nd commit by `actions-user` titled `Template cleanup`.
+CPU HDL files are stored in: ```main\scala\RISCV```
 
 
-#### Clone your repository
+### ALU.scala
 
-Once you have created a repository from this template and the `Template cleanup` workflow has completed, you can click the green button to get a link for cloning your repository.
-Note that it is easiest to push to a repository if you set up SSH with Github, please see the [related documentation](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/connecting-to-github-with-ssh). SSH is required for pushing to a Github repository when using two-factor authentication.
+Defines the Arithmetic Logic Unit (ALU) hardware.
 
-```sh
-git clone git@github.com:MIT-OpenCompute/RISC-V.git
-cd RISC-V
+The ALU takes two operands, `a` and `b`, and sends the result of the operation to `output`.  
+It also accepts two control inputs:
+- A 4-bit operation code.
+- A sign-flag boolean, used only for comparisons.
+
+#### Operation Codes
+
+| Code  | Operation               |
+|-------|--------------------------|
+| 0000  | Addition                |
+| 0001  | Multiplication          |
+| 0010  | Comparison (gt, eq, lt) |
+| 0011  | Bitwise AND             |
+| 0100  | Bitwise OR              |
+| 0101  | Bitwise XOR             |
+| 0110  | Bitwise NOT (outputs NOT a) |
+| 0111  | Logical shift left      |
+| 1000  | Logical shift right     |
+| 1001  | Arithmetic shift right  |
+
+The sign flag determines whether operands are treated as signed or unsigned values for comparison.
+
+---
+
+### Decoder.scala
+
+Implements the RISC-V instruction decoder that extracts key fields from a 32-bit instruction and formats them for downstream units such as the ALU, register file, or control logic.
+
+The decoder:
+- Identifies the instruction format (R, I, S, B, U, or J) based on the opcode (bits 6–0).
+- Outputs:
+  - `rs1`, `rs2`, and `rd` register indices
+  - The operation code (`operation`)
+  - The immediate value (`immediate`)
+
+For each format, the corresponding immediate field is assembled and sign-extended (or zero-filled) to 32 bits by left-shifting the extracted bits and padding with zeros as needed.  
+This ensures that all immediates output by the decoder are consistently 32 bits wide, ready for arithmetic or address calculations without additional shifting logic later in the datapath.
+
+---
+
+### Registers.scala
+
+Defines the register file hardware.
+
+The CPU register file supports:
+- Dual independent combinational reads.
+- A single independent synchronous write.
+
+This allows two registers to be read in one clock cycle while a third register is written simultaneously.
+
+The module also includes a third, debugging-only read port called the **C port**.  
+This port is used exclusively for reading register values from testbenches.  
+It is not part of the actual hardware and should not be used in the CPU datapath.
+
+---
+
+## Running Testbenches
+
+This project uses `sbt`.
+
+To run a specific testbench, such as `ALUSpec.scala`, execute:
+```bash
+sbt "testOnly RISCV.ALUSpec"
 ```
 
-#### Set project organization and name in build.sbt
+## Writing a Testbench
 
-The cleanup workflow will have attempted to provide sensible defaults for `ThisBuild / organization` and `name` in the `build.sbt`.
-Feel free to use your text editor of choice to change them as you see fit.
+Use the following template as a guide for creating new testbenches:
 
-#### Clean up the README.md file
-
-Again, use you editor of choice to make the README specific to your project.
-
-#### Add a LICENSE file
-
-It is important to have a LICENSE for open source (or closed source) code.
-This template repository has the Unlicense in order to allow users to add any license they want to derivative code.
-The Unlicense is stripped when creating a repository from this template so that users do not accidentally unlicense their own work.
-
-For more information about a license, check out the [Github Docs](https://docs.github.com/en/free-pro-team@latest/github/building-a-strong-community/adding-a-license-to-a-repository).
-
-#### Commit your changes
-```sh
-git commit -m 'Starting RISC-V'
-git push origin main
 ```
+package RISCV
 
-### Did it work?
+import chisel3._
+import chisel3.simulator.scalatest.ChiselSim
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-You should now have a working Chisel3 project.
+class MainTemplateSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
-You can run the included test with:
-```sh
-sbt test
+  "Main should execute an instruction correctly (template)" in {
+    simulate(new Main()) { dut =>
+      // 1. Initialize registers (example: write value to x1)
+      dut.io.write_enable.poke(true.B)
+      dut.io.write_addr.poke(1.U)
+      dut.io.in.poke(42.U)
+      dut.clock.step(1)
+      dut.io.write_enable.poke(false.B)
+
+      // 2. Load an instruction (replace with your own encoding)
+      val instr = "b000000000000_00000_000_00000_0000000".U(32.W)
+      dut.io.instruction.poke(instr)
+
+      // 3. Step one clock to execute
+      dut.clock.step(1)
+
+      // 4. Read back a register value to verify the result
+      //    Always use the C port of the register file for reading.
+      dut.io.read_addr_C.poke(1.U)   // Which register to read
+      dut.io.out_C.expect(42.U)      // Expected result (example)
+    }
+  }
+}
 ```
-
-Alternatively, if you use Mill:
-```sh
-./mill RISC-V.test
-```
-
-You should see a whole bunch of output that ends with something like the following lines
-```
-[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
-[info] All tests passed.
-[success] Total time: 5 s, completed Dec 16, 2020 12:18:44 PM
-```
-If you see the above then...
-
-### It worked!
-
-You are ready to go. We have a few recommended practices and things to do.
-
-* Use packages and following conventions for [structure](https://www.scala-sbt.org/1.x/docs/Directories.html) and [naming](http://docs.scala-lang.org/style/naming-conventions.html)
-* Package names should be clearly reflected in the testing hierarchy
-* Build tests for all your work
-* Read more about testing in SBT in the [SBT docs](https://www.scala-sbt.org/1.x/docs/Testing.html)
-* This template includes a [test dependency](https://www.scala-sbt.org/1.x/docs/Library-Dependencies.html#Per-configuration+dependencies) on [ScalaTest](https://www.scalatest.org/). This, coupled with `svsim` (included with Chisel) and `verilator`, are a starting point for testing Chisel generators.
-  * You can remove this dependency in the build.sbt file if you want to
-* Change the name of your project in the build.sbt file
-* Change your README.md
-
-## Problems? Questions?
-
-Check out the [Chisel Users Community](https://www.chisel-lang.org/community.html) page for links to get in contact!

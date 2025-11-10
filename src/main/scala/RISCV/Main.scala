@@ -7,166 +7,501 @@ import scala.math._
 import os.read
 
 class Main() extends Module {
+
     val io = IO(new Bundle {
         val instruction = Input(UInt(32.W))
-        val RegFileA_out = Output(UInt(32.W))
-        val RegFileB_out = Output(UInt(32.W))
+        
+        // Debugging variables for tests
+        val out_A = Output(UInt(32.W))
+        val out_B = Output(UInt(32.W))
+        val out_C = Output(UInt(32.W)) // Testing output port
+        val read_addr_A = Input(UInt(5.W))
+        val read_addr_B = Input(UInt(5.W))
+        val read_addr_C = Input(UInt(5.W)) // Testing address port
+        val write_enable = Input(Bool())
+        val write_addr = Input(UInt(5.W))
+        val in = Input(UInt(32.W))
     })
 
-    // set up register files A and B. They will have identical contents so that we can do dual reads.
-    val regFileA = Module(new Registers())
-    val regFileB = Module(new Registers())
+    // Set up register file
+    val regFile = Module(new Registers())
+    // Default connections for register file inputs
 
-    // Provide safe/default connections for all register-file inputs so
-    // there are no uninitialized sinks when a particular opcode path
-    // doesn't drive them. We assign defaults first and override in
-    // the opcode-specific when blocks below.
-    regFileA.io.write_enable := false.B
-    regFileA.io.write_addr := 0.U // default write address
-    regFileA.io.read_addr := 0.U // default read address
-    regFileA.io.in := 0.U
+    regFile.io.write_enable := false.B
+    regFile.io.write_addr := 0.U(5.W)
+    regFile.io.read_addr_A := 0.U(5.W)
+    regFile.io.read_addr_B := 0.U(5.W)
+    regFile.io.read_addr_C := 0.U(5.W)
+    regFile.io.in := 0.U(32.W) 
 
-    regFileB.io.write_enable := false.B
-    regFileB.io.write_addr := 0.U // default write address
-    regFileB.io.read_addr := 0.U // default read address    
-    regFileB.io.in := 0.U
+    // Set up testing register outputs
+    io.out_A := regFile.io.out_A
+    io.out_B := regFile.io.out_B
+    io.out_C := regFile.io.out_C
+    regFile.io.read_addr_A := io.read_addr_A
+    regFile.io.read_addr_B := io.read_addr_B
+    regFile.io.read_addr_C := io.read_addr_C
+    regFile.io.write_enable := io.write_enable
+    regFile.io.write_addr := io.write_addr
+    regFile.io.in := io.in
 
-    // io for observing register file outputs in testbench    
-    io.RegFileA_out := 0.U
-    io.RegFileB_out := 0.U
+    // Set up ALU
+    val alu = Module(new ALU())
+    // Default connections for ALU inputs
+    alu.io.operation := 0.U(3.W)
+    alu.io.signed := false.B
+    alu.io.a := 0.U(32.W)
+    alu.io.b := 0.U(32.W)
 
-    // Fetch opcode from instruction to determine type of instruction
-    val opcode = io.instruction(6,0) // 7 bits
+    // Decode instruction
+    val decoder = Module(new Decoder())
+    // Default connections for decoder inputs
+    
+    decoder.io.instruction := io.instruction
 
-    // Decode logic opcodes
-    switch(opcode) {
-        is ("b1111111".U(7.W)) // Print all registers instruction (not standard RISC-V, just for testing)
-        {
-            val i = io.instruction(11,7) // destination register, 5 bits
-            regFileA.io.read_addr := i // set read address to rd to observe the written
-            regFileB.io.read_addr := i
-            regFileA.io.write_enable := false.B
-            regFileB.io.write_enable := false.B
+    val operation = decoder.io.operation
+    
+    // Uncomment to print instructions
+    //printf("Instruction: %b, Operation: %b\n", io.instruction, operation)
 
-            // Read from both register files
-            io.RegFileA_out := regFileA.io.out
-            io.RegFileB_out := regFileB.io.out
+    switch(operation) {
+        // U-type instructions
+        is("b01101_11".U(7.W)) {  // LUI opcode
+            // LUI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#lui
+            
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val immediate = decoder.io.immediate(31,12)
+
+            // Execute LUI: x[rd] = sext(imm << 12)
+
+            // Pad 20 bit immediate with 12 zeros to the right
+            val sext_imm  = Cat(immediate, Fill(12, 0.U)) 
+
+            // Write to register file
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := sext_imm
         }
-        is ("b0110111".U(7.W)) { // LUI x[rd] = sext(imm << 12)
-            printf("Decoding LUI instruction\n")
-            // Extract the fields
-            val immm = io.instruction(31,12) // immediate value , 20 bits
-            val rd = io.instruction(11,7) // destination register, 5 bits
-            val imm_sext = Cat(immm, Fill(12, 0.U)) // 20 bits followed by 12 zeros to be 32 bit total
+        is("b00101_11".U) {
+            // AUIPC instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#auipc
 
-            printf("Extracted fields:\n")
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val immediate = decoder.io.immediate(31, 12)
 
-            // Execute
+            // Execute AUIPC: x[rd] = pc + sext(imm << 12)
 
-            // Enable and write to the destination register
-            regFileA.io.write_addr := rd // select destination register
-            regFileB.io.write_addr := rd
-            regFileA.io.write_enable := true.B // enable write in destination register
-            regFileB.io.write_enable := true.B
-            regFileA.io.in := imm_sext // Write to reg file A
-            regFileB.io.in := imm_sext // Write to reg file B
+            // Pad 20 bit immediate with 12 zeros to the right
+            val sext_imm  = Cat(immediate, Fill(12, 0.U)) 
 
-            printf(p"LUI: rd = x$rd, imm_sext = ${Binary(imm_sext)}\n")
+            val pc = 0.U(32.W) // Placeholder for program counter value
+            
+            // Set up ALU
+            alu.io.operation := "b0000".U // Addition
+            alu.io.signed := false.B // Default
+            alu.io.a := pc
+            alu.io.b := sext_imm
+            // Get ALU result
+            val alu_result = alu.io.output
 
-            // Registers will update on the next clock edge
-
-            printf("LUI instruction executed\n")
+            // Write to register file
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result // pc + sext(imm << 12)
         }
-        is ("b0010011".U(7.W)) { // Immediate-type ALU operations
-            printf("Decoding immediate-type ALU operation\n")
-            // Extract the fields
-            val rd = io.instruction(11,7) // destination register, 5 bits
-            val funct3 = io.instruction(14,12) // funct3 field,
-            val rs1 = io.instruction(19,15) // source register 1, 5 bits
-            val imm = io.instruction(31,20) // immediate value, 12 bits
 
-            printf("Extracted fields:\n")
+        // I-type instructions
+        is("b000_00100_11".U) {
+            // ADDI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#addi
 
-            // addi (add immediate)
-            when (funct3 === "b000".U(3.W)) { // x[rd] = x[rs1] + sext(imm)
-                printf("Decoding ADDI instruction\n")
-                // Add the 12-bit sign extended immediate to the value in rs1. put output in rd
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
 
-                // Enable register file A to read rs1
-                regFileA.io.write_enable := false.B
-                regFileA.io.read_addr := rs1
+            // Execute ADDI: x[rd] = x[rs1] + sext(imm)
 
-                printf(p"ADDI: Reading rs1 = x$rs1\n")
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
 
-                // Read rs1 (occurs in the same clock cycle because of combinational read)
-                val rs1_value = regFileA.io.out
+            // Sign extend immediate
+            val sext_imm = Cat(Fill(20, immediate(11)), immediate) // sext(imm << 12)
 
-                // Compute result
-                val imm_sext = Cat(Fill(20, imm(11)), imm) // sequence of 20 sign bits followed by the 12-bit immediate to be 32 bit total
-                val result = rs1_value + imm_sext
-                printf(p"ADDI: rs1_value = 0x${Binary(rs1_value)}, imm_sext = 0x${Binary(imm_sext)}, result = 0x${Binary(result)}\n")
+            // Set up ALU
+            alu.io.operation := "b0000".U // Addition
+            alu.io.signed := false.B // Default
+            alu.io.a := rs1_value
+            alu.io.b := sext_imm
+            // Get ALU result
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b010_00100_11".U) {
+            // SLTI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#slti
+            // Note that this is a signed comparison
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
+
+            // Execute SLTI: x[rd] = (x[rs1] < sext(imm)) ? 1 : 0
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Sign extend immediate
+            val sext_imm = Cat(Fill(20, immediate(11)), immediate) // sext(imm << 12)
+
+            // Set up ALU
+            alu.io.operation := "b0010".U // Comparison
+            alu.io.signed := true.B // Signed comparison
+            alu.io.a := rs1_value
+            alu.io.b := sext_imm
+            // Get ALU result
+            val alu_result = alu.io.output(0) // Least significant bit is the comparison result (LT)
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b011_00100_11".U) {
+            // SLTIU instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#sltiu
+            // Note that this is an unsigned comparison
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
+
+            // Execute SLTIU: x[rd] = (x[rs1] < zext(imm)) ? 1 : 0
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Zero extend immediate
+            val zext_imm = Cat(Fill(20, 0.U), immediate) // zext(imm)
+
+            // Set up ALU
+            alu.io.operation := "b0010".U // Comparison
+            alu.io.signed := false.B // Unsigned comparison
+            alu.io.a := rs1_value
+            alu.io.b := zext_imm
+            // Get ALU result
+            val alu_result = alu.io.output(0) // Least significant bit is the comparison result (LT)
+
+            // Compare and write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b100_00100_11".U) {
+            // XORI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#xori
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
+
+            // Execute XORI: x[rd] = x[rs1] ^ sext(imm)
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Sign-extend immediate
+            val sext_imm = Cat(Fill(20, immediate(11)), immediate) // sext(imm)
+
+            // Set up ALU
+            alu.io.operation := "b0101".U // XOR operation
+            alu.io.signed := false.B // Default
+            alu.io.a := rs1_value
+            alu.io.b := sext_imm
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b110_00100_11".U) {
+            // ORI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#ori
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
+
+            // Execute ORI: x[rd] = x[rs1] | sext(imm)
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Sign-extend immediate
+            val sext_imm = Cat(Fill(20, immediate(11)), immediate) // sext(imm)
+
+            // Set up ALU
+            alu.io.operation := "b0100".U // OR operation
+            alu.io.signed := false.B // Default
+            alu.io.a := rs1_value
+            alu.io.b := sext_imm
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b111_00100_11".U) {
+            // ANDI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#andi
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val immediate = decoder.io.immediate
+
+            // Execute ANDI: x[rd] = x[rs1] & sext(imm)
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Sign-extend immediate
+            val sext_imm = Cat(Fill(20, immediate(11)), immediate) // sext(imm)
+
+            // Set up ALU
+            alu.io.operation := "b0011".U // AND operation
+            alu.io.signed := false.B // Default
+            alu.io.a := rs1_value
+            alu.io.b := sext_imm
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b001_00100_11".U) {
+            // SLLI instructions https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#slli
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val shamt = decoder.io.immediate(4,0) // Shift amount is in the lower 5 bits of the immediate
+
+            // Execute SLLI: x[rd] = x[rs1] << shamt
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            // Set up ALU
+            alu.io.operation := "b0111".U // Logical shift left
+            alu.io.signed := false.B // Default
+            alu.io.a := rs1_value
+            alu.io.b := shamt
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is("b101_00100_11".U) {
+            // SRLI / SRAI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#srli
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val shamt = decoder.io.immediate(4,0) // Shift amount is in lower 5 bits of immediate
+            val srli_srai_bit = decoder.io.immediate(9) // Bit 30 differentiates SRLI and SRAI
+
+            // Read rs1 value
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+
+            when (srli_srai_bit === 0.U) {
+                // SRLI: x[rd] = x[rs1] >> shamt (logical)
                 
+                // Set up ALU
+                alu.io.operation := "b1000".U // Logical shift right
+                alu.io.signed := false.B // Default
+                alu.io.a := rs1_value
+                alu.io.b := Cat(0.U(27.W), shamt) // Zero-extend shamt to 32 bits
+                val alu_result = alu.io.output
+
                 // Write result to rd
-                regFileA.io.write_addr := rd // select destination register
-                regFileB.io.write_addr := rd
-                
-                regFileA.io.write_enable := true.B // enable write in destination register
-                regFileB.io.write_enable := true.B
+                regFile.io.write_addr := rd
+                regFile.io.write_enable := true.B
+                regFile.io.in := alu_result
 
-                regFileA.io.in := result // Write to reg file A
-                regFileB.io.in := result // Write to reg file B
+            } .elsewhen (srli_srai_bit === 1.U) {
+                // SRAI: x[rd] = x[rs1] >> shamt (arithmetic)
 
-                printf(p"ADDI: Writing result to rd = x$rd\n")
+                // Set up ALU
+                alu.io.operation := "b1001".U // Arithmetic shift right
+                alu.io.a := rs1_value
+                alu.io.b := Cat(0.U(27.W), shamt) // Zero-extend shamt to 32 bits
+                val alu_result = alu.io.output
 
-                // Registers will update on the next clock edge
-
-                printf("ADDI instruction executed\n")
+                // Write result to rd
+                regFile.io.write_addr := rd
+                regFile.io.write_enable := true.B
+                regFile.io.in := alu_result
             }
+        }
         
-            // slti (set less than immediate)
-            when (funct3 === "b010".U(3.W)) {
-                printf("Decoding SLTI instruction\n?")
-                // read rs1
-                regFileA.io.write_enable := false.B
-                regFileA.io.read_addr := rs1
+        // R-type instructions
+        is ("b0000000000_01100_11".U) {
+            // ADD instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#add
 
-                printf(p"SLTI: Reading rs1 = x$rs1\n")
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val rs2 = decoder.io.rs2
 
-                // Read rs1 (occurs in the same clock cycle because of combinational read)
-                val rs1_value = regFileA.io.out
+            // Execute ADD: x[rd] = x[rs1] + x[rs2]
 
-                // Compute result
-                val imm_sext = Cat(Fill(20, imm(11)), imm) // sequence of 20 sign bits followed by the 12-bit immediate to be 32 bit total
-                when (rs1_value.asSInt < imm_sext.asSInt) {
-                    // rs1 < sext(imm)
-                    // Write 1 to rd
-                    regFileA.io.write_addr := rd // select destination register
-                    regFileB.io.write_addr := rd
+            // Read rs1 and rs2 values
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+            regFile.io.read_addr_B := rs2
+            val rs2_value = regFile.io.out_B
 
-                    regFileA.io.write_enable := true.B // enable write in destination register
-                    regFileB.io.write_enable := true.B
+            // Set up ALU
+            alu.io.operation := "b0000".U // Addition
+            alu.io.a := rs1_value
+            alu.io.b := rs2_value
+            val alu_result = alu.io.output
 
-                    regFileA.io.in := 1.U(32.W) // Write to reg file A
-                    regFileB.io.in := 1.U(32.W) // Write to reg file B
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
 
-                    printf(p"SLTI: rs1_value = ${rs1_value.asSInt}, imm_sext = ${imm_sext.asSInt}, Writing 1 to rd = x$rd\n")
+        is ("b0100000000_01100_11".U) {
+            // SUB instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#sub
 
-                } .otherwise {
-                    //rs1 >= sext(imm)
-                    // Write 0 to rd
-                    regFileA.io.write_addr := rd // select destination register
-                    regFileB.io.write_addr := rd
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val rs2 = decoder.io.rs2
 
-                    regFileA.io.write_enable := true.B // enable write in destination register
-                    regFileB.io.write_enable := true.B
+            // Execute SUB: x[rd] = x[rs1] - x[rs2]
 
-                    regFileA.io.in := 0.U(32.W) // Write to reg file A
-                    regFileB.io.in := 0.U(32.W) // Write to reg file
+            // Read rs1 and rs2 values
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+            regFile.io.read_addr_B := rs2
+            val rs2_value = regFile.io.out_B
 
-                    printf(p"SLTI: rs1_value = ${rs1_value.asSInt}, imm_sext = ${imm_sext.asSInt}, Writing 0 to rd = x$rd\n")
-                }
-                printf("SLTI instruction executed\n")
-            }
+            // Set up ALU
+            alu.io.operation := "b0000".U // Addition
+            alu.io.a := rs1_value
+            alu.io.b := (~rs2_value).asUInt + 1.U // Two's complement for subtraction
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        } 
+        
+        is ("b0000000001_01100_11".U) {
+            // SLL instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#sll
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val rs2 = decoder.io.rs2
+
+            // Execute SLL: x[rd] = x[rs1] << (x[rs2] & 0x1F)
+
+            // Read rs1 and rs2 values
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+            regFile.io.read_addr_B := rs2
+            val rs2_value = regFile.io.out_B
+
+            val shamt = rs2_value(4,0) // Shift amount is lower 5 bits of rs2
+
+            // Set up ALU
+            alu.io.operation := "b0111".U // Logical shift left
+            alu.io.a := rs1_value
+            alu.io.b := shamt
+            val alu_result = alu.io.output
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := alu_result
+        }
+        is ("b0000000010_01100_11".U) {
+            // SLT instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#slt
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val rs2 = decoder.io.rs2
+
+            // Execute SLT: x[rd] = (x[rs1] < x[rs2]) ? 1 : 0
+
+            // Read rs1 and rs2 values
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+            regFile.io.read_addr_B := rs2
+            val rs2_value = regFile.io.out_B
+
+            // Set up ALU
+            alu.io.operation := "b0010".U // Comparison
+            alu.io.signed := true.B // Signed comparison
+            alu.io.a := rs1_value
+            alu.io.b := rs2_value
+            val alu_result = alu.io.output(0) // Least significant bit is the comparison result (LT)
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := Cat(0.U(31.W), alu_result) // Zero extend to 32 bits
+        }
+        is ("b0000000011_01100_11".U) {
+            // SLTU instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#sltu
+
+            // Get additional fields from decoder
+            val rd = decoder.io.rd
+            val rs1 = decoder.io.rs1
+            val rs2 = decoder.io.rs2
+
+            // Execute SLTU: x[rd] = (x[rs1] < x[rs2]) ? 1 : 0 (unsigned)
+
+            // Read rs1 and rs2 values
+            regFile.io.read_addr_A := rs1
+            val rs1_value = regFile.io.out_A
+            regFile.io.read_addr_B := rs2
+            val rs2_value = regFile.io.out_B
+
+            // Set up ALU
+            alu.io.operation := "b0010".U // Comparison
+            alu.io.signed := false.B // Unsigned comparison
+            alu.io.a := rs1_value
+            alu.io.b := rs2_value
+            val alu_result = alu.io.output(0) // Least significant bit is the comparison result (LT)
+
+            // Write result to rd
+            regFile.io.write_addr := rd
+            regFile.io.write_enable := true.B
+            regFile.io.in := Cat(0.U(31.W), alu_result) // Zero extend to 32 bits
         }
     }
 }
