@@ -347,3 +347,5 @@ hs_err_pid*
 
 # Emitted Verilog
 generated/
+documentation/.obsidian/workspace.json
+documentation/.obsidian/appearance.json
