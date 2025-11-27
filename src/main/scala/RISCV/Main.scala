@@ -7,9 +7,12 @@ import scala.math._
 import os.read
 
 class Main() extends Module {
-
     val io = IO(new Bundle {
-        val instruction = Input(UInt(32.W))
+        val execute = Input(Bool());
+
+        val debug_write = Input(Bool());
+        val debug_write_address = Input(UInt(32.W));
+        val debug_write_data = Input(UInt(32.W));
         
         // Debugging variables for tests
         val out_A = Output(UInt(32.W))
@@ -22,6 +25,10 @@ class Main() extends Module {
         val write_addr = Input(UInt(5.W))
         val in = Input(UInt(32.W))
     })
+    
+    val program_pointer = RegInit(0.U(32.W));
+
+    val memory = SRAM(1024, UInt(32.W), 1, 1, 0);
 
     // Set up register file
     val regFile = Module(new Registers())
@@ -53,16 +60,19 @@ class Main() extends Module {
     alu.io.a := 0.U(32.W)
     alu.io.b := 0.U(32.W)
 
-    // Decode instruction
     val decoder = Module(new Decoder())
-    // Default connections for decoder inputs
-    
-    decoder.io.instruction := io.instruction
+    decoder.io.instruction := memory.readPorts(0).data;
+
+    memory.readPorts(0).enable := io.execute;
+    memory.readPorts(0).address := program_pointer;
+
+    memory.writePorts(0).enable := io.debug_write;
+    memory.writePorts(0).address := io.debug_write_address;
+    memory.writePorts(0).data := io.debug_write_data;
 
     val operation = decoder.io.operation
-    
-    // Uncomment to print instructions
-    //printf("Instruction: %b, Operation: %b\n", io.instruction, operation)
+
+    printf("Operation: %b\n", operation)
 
     switch(operation) {
         // U-type instructions
