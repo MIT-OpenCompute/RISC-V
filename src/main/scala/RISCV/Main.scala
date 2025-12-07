@@ -63,18 +63,28 @@ class Main() extends Module {
     val decoder = Module(new Decoder())
     decoder.io.instruction := memory.readPorts(0).data;
 
-    memory.readPorts(0).enable := io.execute;
+    val loading_instruction_stage = RegInit(true.B);
+
+    memory.readPorts(0).enable := io.execute && loading_instruction_stage;
     memory.readPorts(0).address := program_pointer;
 
     memory.writePorts(0).enable := io.debug_write;
     memory.writePorts(0).address := io.debug_write_address;
     memory.writePorts(0).data := io.debug_write_data;
 
-    val operation = decoder.io.operation
+    when(io.execute) {
+        printf("\n")
+        printf("Operation: %b\n", decoder.io.operation)
+        printf("Program Pointer: %d\n", program_pointer)
+        printf("Loading Instruction Stage: %d\n", loading_instruction_stage)
+        printf("Data: %b\n", memory.readPorts(0).data)
 
-    printf("Operation: %b\n", operation)
+        when(loading_instruction_stage) {
+            loading_instruction_stage := false.B;
+        }.otherwise {
+            loading_instruction_stage := true.B;
 
-    switch(operation) {
+    switch(decoder.io.operation) {
         // U-type instructions
         is("b01101_11".U(7.W)) {  // LUI opcode
             // LUI instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#lui
@@ -88,10 +98,14 @@ class Main() extends Module {
             // Pad 20 bit immediate with 12 zeros to the right
             val sext_imm  = Cat(immediate, Fill(12, 0.U)) 
 
+            printf("Register: %d Immediate: %b\n", rd, sext_imm)
+
             // Write to register file
             regFile.io.write_addr := rd
             regFile.io.write_enable := true.B
             regFile.io.in := sext_imm
+
+            program_pointer := program_pointer + 1.U;
         }
         is("b00101_11".U) {
             // AUIPC instruction https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#auipc
@@ -512,6 +526,10 @@ class Main() extends Module {
             regFile.io.write_addr := rd
             regFile.io.write_enable := true.B
             regFile.io.in := Cat(0.U(31.W), alu_result) // Zero extend to 32 bits
+        }
+    }
+        
+
         }
     }
 }
