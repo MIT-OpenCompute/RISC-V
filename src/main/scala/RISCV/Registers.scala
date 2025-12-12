@@ -34,6 +34,8 @@ class Registers() extends Module {
         val out_A = Output(UInt(32.W))
         val out_B = Output(UInt(32.W))
         val out_C = Output(UInt(32.W)) // Testing output port
+        
+        val debug_1 = Output(UInt(32.W))
     })
 
     val regs = RegInit(VecInit(Seq.fill(32.toInt)(0.U(32.W))))
@@ -42,6 +44,8 @@ class Registers() extends Module {
     io.out_A := regs(io.read_addr_A)
     io.out_B := regs(io.read_addr_B)
     io.out_C := regs(io.read_addr_C)
+
+    io.debug_1 := regs(1);
 
     // Uncomment to print the register contents every time they are accessed
     //printf("Regs: [%d]=%d, [%d]=%d, WE=%b, WA=%d, IN=%d\n", io.read_addr_A, io.out_A, io.read_addr_B, io.out_B, io.write_enable, io.write_addr, io.in)

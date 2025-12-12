@@ -56,7 +56,7 @@ class Decoder(val width: Int = 32) extends Module {
 		}
 		is(InstructionFormat.I) {
 			io.operation := io.instruction(14,12) ## io.instruction(6,0);
-			io.immediate := io.instruction(31,31) ## 0.U(20.W) ## io.instruction(30,20);
+			io.immediate := Fill(21, io.instruction(31,31)) ## io.instruction(30,20);
 		}
 		is(InstructionFormat.S) {
 			io.operation := io.instruction(14,12) ## io.instruction(6,0);

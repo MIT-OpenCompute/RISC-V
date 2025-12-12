@@ -9,16 +9,22 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
   "Main should execute LUI correctly" in {
     simulate(new Main()) { dut =>
       dut.io.debug_write.poke(true.B);
-      dut.io.debug_write_data.poke("b00010010001101000101_00001_0110111".U(32.W));
+      dut.io.debug_write_data.poke("b000000000110_00000_000_00001_0010011".U(32.W));
       dut.io.debug_write_address.poke(0.U);
 
       dut.clock.step(1)
 
       dut.io.debug_write.poke(true.B);
-      dut.io.debug_write_data.poke("b00010010001101000101_00010_0110111".U(32.W));
+      dut.io.debug_write_data.poke("b000000000110_00001_000_00001_0010011".U(32.W));
       dut.io.debug_write_address.poke(1.U);
 
       dut.clock.step(1)
+
+      // dut.io.debug_write.poke(true.B);
+      // dut.io.debug_write_data.poke("b000000000000_00000_010_00001_0000011".U(32.W));
+      // dut.io.debug_write_address.poke(1.U);
+
+      // dut.clock.step(1)
 
       dut.io.debug_write.poke(false.B);
       dut.io.execute.poke(true.B);
@@ -29,6 +35,8 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
       dut.clock.step(1)
       
+      dut.clock.step(1)
+
       dut.clock.step(1)
     }
   }
