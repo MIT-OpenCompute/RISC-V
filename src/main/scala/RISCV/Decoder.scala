@@ -60,11 +60,11 @@ class Decoder(val width: Int = 32) extends Module {
 		}
 		is(InstructionFormat.S) {
 			io.operation := io.instruction(14,12) ## io.instruction(6,0);
-			io.immediate := io.instruction(31,31) ## 0.U(20.W) ## io.instruction(31,25) ## io.instruction(11,7);
+			io.immediate := Fill(21, io.instruction(31,31)) ## io.instruction(31,25) ## io.instruction(11,7);
 		}
 		is(InstructionFormat.B) {
 			io.operation := io.instruction(14,12) ## io.instruction(6,0);
-			io.immediate := io.instruction(31,31) ## 0.U(19.W) ## io.instruction(7,7) ## io.instruction(31,25) ## io.instruction(11,8) ## 0.U(1.W);
+			io.immediate := Fill(20, io.instruction(31,31)) ## io.instruction(7,7) ## io.instruction(31,25) ## io.instruction(11,8) ## 0.U(1.W);
 		}
 		is(InstructionFormat.U) {
 			io.operation := io.instruction(6,0);
@@ -72,7 +72,7 @@ class Decoder(val width: Int = 32) extends Module {
 		}
 		is(InstructionFormat.J) {
 			io.operation := io.instruction(6,0);
-			io.immediate := io.instruction(31,31) ## 0.U(11.W) ## io.instruction(19,12) ## io.instruction(20,20) ## io.instruction(30,21) ## 0.U(1.W);
+			io.immediate := Fill(12, io.instruction(31,31)) ## io.instruction(19,12) ## io.instruction(20,20) ## io.instruction(30,21) ## 0.U(1.W);
 		}
 	}
 }

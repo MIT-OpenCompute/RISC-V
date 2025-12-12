@@ -76,6 +76,8 @@ class Main() extends Module {
     memory.writePorts(0).data := io.debug_write_data;
 
     val operation_buffer = RegInit(0.U(17.W));
+    val rs1_buffer = RegInit(0.U(5.W));
+    val rs2_buffer = RegInit(0.U(5.W));
     val rd_buffer = RegInit(0.U(5.W));
 
     when(io.execute) {
@@ -85,11 +87,14 @@ class Main() extends Module {
         printf("Program Pointer: %d\n", program_pointer);
         printf("Data: %b\n", memory.readPorts(0).data);
         printf("Register 1: %b\n", regFile.io.debug_1);
+        printf("Register 2: %b\n", regFile.io.debug_2);
 
         stage := stage + 1.U;
 
         when(stage === 1.U) {
             operation_buffer := decoder.io.operation;
+            rs1_buffer := decoder.io.rs1;
+            rs2_buffer := decoder.io.rs2;
             rd_buffer := decoder.io.rd;
 
             switch(decoder.io.operation) {
@@ -101,6 +106,21 @@ class Main() extends Module {
                     memory.readPorts(1).address := regFile.io.out_A + decoder.io.immediate;
                     
                     printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, regFile.io.out_A + decoder.io.immediate);
+                }
+
+                // SW
+                is("b010_01000_11".U) {
+                    regFile.io.read_addr_A := decoder.io.rs1;
+                    regFile.io.read_addr_B := decoder.io.rs2;
+
+                    memory.writePorts(0).enable := true.B;
+                    memory.writePorts(0).address := regFile.io.out_A + decoder.io.immediate;
+                    memory.writePorts(0).data := regFile.io.out_B;
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+                    
+                    printf("[SW] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, regFile.io.out_A + decoder.io.immediate);
                 }
                 
                 // LUI
