@@ -99,7 +99,7 @@ class Main() extends Module {
 
             switch(decoder.io.operation) {
                 // LW
-                is("b010_00000_11".U) {
+                is("b010_0000011".U) {
                     regFile.io.read_addr_A := decoder.io.rs1;
 
                     memory.readPorts(1).enable := true.B;
@@ -109,7 +109,7 @@ class Main() extends Module {
                 }
 
                 // SW
-                is("b010_01000_11".U) {
+                is("b010_0100011".U) {
                     regFile.io.read_addr_A := decoder.io.rs1;
                     regFile.io.read_addr_B := decoder.io.rs2;
 
@@ -124,7 +124,7 @@ class Main() extends Module {
                 }
                 
                 // LUI
-                is("b01101_11".U(7.W)) { 
+                is("b0110111".U) { 
                     regFile.io.write_addr := decoder.io.rd;
                     regFile.io.write_enable := true.B;
                     regFile.io.in := decoder.io.immediate;
@@ -135,8 +135,20 @@ class Main() extends Module {
                     printf("[LUI] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
                 }
 
+                // AUIPC
+                is("b0010111".U) { 
+                    regFile.io.write_addr := decoder.io.rd;
+                    regFile.io.write_enable := true.B;
+                    regFile.io.in := program_pointer + decoder.io.immediate;
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[AUIPC] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
+                }
+
                 // ADDI
-                is("b000_00100_11".U(7.W)) {
+                is("b000_0010011".U) {
                     regFile.io.read_addr_A := decoder.io.rs1;
 
                     regFile.io.write_addr := decoder.io.rd;
@@ -147,6 +159,44 @@ class Main() extends Module {
                     stage := 0.U;
 
                     printf("[ADDI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
+
+                // SLTI
+                is("b010_0010011".U) {
+                    regFile.io.read_addr_A := decoder.io.rs1;
+
+                    regFile.io.write_addr := decoder.io.rd;
+                    regFile.io.write_enable := true.B;
+
+                    when(regFile.io.out_A.asSInt() < decoder.io.immediate.asSInt()) {
+                       regFile.io.in := 1.U;
+                    }.otherwise {
+                       regFile.io.in := 0.U;
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLTI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
+
+                // SLTIU
+                is("b011_0010011".U) {
+                    regFile.io.read_addr_A := decoder.io.rs1;
+
+                    regFile.io.write_addr := decoder.io.rd;
+                    regFile.io.write_enable := true.B;
+
+                    when(regFile.io.out_A < decoder.io.immediate) {
+                       regFile.io.in := 1.U;
+                    }.otherwise {
+                       regFile.io.in := 0.U;
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLTIU] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
                 }
             }
         }
