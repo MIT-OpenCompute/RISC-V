@@ -168,7 +168,7 @@ class Main() extends Module {
                     regFile.io.write_addr := decoder.io.rd;
                     regFile.io.write_enable := true.B;
 
-                    when(regFile.io.out_A.asSInt() < decoder.io.immediate.asSInt()) {
+                    when(regFile.io.out_A.asSInt < decoder.io.immediate.asSInt) {
                        regFile.io.in := 1.U;
                     }.otherwise {
                        regFile.io.in := 0.U;
@@ -197,6 +197,20 @@ class Main() extends Module {
                     stage := 0.U;
 
                     printf("[SLTIU] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
+
+                // XORI
+                is("b100_0010011".U) { 
+                    regFile.io.read_addr_A := decoder.io.rs1;
+
+                    regFile.io.write_addr := decoder.io.rd;
+                    regFile.io.write_enable := true.B;
+                    regFile.io.in := regFile.io.out_A ^ decoder.io.immediate;
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[XORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
                 }
             }
         }
