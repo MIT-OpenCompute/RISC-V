@@ -21,8 +21,8 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [ ] SLLI
 - [ ] SRLI
 - [ ] SRAI
-- [ ] ADD
-- [ ] SUB
+- [x] ADD
+- [x] SUB
 - [ ] SLL
 - [ ] SLT
 - [ ] SLTU
