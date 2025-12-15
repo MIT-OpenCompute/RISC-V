@@ -11,18 +11,18 @@ class Main() extends Module {
         val execute = Input(Bool());
 
         val debug_write = Input(Bool());
-        val debug_write_address = Input(UInt(32.W));
+        val debug_write_addressess = Input(UInt(32.W));
         val debug_write_data = Input(UInt(32.W));
         
         // Debugging variables for tests
-        val out_A = Output(UInt(32.W))
-        val out_B = Output(UInt(32.W))
-        val out_C = Output(UInt(32.W)) // Testing output port
-        val read_addr_A = Input(UInt(5.W))
-        val read_addr_B = Input(UInt(5.W))
-        val read_addr_C = Input(UInt(5.W)) // Testing address port
+        val out_a = Output(UInt(32.W))
+        val out_b = Output(UInt(32.W))
+        val out_c = Output(UInt(32.W)) // Testing output port
+        val read_address_a = Input(UInt(5.W))
+        val read_address_b = Input(UInt(5.W))
+        val read_address_c = Input(UInt(5.W)) // Testing address port
         val write_enable = Input(Bool())
-        val write_addr = Input(UInt(5.W))
+        val write_address = Input(UInt(5.W))
         val in = Input(UInt(32.W))
     })
     
@@ -31,26 +31,26 @@ class Main() extends Module {
     val memory = SRAM(1024, UInt(32.W), 2, 1, 0);
 
     // Set up register file
-    val regFile = Module(new Registers())
+    val registers = Module(new Registers())
     // Default connections for register file inputs
 
-    regFile.io.write_enable := false.B
-    regFile.io.write_addr := 0.U(5.W)
-    regFile.io.read_addr_A := 0.U(5.W)
-    regFile.io.read_addr_B := 0.U(5.W)
-    regFile.io.read_addr_C := 0.U(5.W)
-    regFile.io.in := 0.U(32.W) 
+    registers.io.write_enable := false.B
+    registers.io.write_address := 0.U(5.W)
+    registers.io.read_address_a := 0.U(5.W)
+    registers.io.read_address_b := 0.U(5.W)
+    registers.io.read_address_c := 0.U(5.W)
+    registers.io.in := 0.U(32.W) 
 
     // Set up testing register outputs
-    io.out_A := regFile.io.out_A
-    io.out_B := regFile.io.out_B
-    io.out_C := regFile.io.out_C
-    regFile.io.read_addr_A := io.read_addr_A
-    regFile.io.read_addr_B := io.read_addr_B
-    regFile.io.read_addr_C := io.read_addr_C
-    regFile.io.write_enable := io.write_enable
-    regFile.io.write_addr := io.write_addr
-    regFile.io.in := io.in
+    io.out_a := registers.io.out_a
+    io.out_b := registers.io.out_b
+    io.out_c := registers.io.out_c
+    registers.io.read_address_a := io.read_address_a
+    registers.io.read_address_b := io.read_address_b
+    registers.io.read_address_c := io.read_address_c
+    registers.io.write_enable := io.write_enable
+    registers.io.write_address := io.write_address
+    registers.io.in := io.in
 
     // Set up ALU
     val alu = Module(new ALU())
@@ -72,7 +72,7 @@ class Main() extends Module {
     memory.readPorts(1).address := 0.U;
 
     memory.writePorts(0).enable := io.debug_write;
-    memory.writePorts(0).address := io.debug_write_address;
+    memory.writePorts(0).address := io.debug_write_addressess;
     memory.writePorts(0).data := io.debug_write_data;
 
     val operation_buffer = RegInit(0.U(17.W));
@@ -86,8 +86,8 @@ class Main() extends Module {
         printf("Operation: %b\n", decoder.io.operation);
         printf("Program Pointer: %d\n", program_pointer);
         printf("Data: %b\n", memory.readPorts(0).data);
-        printf("Register 1: %b\n", regFile.io.debug_1);
-        printf("Register 2: %b\n", regFile.io.debug_2);
+        printf("Register 1: %b\n", registers.io.debug_1);
+        printf("Register 2: %b\n", registers.io.debug_2);
 
         stage := stage + 1.U;
 
@@ -100,34 +100,34 @@ class Main() extends Module {
             switch(decoder.io.operation) {
                 // LW
                 is("b010_0000011".U) {
-                    regFile.io.read_addr_A := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1;
 
                     memory.readPorts(1).enable := true.B;
-                    memory.readPorts(1).address := regFile.io.out_A + decoder.io.immediate;
+                    memory.readPorts(1).address := registers.io.out_a + decoder.io.immediate;
                     
-                    printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, regFile.io.out_A + decoder.io.immediate);
+                    printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
                 }
 
                 // SW
                 is("b010_0100011".U) {
-                    regFile.io.read_addr_A := decoder.io.rs1;
-                    regFile.io.read_addr_B := decoder.io.rs2;
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
 
                     memory.writePorts(0).enable := true.B;
-                    memory.writePorts(0).address := regFile.io.out_A + decoder.io.immediate;
-                    memory.writePorts(0).data := regFile.io.out_B;
+                    memory.writePorts(0).address := registers.io.out_a + decoder.io.immediate;
+                    memory.writePorts(0).data := registers.io.out_b;
 
                     program_pointer := program_pointer + 1.U;
                     stage := 0.U;
                     
-                    printf("[SW] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, regFile.io.out_A + decoder.io.immediate);
+                    printf("[SW] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, registers.io.out_a + decoder.io.immediate);
                 }
                 
                 // LUI
                 is("b0110111".U) { 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
-                    regFile.io.in := decoder.io.immediate;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := decoder.io.immediate;
 
                     program_pointer := program_pointer + 1.U;
                     stage := 0.U;
@@ -137,9 +137,9 @@ class Main() extends Module {
 
                 // AUIPC
                 is("b0010111".U) { 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
-                    regFile.io.in := program_pointer + decoder.io.immediate;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := program_pointer + decoder.io.immediate;
 
                     program_pointer := program_pointer + 1.U;
                     stage := 0.U;
@@ -149,11 +149,11 @@ class Main() extends Module {
 
                 // ADDI
                 is("b000_0010011".U) {
-                    regFile.io.read_addr_A := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1;
 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
-                    regFile.io.in := regFile.io.out_A + decoder.io.immediate;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a + decoder.io.immediate;
 
                     program_pointer := program_pointer + 1.U;
                     stage := 0.U;
@@ -163,15 +163,15 @@ class Main() extends Module {
 
                 // SLTI
                 is("b010_0010011".U) {
-                    regFile.io.read_addr_A := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1;
 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
 
-                    when(regFile.io.out_A.asSInt < decoder.io.immediate.asSInt) {
-                       regFile.io.in := 1.U;
+                    when(registers.io.out_a.asSInt < decoder.io.immediate.asSInt) {
+                       registers.io.in := 1.U;
                     }.otherwise {
-                       regFile.io.in := 0.U;
+                       registers.io.in := 0.U;
                     }
 
                     program_pointer := program_pointer + 1.U;
@@ -182,15 +182,15 @@ class Main() extends Module {
 
                 // SLTIU
                 is("b011_0010011".U) {
-                    regFile.io.read_addr_A := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1;
 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
 
-                    when(regFile.io.out_A < decoder.io.immediate) {
-                       regFile.io.in := 1.U;
+                    when(registers.io.out_a < decoder.io.immediate) {
+                       registers.io.in := 1.U;
                     }.otherwise {
-                       regFile.io.in := 0.U;
+                       registers.io.in := 0.U;
                     }
 
                     program_pointer := program_pointer + 1.U;
@@ -201,11 +201,11 @@ class Main() extends Module {
 
                 // XORI
                 is("b100_0010011".U) { 
-                    regFile.io.read_addr_A := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1;
 
-                    regFile.io.write_addr := decoder.io.rd;
-                    regFile.io.write_enable := true.B;
-                    regFile.io.in := regFile.io.out_A ^ decoder.io.immediate;
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a ^ decoder.io.immediate;
 
                     program_pointer := program_pointer + 1.U;
                     stage := 0.U;
@@ -220,9 +220,9 @@ class Main() extends Module {
 
             switch(operation_buffer) {
                 is("b010_00000_11".U) {
-                    regFile.io.write_addr := rd_buffer;
-                    regFile.io.write_enable := true.B;
-                    regFile.io.in := memory.readPorts(1).data;
+                    registers.io.write_address := rd_buffer;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := memory.readPorts(1).data;
 
                     program_pointer := program_pointer + 1.U;
 

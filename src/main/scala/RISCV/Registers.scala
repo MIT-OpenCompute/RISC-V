@@ -14,26 +14,26 @@ import _root_.circt.stage.ChiselStage
  * 
  * I/O:
     * in: 32-bit input data to write to register
-    * write_addr: 5-bit address of register to write to
-    * read_addr_A: 5-bit address of register to read from (port A)
-    * read_addr_B: 5-bit address of register to read from (port B)
+    * write_address: 5-bit address of register to write to
+    * read_address_a: 5-bit address of register to read from (port A)
+    * read_address_b: 5-bit address of register to read from (port B)
     * write_enable: boolean signal to enable writing to register
-    * out_A: 32-bit output data from read port A
-    * out_B: 32-bit output data from read port B
+    * out_a: 32-bit output data from read port A
+    * out_b: 32-bit output data from read port B
  *
  */
 
 class Registers() extends Module {
     val io = IO(new Bundle {
         val in  = Input(UInt(32.W))
-        val write_addr = Input(UInt(5.W))
-        val read_addr_A = Input(UInt(5.W))
-        val read_addr_B = Input(UInt(5.W))
-        val read_addr_C = Input(UInt(5.W)) // Testing address port
+        val write_address = Input(UInt(5.W))
+        val read_address_a = Input(UInt(5.W))
+        val read_address_b = Input(UInt(5.W))
+        val read_address_c = Input(UInt(5.W)) // Testing address port
         val write_enable = Input(Bool())
-        val out_A = Output(UInt(32.W))
-        val out_B = Output(UInt(32.W))
-        val out_C = Output(UInt(32.W)) // Testing output port
+        val out_a = Output(UInt(32.W))
+        val out_b = Output(UInt(32.W))
+        val out_c = Output(UInt(32.W)) // Testing output port
 
         val debug_1 = Output(UInt(32.W));
         val debug_2 = Output(UInt(32.W));
@@ -42,18 +42,18 @@ class Registers() extends Module {
     val regs = RegInit(VecInit(Seq.fill(32.toInt)(0.U(32.W))))
 
     // Dual read ports
-    io.out_A := regs(io.read_addr_A)
-    io.out_B := regs(io.read_addr_B)
-    io.out_C := regs(io.read_addr_C)
+    io.out_a := regs(io.read_address_a)
+    io.out_b := regs(io.read_address_b)
+    io.out_c := regs(io.read_address_c)
 
     io.debug_1 := regs(1);
     io.debug_2 := regs(2);
 
     // Uncomment to print the register contents every time they are accessed
-    //printf("Regs: [%d]=%d, [%d]=%d, WE=%b, WA=%d, IN=%d\n", io.read_addr_A, io.out_A, io.read_addr_B, io.out_B, io.write_enable, io.write_addr, io.in)
+    //printf("Regs: [%d]=%d, [%d]=%d, WE=%b, WA=%d, IN=%d\n", io.read_address_a, io.out_a, io.read_address_b, io.out_b, io.write_enable, io.write_address, io.in)
 
     // Single write port
-    when (io.write_enable && (io.write_addr =/= 0.U)) {
-        regs(io.write_addr) := io.in
+    when (io.write_enable && (io.write_address =/= 0.U)) {
+        regs(io.write_address) := io.in
     }
 }
