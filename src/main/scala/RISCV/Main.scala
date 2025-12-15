@@ -212,6 +212,34 @@ class Main() extends Module {
 
                     printf("[XORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
                 }
+
+                // ORI
+                is("b110_0010011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a | decoder.io.immediate;
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[XORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
+
+                // ANDI
+                is("b111_0010011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a & decoder.io.immediate;
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[XORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
             }
         }
 
