@@ -8,3 +8,57 @@ The instruction at the program pointer is requested from memory.
 The instruction is available from memory and the decoder is now emitting the decoded instruction. We store the decoded instructions in buffers for access in later stages. Most instructions can simply execute in this stage and then set the stage counter back to 0 and increase the program pointer.
 ## Stage 2
 Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests the info from memory and then in stage 2 it takes the value from memory and writes it to the register.
+## Implemented Instructions
+### Main Integer Instructions
+- [x] LUI
+- [x] AUIPC
+- [x] ADDI
+- [x] SLTI
+- [x] SLTIU
+- [x] XORI
+- [x] ORI
+- [x] ANDI
+- [ ] SLLI
+- [ ] SRLI
+- [ ] SRAI
+- [ ] ADD
+- [ ] SUB
+- [ ] SLL
+- [ ] SLT
+- [ ] SLTU
+- [ ] XOR
+- [ ] SRL
+- [ ] SRA
+- [ ] OR
+- [ ] AND
+- [ ] LB
+- [ ] LH
+- [x] LW
+- [ ] LBU
+- [ ] LHU
+- [ ] SB
+- [ ] SH
+- [x] SW
+- [ ] JAL
+- [ ] JALR
+- [ ] BEQ
+- [ ] BNE
+- [ ] BLT
+- [ ] BGE
+- [ ] BLTU
+- [ ] BGEU
+### Other Integer Instructions
+- [ ] FENCE
+- [ ] FENCEI
+- [ ] ECALL
+- [ ] EBREAK
+- [ ] SRET
+- [ ] MRET
+- [ ] WFI
+- [ ] SFENCEVMA
+- [ ] CSRRW
+- [ ] CSRRS
+- [ ] CSRRC
+- [ ] CSRRWI
+- [ ] CSRRSI
+- [ ] CSRRCI
