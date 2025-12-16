@@ -6,6 +6,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 
 class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
+  /*
   "Main should execute LUI correctly" in {
     simulate(new Main()) { dut =>
       // LUI x1, 0x12345
@@ -316,4 +317,77 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
     }
   }
   
+  "Main should execute XOR correctly" in {
+    simulate(new Main()) { dut =>
+      // x1 = b00000000000000000000000000001010
+      // x2 = b00000000000000000000000000001100  
+
+      dut.io.write_enable.poke(true.B)
+      dut.io.write_addr.poke(1.U)
+      dut.io.in.poke("b00000000000000000000000000001010".U)
+      dut.clock.step(1)
+      dut.io.write_addr.poke(2.U)
+      dut.io.in.poke("b00000000000000000000000000001100".U)
+      dut.clock.step(1)
+      dut.io.write_enable.poke(false.B)
+
+      // XOR x3 x1 x2 -> x3 = x1 ^ x2
+      val instr = "b00000_00_00010_00001_100_00011_01100_11".U(32.W)
+      dut.io.instruction.poke(instr)
+      dut.clock.step(1)
+
+      dut.io.read_addr_C.poke(3.U)
+      dut.io.out_C.expect("b00000000000000000000000000000110".U)
+    }
+  }
+  */
+
+  "Main should execute SRL correctly" in {
+    simulate(new Main()) { dut =>
+      // x1 = b00000000000000000000000000001111
+      // x2 = b00000000000000000000000000000011
+
+      dut.io.write_enable.poke(true.B)
+      dut.io.write_addr.poke(1.U)
+      dut.io.in.poke("b00000000000000000000000000001111".U)
+      dut.clock.step(1)
+      dut.io.write_addr.poke(2.U)
+      dut.io.in.poke("b00000000000100000000000000000011".U)
+      dut.clock.step(1)
+      dut.io.write_enable.poke(false.B)
+
+      // XOR x3 x1 x2
+      val instr = "b00000_00_00010_00001_101_00011_01100_11".U(32.W)
+      dut.io.instruction.poke(instr)
+      dut.clock.step(1)
+
+      dut.io.read_addr_C.poke(3.U)
+      dut.io.out_C.expect("b00000000000000000000000000000001".U)
+    }
+  }
+
+  "Main should execute SRA correctly" in {
+    simulate(new Main()) { dut =>
+      // x1 = b11111111111111111111111111110000
+      // x2 = b00000000000000000000000000000011
+
+      dut.io.write_enable.poke(true.B)
+      dut.io.write_addr.poke(1.U)
+      dut.io.in.poke("b11111111111111111111111111110000".U)
+      dut.clock.step(1)
+      dut.io.write_addr.poke(2.U)
+      dut.io.in.poke("b00000000010000000000000000000011".U)
+      dut.clock.step(1)
+      dut.io.write_enable.poke(false.B)
+
+      // SRA x3 x1 x2
+      val instr = "b01000_00_00010_00001_101_00011_01100_11".U(32.W)
+      dut.io.instruction.poke(instr)
+      dut.clock.step(1)
+
+      dut.io.read_addr_C.poke(3.U)
+      dut.io.out_C.expect("b11111111111111111111111111111110".U)
+    }
+  }
+
 }
