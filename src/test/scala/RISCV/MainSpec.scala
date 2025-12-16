@@ -9,14 +9,36 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
   /*
   "Main should execute LUI correctly" in {
     simulate(new Main()) { dut =>
-      // LUI x1, 0x12345
-      val instr = "b00010010001101000101_00001_0110111".U(32.W) // opcode=0110111
-      dut.io.instruction.poke(instr)
-      dut.clock.step(1)
+      dut.io.debug_write.poke(true.B);
+      dut.io.debug_write_data.poke("b000000000110_00000_000_00001_0010011".U(32.W));
+      dut.io.debug_write_addressess.poke(0.U);
 
-      // Expect register x1 to hold immediate shifted left 12 bits
-      dut.io.read_addr_C.poke(1.U)
-      dut.io.out_C.expect("h12345000".U)
+      dut.clock.step(1);
+
+      dut.io.debug_write.poke(true.B);
+      dut.io.debug_write_data.poke("b0000000_00001_00000_010_01000_0100011".U(32.W));
+      dut.io.debug_write_addressess.poke(1.U);
+
+      dut.clock.step(1);
+
+      dut.io.debug_write.poke(true.B);
+      dut.io.debug_write_data.poke("b000000001000_00000_010_00010_0000011".U(32.W));
+      dut.io.debug_write_addressess.poke(2.U);
+
+      dut.clock.step(1);
+
+      dut.io.debug_write.poke(false.B);
+      dut.io.execute.poke(true.B);
+
+      dut.clock.step(1);
+
+      dut.clock.step(1);
+      dut.clock.step(1);
+      dut.clock.step(1);
+      dut.clock.step(1);
+      dut.clock.step(1);
+      dut.clock.step(1);
+      dut.clock.step(1);
     }
   }
   

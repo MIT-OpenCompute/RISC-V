@@ -97,7 +97,7 @@ class MainTemplateSpec extends AnyFreeSpec with Matchers with ChiselSim {
     simulate(new Main()) { dut =>
       // 1. Initialize registers (example: write value to x1)
       dut.io.write_enable.poke(true.B)
-      dut.io.write_addr.poke(1.U)
+      dut.io.write_address.poke(1.U)
       dut.io.in.poke(42.U)
       dut.clock.step(1)
       dut.io.write_enable.poke(false.B)
@@ -111,8 +111,8 @@ class MainTemplateSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
       // 4. Read back a register value to verify the result
       //    Always use the C port of the register file for reading.
-      dut.io.read_addr_C.poke(1.U)   // Which register to read
-      dut.io.out_C.expect(42.U)      // Expected result (example)
+      dut.io.read_address_c.poke(1.U)   // Which register to read
+      dut.io.out_c.expect(42.U)      // Expected result (example)
     }
   }
 }
