@@ -32,11 +32,19 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
       dut.clock.step(1);
 
+      dut.io.debug_write.poke(true.B);
+      dut.io.debug_write_data.poke("b0000000_00001_00010_011_00010_0110011".U(32.W));
+      dut.io.debug_write_addressess.poke(4.U);
+
+      dut.clock.step(1);
+
       dut.io.debug_write.poke(false.B);
       dut.io.execute.poke(true.B);
 
       dut.clock.step(1);
 
+      dut.clock.step(1);
+      dut.clock.step(1);
       dut.clock.step(1);
       dut.clock.step(1);
       dut.clock.step(1);

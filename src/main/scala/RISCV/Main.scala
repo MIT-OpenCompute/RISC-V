@@ -322,6 +322,46 @@ class Main() extends Module {
 
                     printf("[SLL] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
                 }
+
+                // SLT
+                is("b010_0110011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    
+                    when(registers.io.out_a.asSInt < registers.io.out_b.asSInt) {
+                        registers.io.in := 1.U;
+                    }.otherwise {
+                        registers.io.in := 0.U;
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLT] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
+                }
+
+                // SLTU
+                is("b011_0110011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    
+                    when(registers.io.out_a < registers.io.out_b) {
+                        registers.io.in := 1.U;
+                    }.otherwise {
+                        registers.io.in := 0.U;
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLTU] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
+                }
             }
         }
 
