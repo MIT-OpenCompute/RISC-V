@@ -307,6 +307,21 @@ class Main() extends Module {
                         printf("[SRLI] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
                     }
                 }
+
+                // SLL
+                is("b001_0110011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a << registers.io.out_b(5, 0);
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLL] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
+                }
             }
         }
 
