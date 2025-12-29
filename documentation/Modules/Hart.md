@@ -27,8 +27,8 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [x] SLT
 - [x] SLTU
 - [x] XOR
-- [ ] SRL
-- [ ] SRA
+- [x] SRL
+- [x] SRA
 - [x] OR
 - [x] AND
 - [ ] LB

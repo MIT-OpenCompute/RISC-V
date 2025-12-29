@@ -323,6 +323,29 @@ class Main() extends Module {
                     printf("[SLL] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
                 }
 
+                // SRL and SRA
+                is("b101_0110011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    
+                    when(decoder.io.immediate(10) === 1.U) { // SRA
+                        registers.io.in := (registers.io.out_a.asSInt >> decoder.io.immediate(5, 0)).asUInt;
+                    }.otherwise { // SLA
+                        registers.io.in := registers.io.out_a >> decoder.io.immediate(5, 0);
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    when(decoder.io.immediate(10) === 1.U) { // SRA
+                        printf("[SRA] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
+                    }.otherwise { // SLA
+                        printf("[SRL] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
+                    }
+                }
+
                 // SLT
                 is("b010_0110011".U) { 
                     registers.io.read_address_a := decoder.io.rs1;
