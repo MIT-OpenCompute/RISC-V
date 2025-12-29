@@ -26,11 +26,11 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [x] SLL
 - [x] SLT
 - [x] SLTU
-- [ ] XOR
+- [x] XOR
 - [ ] SRL
 - [ ] SRA
-- [ ] OR
-- [ ] AND
+- [x] OR
+- [x] AND
 - [ ] LB
 - [ ] LH
 - [x] LW
