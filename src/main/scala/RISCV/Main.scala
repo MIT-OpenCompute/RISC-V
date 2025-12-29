@@ -270,6 +270,43 @@ class Main() extends Module {
 
                     printf("[SUB] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
                 }
+
+                // SLLI
+                is("b001_0010011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := registers.io.out_a << decoder.io.immediate(5, 0);
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    printf("[SLLI] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
+                }
+
+                // SRLI and SRAI
+                is("b101_0010011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    
+                    when(decoder.io.immediate(10) === 1.U) { // SRAI
+                        registers.io.in := (registers.io.out_a.asSInt >> decoder.io.immediate(5, 0)).asUInt;
+                    }.otherwise { // SLAI
+                        registers.io.in := registers.io.out_a >> decoder.io.immediate(5, 0);
+                    }
+
+                    program_pointer := program_pointer + 1.U;
+                    stage := 0.U;
+
+                    when(decoder.io.immediate(10) === 1.U) { // SRAI
+                        printf("[SRAI] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
+                    }.otherwise { // SLAI
+                        printf("[SRLI] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
+                    }
+                }
             }
         }
 
@@ -277,7 +314,8 @@ class Main() extends Module {
             stage := 0.U;
 
             switch(operation_buffer) {
-                is("b010_00000_11".U) {
+                // LW
+                is("b010_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
                     registers.io.in := memory.readPorts(1).data;
