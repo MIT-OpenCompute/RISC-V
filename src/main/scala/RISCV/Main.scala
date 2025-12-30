@@ -430,6 +430,18 @@ class Main() extends Module {
 
                     printf("[AND] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
                 }
+
+                // JAL
+                is("b1101111".U) { 
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := program_pointer + 1.U;
+
+                    program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    stage := 0.U;
+
+                    printf("[JAL] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
+                }
             }
         }
 

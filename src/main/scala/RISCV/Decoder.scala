@@ -42,7 +42,7 @@ class Decoder(val width: Int = 32) extends Module {
 		is(0b1110011.U) { format := InstructionFormat.S; } // ecall, ebreak, sret, mret, wfi, sfence.vma | the format for these is not within the standard formats but we can basically achieve the same thing with S type and then using the immediate, rs2, and rs1 to differentiate the calls. Also technically sret, mret, and wfi come from the privelleged spec but we'll just include them here.
 		is(0b0000011.U) { format := InstructionFormat.I; } // lb, lh, lw, lbu, lhu
 		is(0b0100011.U) { format := InstructionFormat.S; } // sb, sh, sw
-		is(0b1101111.U) { format := InstructionFormat.U; } // jal
+		is(0b1101111.U) { format := InstructionFormat.J; } // jal
 		is(0b1100111.U) { format := InstructionFormat.I; } // jalr
 		is(0b1100011.U) { format := InstructionFormat.B; } // beq, bne, blt, bge, bltu, bgeu
 	}

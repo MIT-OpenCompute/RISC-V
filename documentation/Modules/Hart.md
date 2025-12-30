@@ -39,7 +39,7 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [ ] SB
 - [ ] SH
 - [x] SW
-- [ ] JAL
+- [x] JAL
 - [ ] JALR
 - [ ] BEQ
 - [ ] BNE
