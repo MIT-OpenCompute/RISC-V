@@ -442,6 +442,20 @@ class Main() extends Module {
 
                     printf("[JAL] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
                 }
+
+                // JALR
+                is("b000_1100111".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := program_pointer + 1.U;
+
+                    program_pointer := (registers.io.out_a.zext + decoder.io.immediate.asSInt).asUInt;
+                    stage := 0.U;
+
+                    printf("[JALR] RS1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
+                }
             }
         }
 
