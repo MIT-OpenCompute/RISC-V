@@ -31,13 +31,13 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [x] SRA
 - [x] OR
 - [x] AND
-- [ ] LB
-- [ ] LH
+- [x] LB
+- [x] LH
 - [x] LW
-- [ ] LBU
-- [ ] LHU
-- [ ] SB
-- [ ] SH
+- [x] LBU
+- [x] LHU
+- [x] SB
+- [x] SH
 - [x] SW
 - [x] JAL
 - [x] JALR
