@@ -135,6 +135,39 @@ class Main() extends Module {
                     printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
                 }
 
+                // SB
+                is("b000_0100011".U) {
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    memory.writePorts(0).enable := true.B;
+                    memory.writePorts(0).address := registers.io.out_a + decoder.io.immediate;
+                    memory.writePorts(0).data := registers.io.out_b(7,0);
+
+                    program_pointer := program_pointer + 4.U;
+                    stage := 0.U;
+                    
+                    printf("[SB] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, registers.io.out_a + decoder.io.immediate);
+                }
+
+                // SH
+                is("b001_0100011".U) {
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    memory.writePorts(0).enable := true.B;
+                    memory.writePorts(0).address := registers.io.out_a + decoder.io.immediate;
+                    memory.writePorts(0).data := registers.io.out_b(7,0);
+                    memory.writePorts(1).enable := true.B;
+                    memory.writePorts(1).address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    memory.writePorts(1).data := registers.io.out_b(15,8);
+
+                    program_pointer := program_pointer + 4.U;
+                    stage := 0.U;
+                    
+                    printf("[SH] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, registers.io.out_a + decoder.io.immediate);
+                }
+
                 // SW
                 is("b010_0100011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
