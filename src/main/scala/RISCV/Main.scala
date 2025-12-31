@@ -456,6 +456,102 @@ class Main() extends Module {
 
                     printf("[JALR] RS1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
                 }
+
+                // BEQ
+                is("b000_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a === registers.io.out_b) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BEQ] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
+
+                // BNEQ
+                is("b001_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a =/= registers.io.out_b) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BNEQ] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
+
+                // BLT
+                is("b100_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a.asSInt < registers.io.out_b.asSInt) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BLT] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
+
+                // BGE
+                is("b101_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a.asSInt >= registers.io.out_b.asSInt) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BGE] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
+
+                // BLTU
+                is("b110_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a < registers.io.out_b) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BLTU] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
+
+                // BGEU
+                is("b111_1100011".U) { 
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    when(registers.io.out_a >= registers.io.out_b) {
+                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
+                    }.otherwise {
+                        program_pointer := program_pointer + 1.U;
+                    }
+                    
+                    stage := 0.U;
+
+                    printf("[BGEU] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
+                }
             }
         }
 
