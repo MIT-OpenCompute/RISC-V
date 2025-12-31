@@ -28,7 +28,7 @@ class Main() extends Module {
     
     val program_pointer = RegInit(0.U(32.W));
 
-    val memory = SRAM(1024, UInt(32.W), 2, 1, 0);
+    val memory = SRAM(1024, UInt(8.W), 8, 4, 0);
 
     // Set up register file
     val registers = Module(new Registers())
@@ -61,19 +61,40 @@ class Main() extends Module {
     alu.io.b := 0.U(32.W)
 
     val decoder = Module(new Decoder())
-    decoder.io.instruction := memory.readPorts(0).data;
+    decoder.io.instruction := memory.readPorts(3).data ## memory.readPorts(2).data ## memory.readPorts(1).data ## memory.readPorts(0).data;
 
     val stage = RegInit(0.U(2.W)); // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
 
     memory.readPorts(0).enable := io.execute && stage === 0.U;
     memory.readPorts(0).address := program_pointer;
+    memory.readPorts(1).enable := io.execute && stage === 0.U;
+    memory.readPorts(1).address := program_pointer + 1.U;
+    memory.readPorts(2).enable := io.execute && stage === 0.U;
+    memory.readPorts(2).address := program_pointer + 2.U;
+    memory.readPorts(3).enable := io.execute && stage === 0.U;
+    memory.readPorts(3).address := program_pointer + 3.U;
 
-    memory.readPorts(1).enable := false.B;
-    memory.readPorts(1).address := 0.U;
+    memory.readPorts(4).enable := false.B;
+    memory.readPorts(4).address := 0.U;
+    memory.readPorts(5).enable := false.B;
+    memory.readPorts(5).address := 0.U;
+    memory.readPorts(6).enable := false.B;
+    memory.readPorts(6).address := 0.U;
+    memory.readPorts(7).enable := false.B;
+    memory.readPorts(7).address := 0.U;
 
     memory.writePorts(0).enable := io.debug_write;
-    memory.writePorts(0).address := io.debug_write_addressess;
+    memory.writePorts(0).address := io.debug_write_addressess(7, 0);
     memory.writePorts(0).data := io.debug_write_data;
+    memory.writePorts(1).enable := io.debug_write;
+    memory.writePorts(1).address := io.debug_write_addressess + 1.U;
+    memory.writePorts(1).data := io.debug_write_data(15,8);
+    memory.writePorts(2).enable := io.debug_write;
+    memory.writePorts(2).address := io.debug_write_addressess + 2.U;
+    memory.writePorts(2).data := io.debug_write_data(23,16);
+    memory.writePorts(3).enable := io.debug_write;
+    memory.writePorts(3).address := io.debug_write_addressess + 3.U;
+    memory.writePorts(3).data := io.debug_write_data(31,24);
 
     val operation_buffer = RegInit(0.U(17.W));
     val rs1_buffer = RegInit(0.U(5.W));
@@ -85,7 +106,7 @@ class Main() extends Module {
         printf("Stage: %d\n", stage);
         printf("Operation: %b\n", decoder.io.operation);
         printf("Program Pointer: %d\n", program_pointer);
-        printf("Data: %b\n", memory.readPorts(0).data);
+        printf("Data: %b\n", memory.readPorts(3).data ## memory.readPorts(2).data ## memory.readPorts(1).data ## memory.readPorts(0).data);
         printf("Register 1: %b\n", registers.io.debug_1);
         printf("Register 2: %b\n", registers.io.debug_2);
 
@@ -102,8 +123,14 @@ class Main() extends Module {
                 is("b010_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.readPorts(1).enable := true.B;
-                    memory.readPorts(1).address := registers.io.out_a + decoder.io.immediate;
+                    memory.readPorts(4).enable := true.B;
+                    memory.readPorts(4).address := registers.io.out_a + decoder.io.immediate;
+                    memory.readPorts(5).enable := true.B;
+                    memory.readPorts(5).address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    memory.readPorts(6).enable := true.B;
+                    memory.readPorts(6).address := registers.io.out_a + decoder.io.immediate + 2.U;
+                    memory.readPorts(7).enable := true.B;
+                    memory.readPorts(7).address := registers.io.out_a + decoder.io.immediate + 3.U;
                     
                     printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
                 }
@@ -115,9 +142,18 @@ class Main() extends Module {
 
                     memory.writePorts(0).enable := true.B;
                     memory.writePorts(0).address := registers.io.out_a + decoder.io.immediate;
-                    memory.writePorts(0).data := registers.io.out_b;
+                    memory.writePorts(0).data := registers.io.out_b(7,0);
+                    memory.writePorts(1).enable := true.B;
+                    memory.writePorts(1).address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    memory.writePorts(1).data := registers.io.out_b(15,8);
+                    memory.writePorts(2).enable := true.B;
+                    memory.writePorts(2).address := registers.io.out_a + decoder.io.immediate + 2.U;
+                    memory.writePorts(2).data := registers.io.out_b(23,16);
+                    memory.writePorts(3).enable := true.B;
+                    memory.writePorts(3).address := registers.io.out_a + decoder.io.immediate + 3.U;
+                    memory.writePorts(3).data := registers.io.out_b(31,16);
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
                     
                     printf("[SW] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, registers.io.out_a + decoder.io.immediate);
@@ -129,7 +165,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[LUI] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
@@ -141,7 +177,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := program_pointer + decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[AUIPC] Rd: %d Immediate: %b\n", decoder.io.rd, decoder.io.immediate);
@@ -155,7 +191,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a + decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[ADDI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -174,7 +210,7 @@ class Main() extends Module {
                        registers.io.in := 0.U;
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLTI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -193,7 +229,7 @@ class Main() extends Module {
                        registers.io.in := 0.U;
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLTIU] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -207,7 +243,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a ^ decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[XORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -221,7 +257,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a | decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[ORI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -235,7 +271,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a & decoder.io.immediate;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[ANDI] Rs1: %d Rd: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate);
@@ -250,7 +286,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a + registers.io.out_b;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[ADD] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -265,7 +301,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a - registers.io.out_b;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SUB] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -279,7 +315,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a << decoder.io.immediate(5, 0);
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLLI] Rs1: %d Rd: %d Shift: %d\n", decoder.io.rs1, decoder.io.rd, decoder.io.immediate(5, 0));
@@ -298,7 +334,7 @@ class Main() extends Module {
                         registers.io.in := registers.io.out_a >> decoder.io.immediate(5, 0);
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     when(decoder.io.immediate(10) === 1.U) { // SRAI
@@ -317,7 +353,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a << registers.io.out_b(5, 0);
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLL] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -336,7 +372,7 @@ class Main() extends Module {
                         registers.io.in := registers.io.out_a >> decoder.io.immediate(5, 0);
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     when(decoder.io.immediate(10) === 1.U) { // SRA
@@ -360,7 +396,7 @@ class Main() extends Module {
                         registers.io.in := 0.U;
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLT] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -380,7 +416,7 @@ class Main() extends Module {
                         registers.io.in := 0.U;
                     }
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[SLTU] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -395,7 +431,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a ^ registers.io.out_b;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[XOR] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -410,7 +446,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a | registers.io.out_b;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[OR] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -425,7 +461,7 @@ class Main() extends Module {
                     registers.io.write_enable := true.B;
                     registers.io.in := registers.io.out_a & registers.io.out_b;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
                     stage := 0.U;
 
                     printf("[AND] Rs1: %d Rs2: %d Rd: %d\n", decoder.io.rs1, decoder.io.rs2, decoder.io.rd);
@@ -465,7 +501,7 @@ class Main() extends Module {
                     when(registers.io.out_a === registers.io.out_b) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -481,7 +517,7 @@ class Main() extends Module {
                     when(registers.io.out_a =/= registers.io.out_b) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -497,7 +533,7 @@ class Main() extends Module {
                     when(registers.io.out_a.asSInt < registers.io.out_b.asSInt) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -513,7 +549,7 @@ class Main() extends Module {
                     when(registers.io.out_a.asSInt >= registers.io.out_b.asSInt) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -529,7 +565,7 @@ class Main() extends Module {
                     when(registers.io.out_a < registers.io.out_b) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -545,7 +581,7 @@ class Main() extends Module {
                     when(registers.io.out_a >= registers.io.out_b) {
                         program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     }.otherwise {
-                        program_pointer := program_pointer + 1.U;
+                        program_pointer := program_pointer + 4.U;
                     }
                     
                     stage := 0.U;
@@ -563,11 +599,11 @@ class Main() extends Module {
                 is("b010_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
-                    registers.io.in := memory.readPorts(1).data;
+                    registers.io.in := memory.readPorts(7).data ## memory.readPorts(6).data ## memory.readPorts(5).data ## memory.readPorts(4).data;
 
-                    program_pointer := program_pointer + 1.U;
+                    program_pointer := program_pointer + 4.U;
 
-                    printf("[LW] Rd: %d Data: %b\n", rd_buffer, memory.readPorts(1).data);
+                    printf("[LW] Rd: %d Data: %b\n", rd_buffer, memory.readPorts(7).data ## memory.readPorts(6).data ## memory.readPorts(5).data ## memory.readPorts(4).data);
                 }
             }
         }
