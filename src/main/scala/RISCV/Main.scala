@@ -135,6 +135,28 @@ class Main() extends Module {
                     printf("[LW] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
                 }
 
+                // LBU
+                is("b100_0000011".U) {
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    memory.readPorts(4).enable := true.B;
+                    memory.readPorts(4).address := registers.io.out_a + decoder.io.immediate;
+                    
+                    printf("[LBU] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
+                }
+
+                // LHU
+                is("b101_0000011".U) {
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    memory.readPorts(4).enable := true.B;
+                    memory.readPorts(4).address := registers.io.out_a + decoder.io.immediate;
+                    memory.readPorts(5).enable := true.B;
+                    memory.readPorts(5).address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    
+                    printf("[LHU] Rs1: %d Immediate: %b\n", decoder.io.rs1, registers.io.out_a + decoder.io.immediate);
+                }
+
                 // SB
                 is("b000_0100011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
@@ -637,6 +659,28 @@ class Main() extends Module {
                     program_pointer := program_pointer + 4.U;
 
                     printf("[LW] Rd: %d Data: %b\n", rd_buffer, memory.readPorts(7).data ## memory.readPorts(6).data ## memory.readPorts(5).data ## memory.readPorts(4).data);
+                }
+
+                // LBU
+                is("b100_0000011".U) {
+                    registers.io.write_address := rd_buffer;
+                registers.io.write_enable := true.B;
+                    registers.io.in := 0.U(24.W) ## memory.readPorts(4).data;
+
+                    program_pointer := program_pointer + 4.U;
+
+                    printf("[LBU] Rd: %d Data: %b\n", rd_buffer, 0.U(24.W) ## memory.readPorts(4).data);
+                }
+
+                // LHU
+                is("b101_0000011".U) {
+                    registers.io.write_address := rd_buffer;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := 0.U(16.W) ## memory.readPorts(5).data ## memory.readPorts(4).data;
+
+                    program_pointer := program_pointer + 4.U;
+
+                    printf("[LHU] Rd: %d Data: %b\n", rd_buffer, 0.U(16.W) ## memory.readPorts(5).data ## memory.readPorts(4).data);
                 }
             }
         }
