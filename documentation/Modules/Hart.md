@@ -41,12 +41,12 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [x] SW
 - [x] JAL
 - [x] JALR
-- [ ] BEQ
-- [ ] BNE
-- [ ] BLT
-- [ ] BGE
-- [ ] BLTU
-- [ ] BGEU
+- [x] BEQ
+- [x] BNE
+- [x] BLT
+- [x] BGE
+- [x] BLTU
+- [x] BGEU
 ### Other Integer Instructions
 - [ ] FENCE
 - [ ] FENCEI
