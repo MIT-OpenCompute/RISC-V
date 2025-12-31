@@ -28,7 +28,7 @@ class Main() extends Module {
     
     val program_pointer = RegInit(0.U(32.W));
 
-    val memory = SRAM(1024, UInt(8.W), 8, 4, 0);
+    val memory = SRAM(512000, UInt(8.W), 8, 4, 0);
 
     // Set up register file
     val registers = Module(new Registers())
@@ -104,11 +104,22 @@ class Main() extends Module {
     when(io.execute) {
         printf("\n");
         printf("Stage: %d\n", stage);
-        printf("Operation: %b\n", decoder.io.operation);
-        printf("Program Pointer: %d\n", program_pointer);
-        printf("Data: %b\n", memory.readPorts(3).data ## memory.readPorts(2).data ## memory.readPorts(1).data ## memory.readPorts(0).data);
-        printf("Register 1: %b\n", registers.io.debug_1);
-        printf("Register 2: %b\n", registers.io.debug_2);
+        
+        when(stage =/= 0.U) {
+            printf("Operation: %b\n", decoder.io.operation);
+            printf("Program Pointer: %d\n", program_pointer);
+            printf("Data: %b\n", memory.readPorts(3).data ## memory.readPorts(2).data ## memory.readPorts(1).data ## memory.readPorts(0).data);
+            printf("Register 1: %b\n", registers.io.debug_1);
+            printf("Register 2: %b\n", registers.io.debug_2);
+            printf("Register 3: %b\n", registers.io.debug_3);
+            printf("Register 4: %b\n", registers.io.debug_4);
+            printf("Register 5: %b\n", registers.io.debug_5);
+            printf("Register 6: %b\n", registers.io.debug_6);
+            printf("Register 7: %b\n", registers.io.debug_7);
+            printf("Register 8: %b\n", registers.io.debug_8);
+            printf("Register 9: %b\n", registers.io.debug_9);
+            printf("Register10: %b\n", registers.io.debug_10);
+        }
 
         stage := stage + 1.U;
 
