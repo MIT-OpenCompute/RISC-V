@@ -47,9 +47,8 @@ Currently only the `LW` instruction uses stage 2, since in stage 1 `LW` requests
 - [x] BGE
 - [x] BLTU
 - [x] BGEU
+- [x] FENCE
 ### Other Integer Instructions
-- [ ] FENCE
-- [ ] FENCEI
 - [ ] ECALL
 - [ ] EBREAK
 - [ ] SRET

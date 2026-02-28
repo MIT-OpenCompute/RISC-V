@@ -676,6 +676,15 @@ class Main() extends Module {
 
                     printf("[BGEU] Rs1: %d Rs2: %d Immediate: %b\n", decoder.io.rs1, decoder.io.rs2, decoder.io.immediate);
                 }
+
+                // FENCE - NoOP
+                is("b000_0001111".U) { 
+                    program_pointer := program_pointer + 4.U;
+                    
+                    stage := 0.U;
+
+                    printf("[FENCE]");
+                }
             }
         }
 
