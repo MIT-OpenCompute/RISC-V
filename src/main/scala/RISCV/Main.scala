@@ -53,17 +53,17 @@ class Main() extends Module {
     alu.io.b := 0.U(32.W)
 
     val memory = Module(new Memory())
-    memory.io.program_pointer := program_pointer
 
     val decoder = Module(new Decoder())
-    decoder.io.instruction := memory.io.instruction
-
     // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
     val stage = RegInit(0.U(2.W));
 
-    memory.io.write := false.B;
-    memory.io.read := false.B;
-    memory.io.address := 0.U;
+    memory.io.write_1 := false.B;
+    memory.io.read_1 := false.B;
+    memory.io.address_1 := 0.U;
+    memory.io.write_2 := false.B;
+    memory.io.read_2 := false.B;
+    memory.io.address_2 := 0.U;
 
     val operation_buffer = RegInit(0.U(17.W));
     val rs1_buffer = RegInit(0.U(5.W));
@@ -77,7 +77,8 @@ class Main() extends Module {
         when(stage =/= 0.U) {
             printf("Operation: %b\n", decoder.io.operation);
             printf("Program Pointer: %d\n", program_pointer);
-            printf("Data: %b\n", memory.io.read_value);
+            printf("Data 1: %b\n", memory.io.read_value_1);
+            printf("Data 2: %b\n", memory.io.read_value_2);
             printf("Register 1: %b\n", registers.io.debug_1);
             printf("Register 2: %b\n", registers.io.debug_2);
             printf("Register 3: %b\n", registers.io.debug_3);
@@ -92,7 +93,13 @@ class Main() extends Module {
 
         stage := stage + 1.U;
 
+        when(stage === 0.U) {
+          memory.io.read_1 := true.B
+          memory.io.address_1 := program_pointer
+        }
+
         when(stage === 1.U) {
+            decoder.io.instruction := memory.io.read_value_1
             operation_buffer := decoder.io.operation;
             rs1_buffer := decoder.io.rs1;
             rs2_buffer := decoder.io.rs2;
@@ -103,8 +110,10 @@ class Main() extends Module {
                 is("b000_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1
 
-                    memory.io.read := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     printf(
                       "[LB] Rs1: %d Immediate: %b\n",
@@ -117,8 +126,10 @@ class Main() extends Module {
                 is("b001_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.io.read := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     printf(
                       "[LH] Rs1: %d Immediate: %b\n",
@@ -131,8 +142,10 @@ class Main() extends Module {
                 is("b010_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.io.read := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     printf(
                       "[LW] Rs1: %d Immediate: %b\n",
@@ -145,8 +158,10 @@ class Main() extends Module {
                 is("b100_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.io.read := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     printf(
                       "[LBU] Rs1: %d Immediate: %b\n",
@@ -159,8 +174,10 @@ class Main() extends Module {
                 is("b101_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.io.read := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     printf(
                       "[LHU] Rs1: %d Immediate: %b\n",
@@ -174,9 +191,14 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.io.write := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate
-                    memory.io.write_value := registers.io.out_b(7, 0);
+                    // memory.io.write := true.B
+                    // memory.io.address := registers.io.out_a + decoder.io.immediate
+                    // memory.io.write_value := registers.io.out_b(7, 0);
+
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
@@ -194,9 +216,14 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.io.write := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate
-                    memory.io.write_value := registers.io.out_b(15, 0);
+                    // memory.io.write := true.B
+                    // memory.io.address := registers.io.out_a + decoder.io.immediate
+                    // memory.io.write_value := registers.io.out_b(15, 0);
+
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
@@ -214,9 +241,14 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.io.write := true.B
-                    memory.io.address := registers.io.out_a + decoder.io.immediate
-                    memory.io.write_value := registers.io.out_b(31, 0);
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
+
+                    // memory.io.write := true.B
+                    // memory.io.address := registers.io.out_a + decoder.io.immediate
+                    // memory.io.write_value := registers.io.out_b(31, 0);
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
@@ -834,21 +866,20 @@ class Main() extends Module {
             switch(operation_buffer) {
                 // LB
                 is("b000_0000011".U) {
-                    registers.io.write_address := rd_buffer;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := Fill(
-                      24,
-                      memory.readPorts(4).data(7)
-                    ) ## memory.readPorts(4).data;
+                    registers.io.write_address := rd_buffer
+                    registers.io.write_enable := true.B
 
-                    program_pointer := program_pointer + 4.U;
+                    val address = registers.io.out_a + decoder.io.immediate
+                    val data = (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+
+                    registers.io.in := Fill(24, data(7)) ## data(7, 0)
+
+                    program_pointer := program_pointer + 4.U
 
                     printf(
                       "[LB] Rd: %d Data: %b\n",
                       rd_buffer,
-                      Fill(24, memory.readPorts(4).data(7)) ## memory
-                          .readPorts(4)
-                          .data
+                      Fill(24, data(7)) ## data(7, 0)
                     );
                 }
 
@@ -856,19 +887,18 @@ class Main() extends Module {
                 is("b001_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
-                    registers.io.in := Fill(
-                      16,
-                      memory.readPorts(5).data(7)
-                    ) ## memory.readPorts(5).data ## memory.readPorts(4).data;
+
+                    val address = registers.io.out_a + decoder.io.immediate
+                    val data = (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+
+                    registers.io.in := Fill(16, data(15)) ## data(15, 0)
 
                     program_pointer := program_pointer + 4.U;
 
                     printf(
                       "[LH] Rd: %d Data: %b\n",
                       rd_buffer,
-                      Fill(16, memory.readPorts(5).data(7)) ## memory
-                          .readPorts(5)
-                          .data ## memory.readPorts(4).data
+                      Fill(16, data(15)) ## data(15, 0)
                     );
                 }
 
@@ -876,22 +906,18 @@ class Main() extends Module {
                 is("b010_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
-                    registers.io.in := memory.readPorts(7).data ## memory
-                        .readPorts(6)
-                        .data ## memory.readPorts(5).data ## memory
-                        .readPorts(4)
-                        .data;
+                    
+                    val address = registers.io.out_a + decoder.io.immediate
+                    val data = (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+
+                    registers.io.in := data
 
                     program_pointer := program_pointer + 4.U;
 
                     printf(
                       "[LW] Rd: %d Data: %b\n",
                       rd_buffer,
-                      memory.readPorts(7).data ## memory
-                          .readPorts(6)
-                          .data ## memory.readPorts(5).data ## memory
-                          .readPorts(4)
-                          .data
+                      data
                     );
                 }
 
@@ -899,14 +925,18 @@ class Main() extends Module {
                 is("b100_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
-                    registers.io.in := 0.U(24.W) ## memory.readPorts(4).data;
+
+                    val address = registers.io.out_a + decoder.io.immediate
+                    val data = (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+
+                    registers.io.in := 0.U(24.W) ## data(7, 0)
 
                     program_pointer := program_pointer + 4.U;
 
                     printf(
                       "[LBU] Rd: %d Data: %b\n",
                       rd_buffer,
-                      0.U(24.W) ## memory.readPorts(4).data
+                      0.U(24.W) ## data(7, 0)
                     );
                 }
 
@@ -914,18 +944,18 @@ class Main() extends Module {
                 is("b101_0000011".U) {
                     registers.io.write_address := rd_buffer;
                     registers.io.write_enable := true.B;
-                    registers.io.in := 0.U(16.W) ## memory
-                        .readPorts(5)
-                        .data ## memory.readPorts(4).data;
+                    
+                    val address = registers.io.out_a + decoder.io.immediate
+                    val data = (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+
+                    registers.io.in := 0.U(16.W) ## data(15, 0)
 
                     program_pointer := program_pointer + 4.U;
 
                     printf(
                       "[LHU] Rd: %d Data: %b\n",
                       rd_buffer,
-                      0.U(16.W) ## memory.readPorts(5).data ## memory
-                          .readPorts(4)
-                          .data
+                      0.U(16.W) ## data(15, 0)
                     );
                 }
             }
