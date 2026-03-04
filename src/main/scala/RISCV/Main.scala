@@ -11,19 +11,8 @@ class Main() extends Module {
         val execute = Input(Bool());
 
         val debug_write = Input(Bool());
-        val debug_write_addressess = Input(UInt(32.W));
+        val debug_write_address = Input(UInt(32.W));
         val debug_write_data = Input(UInt(32.W));
-
-        // Debugging variables for tests
-        val out_a = Output(UInt(32.W))
-        val out_b = Output(UInt(32.W))
-        val out_c = Output(UInt(32.W)) // Testing output port
-        val read_address_a = Input(UInt(5.W))
-        val read_address_b = Input(UInt(5.W))
-        val read_address_c = Input(UInt(5.W)) // Testing address port
-        val write_enable = Input(Bool())
-        val write_address = Input(UInt(5.W))
-        val in = Input(UInt(32.W))
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -36,16 +25,6 @@ class Main() extends Module {
     registers.io.read_address_c := 0.U(5.W)
     registers.io.in := 0.U(32.W)
 
-    io.out_a := registers.io.out_a
-    io.out_b := registers.io.out_b
-    io.out_c := registers.io.out_c
-    registers.io.read_address_a := io.read_address_a
-    registers.io.read_address_b := io.read_address_b
-    registers.io.read_address_c := io.read_address_c
-    registers.io.write_enable := io.write_enable
-    registers.io.write_address := io.write_address
-    registers.io.in := io.in
-
     val alu = Module(new ALU())
     alu.io.operation := 0.U(3.W)
     alu.io.signed := false.B
@@ -55,15 +34,26 @@ class Main() extends Module {
     val memory = Module(new Memory())
 
     val decoder = Module(new Decoder())
+    decoder.io.instruction := 0.U;
+
     // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
     val stage = RegInit(0.U(2.W));
 
-    memory.io.write_1 := false.B;
-    memory.io.read_1 := false.B;
-    memory.io.address_1 := 0.U;
-    memory.io.write_2 := false.B;
-    memory.io.read_2 := false.B;
-    memory.io.address_2 := 0.U;
+    memory.io.write_1 := false.B
+    memory.io.read_1 := false.B
+    memory.io.address_1 := 0.U
+    memory.io.write_value_1 := 0.U
+
+    memory.io.write_2 := false.B
+    memory.io.read_2 := false.B
+    memory.io.address_2 := 0.U
+    memory.io.write_value_2 := 0.U
+
+    when(io.debug_write) {
+        memory.io.write_1 := true.B
+        memory.io.address_1 := io.debug_write_address
+        memory.io.write_value_1 := io.debug_write_data
+    }
 
     val operation_buffer = RegInit(0.U(17.W));
     val immediate_buffer = RegInit(0.U(32.W));
@@ -96,7 +86,7 @@ class Main() extends Module {
 
         when(stage === 0.U) {
             memory.io.read_1 := true.B
-            memory.io.address_1 := program_pointer
+            memory.io.address_1 := program_pointer / 4.U
         }
 
         when(stage === 1.U) {
@@ -853,7 +843,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := Fill(24, data(7)) ## data(7, 0)
 
@@ -873,7 +863,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := Fill(16, data(15)) ## data(15, 0)
 
@@ -893,7 +883,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := data
 
@@ -913,7 +903,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := 0.U(24.W) ## data(7, 0)
 
@@ -933,7 +923,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U)) | (memory.io.read_value_1 << (4.U - (address % 4.U)))
+                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := 0.U(16.W) ## data(15, 0)
 
@@ -953,23 +943,35 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
 
-                    val value_1 = memory.io.read_value_1
+                    val value_1 =
+                        WireDefault(WireDefault(memory.io).read_value_1)
 
                     switch(address % 4.U) {
                         is(0.U) {
-                            value_1(7, 0) := registers.io.out_b(7, 0)
+                            value_1 := Cat(
+                              memory.io.read_value_1(31, 8),
+                              registers.io.out_b(7, 0)
+                            )
                         }
-
                         is(1.U) {
-                            value_1(15, 8) := registers.io.out_b(7, 0)
+                            value_1 := Cat(
+                              memory.io.read_value_1(31, 16),
+                              registers.io.out_b(7, 0),
+                              memory.io.read_value_1(7, 0)
+                            )
                         }
-
                         is(2.U) {
-                            value_1(23, 16) := registers.io.out_b(7, 0)
+                            value_1 := Cat(
+                              memory.io.read_value_1(31, 24),
+                              registers.io.out_b(7, 0),
+                              memory.io.read_value_1(15, 0)
+                            )
                         }
-
                         is(3.U) {
-                            value_1(31, 24) := registers.io.out_b(7, 0)
+                            value_1 := Cat(
+                              registers.io.out_b(7, 0),
+                              memory.io.read_value_1(23, 0)
+                            )
                         }
                     }
 
@@ -979,7 +981,7 @@ class Main() extends Module {
 
                     program_pointer := program_pointer + 4.U
 
-                    printf("[SB]\n")
+                    printf("[SB] Address: %d Value 1: %b\n", address, value_1)
                 }
 
                 // SH
@@ -989,25 +991,41 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
 
-                    val value_1 = memory.io.read_value_1
-                    val value_2 = memory.io.read_value_2
+                    val value_1 = WireDefault(memory.io.read_value_1)
+                    val value_2 = WireDefault(memory.io.read_value_2)
 
                     switch(address % 4.U) {
                         is(0.U) {
-                            value_1(15, 0) := registers.io.out_b(15, 0)
+                            value_1 := Cat(
+                              memory.io.read_value_1(31, 16),
+                              registers.io.out_b(15, 0)
+                            )
                         }
 
                         is(1.U) {
-                            value_1(23, 8) := registers.io.out_b(15, 0)
+                            value_1 := Cat(
+                              memory.io.read_value_1(31, 24),
+                              registers.io.out_b(15, 0),
+                              memory.io.read_value_1(7, 0)
+                            )
                         }
 
                         is(2.U) {
-                            value_1(31, 16) := registers.io.out_b(15, 0)
+                            value_1 := Cat(
+                              registers.io.out_b(15, 0),
+                              memory.io.read_value_1(15, 0)
+                            )
                         }
 
                         is(3.U) {
-                            value_1(31, 24) := registers.io.out_b(7, 0)
-                            value_2(7, 0) := registers.io.out_b(15, 8)
+                            value_1 := Cat(
+                              registers.io.out_b(7, 0),
+                              memory.io.read_value_1(23, 0)
+                            )
+                            value_2 := Cat(
+                              memory.io.read_value_2(31, 8),
+                              registers.io.out_b(15, 8)
+                            )
                         }
                     }
 
@@ -1029,8 +1047,8 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
 
-                    val value_1 = memory.io.read_value_1
-                    val value_2 = memory.io.read_value_2
+                    val value_1 = WireDefault(memory.io.read_value_1)
+                    val value_2 = WireDefault(memory.io.read_value_2)
 
                     switch(address % 4.U) {
                         is(0.U) {
@@ -1038,18 +1056,36 @@ class Main() extends Module {
                         }
 
                         is(1.U) {
-                            value_1(31, 8) := registers.io.out_b(23, 0)
-                            value_2(7, 0) := registers.io.out_b(31, 24)
+                            value_1 := Cat(
+                              registers.io.out_b(23, 0),
+                              memory.io.read_value_1(7, 0)
+                            )
+                            value_2 := Cat(
+                              memory.io.read_value_2(31, 8),
+                              registers.io.out_b(31, 24)
+                            )
                         }
 
                         is(2.U) {
-                            value_1(31, 16) := registers.io.out_b(15, 0)
-                            value_2(15, 0) := registers.io.out_b(31, 16)
+                            value_1 := Cat(
+                              registers.io.out_b(15, 0),
+                              memory.io.read_value_1(15, 0)
+                            )
+                            value_2 := Cat(
+                              memory.io.read_value_2(31, 16),
+                              registers.io.out_b(31, 16)
+                            )
                         }
 
                         is(3.U) {
-                            value_1(31, 24) := registers.io.out_b(7, 0)
-                            value_2(23, 0) := registers.io.out_b(31, 8)
+                            value_1 := Cat(
+                              registers.io.out_b(7, 0),
+                              memory.io.read_value_1(23, 0)
+                            )
+                            value_2 := Cat(
+                              memory.io.read_value_2(31, 24),
+                              registers.io.out_b(31, 8)
+                            )
                         }
                     }
 
