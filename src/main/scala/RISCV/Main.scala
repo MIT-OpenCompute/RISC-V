@@ -26,14 +26,9 @@ class Main() extends Module {
         val in = Input(UInt(32.W))
     })
 
-    val program_pointer = RegInit(0.U(32.W));
+    val program_pointer = RegInit(0.U(32.W))
 
-    val memory = SRAM(512000, UInt(8.W), 8, 4, 0);
-
-    // Set up register file
     val registers = Module(new Registers())
-    // Default connections for register file inputs
-
     registers.io.write_enable := false.B
     registers.io.write_address := 0.U(5.W)
     registers.io.read_address_a := 0.U(5.W)
@@ -41,7 +36,6 @@ class Main() extends Module {
     registers.io.read_address_c := 0.U(5.W)
     registers.io.in := 0.U(32.W)
 
-    // Set up testing register outputs
     io.out_a := registers.io.out_a
     io.out_b := registers.io.out_b
     io.out_c := registers.io.out_c
@@ -52,54 +46,24 @@ class Main() extends Module {
     registers.io.write_address := io.write_address
     registers.io.in := io.in
 
-    // Set up ALU
     val alu = Module(new ALU())
-    // Default connections for ALU inputs
     alu.io.operation := 0.U(3.W)
     alu.io.signed := false.B
     alu.io.a := 0.U(32.W)
     alu.io.b := 0.U(32.W)
 
+    val memory = Module(new Memory())
+    memory.io.program_pointer := program_pointer
+
     val decoder = Module(new Decoder())
-    decoder.io.instruction := memory.readPorts(3).data ## memory
-        .readPorts(2)
-        .data ## memory.readPorts(1).data ## memory.readPorts(0).data;
+    decoder.io.instruction := memory.io.instruction
 
-    val stage =
-        RegInit(
-          0.U(2.W)
-        ); // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
+    // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
+    val stage = RegInit(0.U(2.W));
 
-    memory.readPorts(0).enable := io.execute && stage === 0.U;
-    memory.readPorts(0).address := program_pointer;
-    memory.readPorts(1).enable := io.execute && stage === 0.U;
-    memory.readPorts(1).address := program_pointer + 1.U;
-    memory.readPorts(2).enable := io.execute && stage === 0.U;
-    memory.readPorts(2).address := program_pointer + 2.U;
-    memory.readPorts(3).enable := io.execute && stage === 0.U;
-    memory.readPorts(3).address := program_pointer + 3.U;
-
-    memory.readPorts(4).enable := false.B;
-    memory.readPorts(4).address := 0.U;
-    memory.readPorts(5).enable := false.B;
-    memory.readPorts(5).address := 0.U;
-    memory.readPorts(6).enable := false.B;
-    memory.readPorts(6).address := 0.U;
-    memory.readPorts(7).enable := false.B;
-    memory.readPorts(7).address := 0.U;
-
-    memory.writePorts(0).enable := io.debug_write;
-    memory.writePorts(0).address := io.debug_write_addressess(7, 0);
-    memory.writePorts(0).data := io.debug_write_data;
-    memory.writePorts(1).enable := io.debug_write;
-    memory.writePorts(1).address := io.debug_write_addressess + 1.U;
-    memory.writePorts(1).data := io.debug_write_data(15, 8);
-    memory.writePorts(2).enable := io.debug_write;
-    memory.writePorts(2).address := io.debug_write_addressess + 2.U;
-    memory.writePorts(2).data := io.debug_write_data(23, 16);
-    memory.writePorts(3).enable := io.debug_write;
-    memory.writePorts(3).address := io.debug_write_addressess + 3.U;
-    memory.writePorts(3).data := io.debug_write_data(31, 24);
+    memory.io.write := false.B;
+    memory.io.read := false.B;
+    memory.io.address := 0.U;
 
     val operation_buffer = RegInit(0.U(17.W));
     val rs1_buffer = RegInit(0.U(5.W));
@@ -113,12 +77,7 @@ class Main() extends Module {
         when(stage =/= 0.U) {
             printf("Operation: %b\n", decoder.io.operation);
             printf("Program Pointer: %d\n", program_pointer);
-            printf(
-              "Data: %b\n",
-              memory.readPorts(3).data ## memory.readPorts(2).data ## memory
-                  .readPorts(1)
-                  .data ## memory.readPorts(0).data
-            );
+            printf("Data: %b\n", memory.io.read_value);
             printf("Register 1: %b\n", registers.io.debug_1);
             printf("Register 2: %b\n", registers.io.debug_2);
             printf("Register 3: %b\n", registers.io.debug_3);
@@ -142,12 +101,10 @@ class Main() extends Module {
             switch(decoder.io.operation) {
                 // LB
                 is("b000_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_a := decoder.io.rs1
 
-                    memory.readPorts(4).enable := true.B;
-                    memory
-                        .readPorts(4)
-                        .address := registers.io.out_a + decoder.io.immediate;
+                    memory.io.read := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
 
                     printf(
                       "[LB] Rs1: %d Immediate: %b\n",
@@ -160,14 +117,8 @@ class Main() extends Module {
                 is("b001_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.readPorts(4).enable := true.B;
-                    memory
-                        .readPorts(4)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.readPorts(5).enable := true.B;
-                    memory
-                        .readPorts(5)
-                        .address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    memory.io.read := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
 
                     printf(
                       "[LH] Rs1: %d Immediate: %b\n",
@@ -180,22 +131,8 @@ class Main() extends Module {
                 is("b010_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.readPorts(4).enable := true.B;
-                    memory
-                        .readPorts(4)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.readPorts(5).enable := true.B;
-                    memory
-                        .readPorts(5)
-                        .address := registers.io.out_a + decoder.io.immediate + 1.U;
-                    memory.readPorts(6).enable := true.B;
-                    memory
-                        .readPorts(6)
-                        .address := registers.io.out_a + decoder.io.immediate + 2.U;
-                    memory.readPorts(7).enable := true.B;
-                    memory
-                        .readPorts(7)
-                        .address := registers.io.out_a + decoder.io.immediate + 3.U;
+                    memory.io.read := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
 
                     printf(
                       "[LW] Rs1: %d Immediate: %b\n",
@@ -208,10 +145,8 @@ class Main() extends Module {
                 is("b100_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.readPorts(4).enable := true.B;
-                    memory
-                        .readPorts(4)
-                        .address := registers.io.out_a + decoder.io.immediate;
+                    memory.io.read := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
 
                     printf(
                       "[LBU] Rs1: %d Immediate: %b\n",
@@ -224,14 +159,8 @@ class Main() extends Module {
                 is("b101_0000011".U) {
                     registers.io.read_address_a := decoder.io.rs1;
 
-                    memory.readPorts(4).enable := true.B;
-                    memory
-                        .readPorts(4)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.readPorts(5).enable := true.B;
-                    memory
-                        .readPorts(5)
-                        .address := registers.io.out_a + decoder.io.immediate + 1.U;
+                    memory.io.read := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate / 4.U;
 
                     printf(
                       "[LHU] Rs1: %d Immediate: %b\n",
@@ -245,11 +174,9 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.writePorts(0).enable := true.B;
-                    memory
-                        .writePorts(0)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.writePorts(0).data := registers.io.out_b(7, 0);
+                    memory.io.write := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate
+                    memory.io.write_value := registers.io.out_b(7, 0);
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
@@ -267,16 +194,9 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.writePorts(0).enable := true.B;
-                    memory
-                        .writePorts(0)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.writePorts(0).data := registers.io.out_b(7, 0);
-                    memory.writePorts(1).enable := true.B;
-                    memory
-                        .writePorts(1)
-                        .address := registers.io.out_a + decoder.io.immediate + 1.U;
-                    memory.writePorts(1).data := registers.io.out_b(15, 8);
+                    memory.io.write := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate
+                    memory.io.write_value := registers.io.out_b(15, 0);
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
@@ -294,26 +214,9 @@ class Main() extends Module {
                     registers.io.read_address_a := decoder.io.rs1;
                     registers.io.read_address_b := decoder.io.rs2;
 
-                    memory.writePorts(0).enable := true.B;
-                    memory
-                        .writePorts(0)
-                        .address := registers.io.out_a + decoder.io.immediate;
-                    memory.writePorts(0).data := registers.io.out_b(7, 0);
-                    memory.writePorts(1).enable := true.B;
-                    memory
-                        .writePorts(1)
-                        .address := registers.io.out_a + decoder.io.immediate + 1.U;
-                    memory.writePorts(1).data := registers.io.out_b(15, 8);
-                    memory.writePorts(2).enable := true.B;
-                    memory
-                        .writePorts(2)
-                        .address := registers.io.out_a + decoder.io.immediate + 2.U;
-                    memory.writePorts(2).data := registers.io.out_b(23, 16);
-                    memory.writePorts(3).enable := true.B;
-                    memory
-                        .writePorts(3)
-                        .address := registers.io.out_a + decoder.io.immediate + 3.U;
-                    memory.writePorts(3).data := registers.io.out_b(31, 16);
+                    memory.io.write := true.B
+                    memory.io.address := registers.io.out_a + decoder.io.immediate
+                    memory.io.write_value := registers.io.out_b(31, 0);
 
                     program_pointer := program_pointer + 4.U;
                     stage := 0.U;
