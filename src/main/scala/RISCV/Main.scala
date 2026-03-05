@@ -221,10 +221,7 @@ class Main() extends Module {
                     memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
+                    
                     printf(
                       "[SW] Rs1: %d Rs2: %d Immediate: %b\n",
                       decoder.io.rs1,
