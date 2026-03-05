@@ -350,3 +350,5 @@ generated/
 
 documentation/.obsidian/workspace.json
 documentation/.obsidian/appearance.json
+
+simulation/obj_dir

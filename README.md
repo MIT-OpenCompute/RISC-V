@@ -117,3 +117,9 @@ class MainTemplateSpec extends AnyFreeSpec with Matchers with ChiselSim {
   }
 }
 ```
+
+## Compile Verilator
+cd simulation
+verilator --cc --sv --exe --build -j 0 -CFLAGS "-I./obj_dir" -Wall vga-image.cpp VGAController.sv
+./obj_dir/VVGAController
+nix-shell -p imagemagick --run "convert frame.ppm frame.png"
