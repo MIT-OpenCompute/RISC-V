@@ -13,6 +13,13 @@ class Main() extends Module {
         val debug_write = Input(Bool());
         val debug_write_address = Input(UInt(32.W));
         val debug_write_data = Input(UInt(32.W));
+
+        val hsync = Output(Bool())
+        val vsync = Output(Bool())
+        val rgb = Output(UInt(12.W))
+        val blanking = Output(Bool())
+        val hPos = Output(UInt(10.W))
+        val vPos = Output(UInt(10.W))
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -32,6 +39,18 @@ class Main() extends Module {
     alu.io.b := 0.U(32.W)
 
     val memory = Module(new Memory())
+
+    val vga_controller = Module(new VGAController())
+    vga_controller.io.address := memory.io.address_vga
+    vga_controller.io.write := memory.io.write_vga
+    vga_controller.io.write_value := memory.io.write_value_vga
+
+    io.hsync := vga_controller.io.hsync
+    io.vsync := vga_controller.io.vsync
+    io.rgb := vga_controller.io.rgb
+    io.blanking := vga_controller.io.blanking
+    io.hPos := vga_controller.io.hPos
+    io.vPos := vga_controller.io.vPos
 
     val decoder = Module(new Decoder())
     decoder.io.instruction := 0.U;

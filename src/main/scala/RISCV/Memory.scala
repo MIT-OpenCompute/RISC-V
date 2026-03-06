@@ -16,12 +16,22 @@ class Memory() extends Module {
         val write_value_2 = Input(UInt(32.W))
         val read_2 = Input(Bool())
         val read_value_2 = Output(UInt(32.W))
+
+        val address_vga = Output(UInt(32.W))
+        val write_vga = Output(Bool())
+        val write_value_vga = Output(UInt(32.W))
     })
 
     val memory = SyncReadMem(1024, UInt(32.W))
 
+    io.address_vga := 0.U
+    io.write_vga := true.B
+    io.write_value_vga := 0.U
+
     when(io.address_1 > 0b1000000000000.U) {
-        
+        io.address_vga := io.address_1 - 0b1000000000000.U
+        io.write_vga := true.B
+        io.write_value_vga := io.write_value_1
     }.otherwise {
         io.read_value_1 := memory.readWrite(
             io.address_1,
