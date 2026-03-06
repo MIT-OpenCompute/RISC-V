@@ -31,23 +31,24 @@ class Memory() extends Module {
     io.read_value_1    := 0.U
     io.read_value_2    := 0.U
 
-    when(io.address_1 > 0b1000000000000.U) {
-        io.address_vga := io.address_1 - 0b1000000000000.U
-        io.write_vga := true.B
-        io.write_value_vga := io.write_value_1
-    }.otherwise {
-        io.read_value_1 := memory.readWrite(
-            io.address_1,
-            io.write_value_1,
-            io.read_1 || io.write_1,
-            io.write_1
-        )
+    val isVGA = io.address_1 > 0b1000000000000.U; 
+    io.address_vga := Mux(isVGA, io.address_1 - 0b1000000000000.U,0.U);
+    io.write_vga   := isVGA && io.write_1
+    io.write_value_vga := io.write_value_1
 
-        io.read_value_2 := memory.readWrite(
-            io.address_2,
-            io.write_value_2,
-            io.read_2 || io.write_2,
-            io.write_2
-        )
-    }
+
+    io.read_value_1 := memory.readWrite(
+        io.address_1,
+        io.write_value_1,
+        io.read_1 || io.write_1,
+        io.write_1
+    )
+
+    io.read_value_2 := memory.readWrite(
+        io.address_2,
+        io.write_value_2,
+        io.read_2 || io.write_2,
+        io.write_2
+    )
+    
 }
