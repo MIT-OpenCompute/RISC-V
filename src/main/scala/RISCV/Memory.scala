@@ -2,7 +2,7 @@ package RISCV
 
 import chisel3._
 import _root_.circt.stage.ChiselStage
-// import chisel3.util.experimental.loadMemoryFromFileInline
+import chisel3.util.experimental.loadMemoryFromFileInline
 
 class Memory() extends Module {
     val io = IO(new Bundle {
@@ -24,7 +24,8 @@ class Memory() extends Module {
     })
 
     val memory = SyncReadMem(1024, UInt(32.W))
-    // loadMemoryFromFileInline(memory, "program.hex") 
+    loadMemoryFromFileInline(memory, "program.hex") 
+    
     io.address_vga := 0.U
     io.write_vga := true.B
     io.write_value_vga := 0.U
