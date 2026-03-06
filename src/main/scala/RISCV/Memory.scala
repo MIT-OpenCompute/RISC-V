@@ -25,7 +25,7 @@ class Memory() extends Module {
 
     val memory = SyncReadMem(1024, UInt(32.W))
     loadMemoryFromFileInline(memory, "program.hex") 
-    
+
     io.address_vga := 0.U
     io.write_vga := true.B
     io.write_value_vga := 0.U
@@ -49,13 +49,13 @@ class Memory() extends Module {
         io.address_1,
         io.write_value_1,
         (io.read_1 || io.write_1) && !isVGA,
-        io.write_1
+        io.write_1 && !isVGA
     )
 
     io.read_value_2 := memory.readWrite(
         io.address_2,
         io.write_value_2,
-        (io.read_2 || io.write_2) && !isVGA,
+        (io.read_2 || io.write_2),
         io.write_2
     )
     

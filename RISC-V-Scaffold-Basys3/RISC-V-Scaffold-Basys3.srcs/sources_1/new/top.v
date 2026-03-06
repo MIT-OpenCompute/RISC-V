@@ -1,14 +1,25 @@
 `timescale 1ns / 1ps
-
 module Top(
     input  wire        clk,
-    input  wire        btnC,   // external reset
-    input  wire        RsRx,   // UART RX
-    output wire        RsTx,   // UART TX (unused)
-    output wire [15:0] led
+    input  wire        btnC,
+    input  wire        RsRx,
+    output wire        RsTx,
+    output wire [15:0] led,
+    output wire        vgaHSync,
+    output wire        vgaVSync,
+    output wire [3:0]  vgaRed,
+    output wire [3:0]  vgaGreen,
+    output wire [3:0]  vgaBlue
 );
-
-    wire rst_n = ~btnC;
+    // -------------------------------------------------------
+    // Clock divider: 100MHz -> 25MHz
+    // -------------------------------------------------------
+    reg [1:0] clk_div;
+    always @(posedge clk) begin
+        if (btnC) clk_div <= 2'h0;
+        else      clk_div <= clk_div + 2'h1;
+    end
+    wire clk_25 = clk_div[1];
 
     // -------------------------------------------------------
     // UART program loader
@@ -19,8 +30,8 @@ module Top(
     wire [31:0] debug_write_data;
 
     uart_program_loader loader (
-        .clk                 (clk),
-        .rst_n               (rst_n),
+        .clk                 (clk_25),
+        .rst_n               (~btnC),
         .rx                  (RsRx),
         .cpu_reset           (cpu_reset),
         .debug_write         (debug_write),
@@ -28,59 +39,60 @@ module Top(
         .debug_write_data    (debug_write_data)
     );
 
-    // -------------------------------------------------------
-    // 2-cycle wide enable pulse at ~5Hz
-    // Only runs when CPU is not being loaded
-    // -------------------------------------------------------
-    reg [23:0] ce_counter;
-    reg [1:0]  ce_phase;
-    reg        ce;
+    wire reset = btnC | cpu_reset;
 
-    always @(posedge clk) begin
-        if (btnC | cpu_reset) begin
-            ce_counter <= 24'd0;
-            ce_phase   <= 2'd0;
+    // -------------------------------------------------------
+    // ce: single pulse per clock cycle - CPU runs at full speed
+    // but we gate with a slow counter so we can see LEDs
+    // Counter fires one ce pulse, CPU stage machine runs freely
+    // -------------------------------------------------------
+    reg  [22:0] ce_counter;
+    reg         ce;
+
+    always @(posedge clk_25) begin
+        if (reset) begin
+            ce_counter <= 23'd0;
             ce         <= 1'b0;
         end else begin
-            case (ce_phase)
-                2'd0: begin
-                    ce <= 1'b0;
-                    if (ce_counter == 24'd19_999_997) begin
-                        ce_counter <= 24'd0;
-                        ce_phase   <= 2'd1;
-                    end else begin
-                        ce_counter <= ce_counter + 24'd1;
-                    end
-                end
-                2'd1: begin
-                    ce       <= 1'b1;
-                    ce_phase <= 2'd2;
-                end
-                2'd2: begin
-                    ce       <= 1'b1;
-                    ce_phase <= 2'd0;
-                end
-                default: ce_phase <= 2'd0;
-            endcase
+            ce <= 1'b0;
+            if (ce_counter == 23'd0) begin
+                ce <= 1'b1;
+            end
+            if (ce_counter == 23'd4_999_999) begin
+                ce_counter <= 23'd0;
+            end else begin
+                ce_counter <= ce_counter + 23'd1;
+            end
         end
     end
 
     // -------------------------------------------------------
-    // CPU
+    // CPU + VGA
     // -------------------------------------------------------
     wire [31:0] debug_1;
+    wire [11:0] rgb;
+    wire        blanking;
 
     Main cpu (
-        .clock                  (clk),
-        .reset                  (cpu_reset | btnC),
+        .clock                  (clk_25),
+        .reset                  (reset),
         .io_execute             (ce),
         .io_debug_write         (debug_write),
         .io_debug_write_address (debug_write_address),
         .io_debug_write_data    (debug_write_data),
-        .io_debug_1             (debug_1)
+        .io_debug_1             (debug_1),
+        .io_busy                (),
+        .io_hsync               (vgaHSync),
+        .io_vsync               (vgaVSync),
+        .io_rgb                 (rgb),
+        .io_blanking            (blanking),
+        .io_hPos                (),
+        .io_vPos                ()
     );
 
-    assign led  = debug_1[15:0];
-    assign RsTx = 1'b1;
-
-endmodule
+    assign vgaRed   = blanking ? 4'h0 : rgb[11:8];
+    assign vgaGreen = blanking ? 4'h0 : rgb[7:4];
+    assign vgaBlue  = blanking ? 4'h0 : rgb[3:0];
+    assign led      = debug_1[15:0];
+    assign RsTx     = 1'b1;
+endmodules

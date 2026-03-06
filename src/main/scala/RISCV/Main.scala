@@ -677,7 +677,7 @@ class Main() extends Module {
                 is("b1101111".U) {
                     registers.io.write_address := decoder.io.rd;
                     registers.io.write_enable := true.B;
-                    registers.io.in := program_pointer + 1.U;
+                    registers.io.in := program_pointer + 4.U;
 
                     program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
                     stage := 0.U;
@@ -695,7 +695,7 @@ class Main() extends Module {
 
                     registers.io.write_address := decoder.io.rd;
                     registers.io.write_enable := true.B;
-                    registers.io.in := program_pointer + 1.U;
+                    registers.io.in := program_pointer + 4.U;
 
                     program_pointer := (registers.io.out_a.zext + decoder.io.immediate.asSInt).asUInt;
                     stage := 0.U;

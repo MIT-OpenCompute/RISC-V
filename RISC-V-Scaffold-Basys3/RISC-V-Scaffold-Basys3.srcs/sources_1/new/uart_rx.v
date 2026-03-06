@@ -65,7 +65,7 @@ module uart_rx(
         end
         START: begin
             counter <= counter +1;
-            if(counter == 433) begin
+            if(counter == 108) begin
                 if(!rx_sync_1) begin
                     counter <= 1;
                     state <= DATA;
@@ -76,7 +76,7 @@ module uart_rx(
         end
         DATA: begin
             counter <= counter +1;
-            if(counter == 867) begin
+            if(counter == 217) begin
                 counter<=0;
                 data_packet[bit_idx] <= rx_sync_1;
                 if(bit_idx == 7) begin
