@@ -242,10 +242,11 @@ class Main() extends Module {
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
                     
                     printf(
-                      "[SW] Rs1: %d Rs2: %d Immediate: %b\n",
+                      "[SW] Rs1: %d Rs2: %d Immediate: %b Raw Address: %b\n",
                       decoder.io.rs1,
                       decoder.io.rs2,
-                      registers.io.out_a + decoder.io.immediate
+                      registers.io.out_a + decoder.io.immediate,
+                      (registers.io.out_a + decoder.io.immediate) / 4.U
                     );
                 }
 

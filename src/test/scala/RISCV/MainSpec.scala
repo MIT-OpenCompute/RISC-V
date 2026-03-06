@@ -44,22 +44,39 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
             dut.io.debug_write.poke(true.B)
 
             dut.io.debug_write_address.poke(0.U)
-            dut.io.debug_write_data.poke(0b000000000111_00000_000_00001_0010011.U) // ADDI
+            dut.io.debug_write_data.poke(0b00000000000000000100_00010_0110111L.U) // LUI
             dut.clock.step(1)
 
             dut.io.debug_write_address.poke(1.U)
-            dut.io.debug_write_data.poke(0b0000000_00001_00000_010_00000_0100011.U) // SW
+            dut.io.debug_write_data.poke(0b000000001000_00001_000_00001_0010011L.U) // ADDI
             dut.clock.step(1)
 
             dut.io.debug_write_address.poke(2.U)
-            dut.io.debug_write_data.poke(0b000000000000_00000_010_00010_0000011.U) // LW
+            dut.io.debug_write_data.poke(0b000000000000_00010_010_00000_0100011L.U) // SW
             dut.clock.step(1)
+
+            dut.io.debug_write_address.poke(3.U)
+            dut.io.debug_write_data.poke(0b11111111100111111111_00000_1101111L.U) // JAL
+            dut.clock.step(1)
+            
+
+            // dut.io.debug_write_address.poke(0.U)
+            // dut.io.debug_write_data.poke(0b000000000111_00000_000_00001_0010011.U) // ADDI
+            // dut.clock.step(1)
+
+            // dut.io.debug_write_address.poke(1.U)
+            // dut.io.debug_write_data.poke(0b0000000_00001_00000_010_00000_0100011.U) // SW
+            // dut.clock.step(1)
+
+            // dut.io.debug_write_address.poke(2.U)
+            // dut.io.debug_write_data.poke(0b000000000000_00000_010_00010_0000011.U) // LW
+            // dut.clock.step(1)
             
             dut.io.debug_write.poke(false.B)
             dut.clock.step(1)
 
             dut.io.execute.poke(true.B)
-            dut.clock.step(12)
+            dut.clock.step(24)
         }
   }
 }
