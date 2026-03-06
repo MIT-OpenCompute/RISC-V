@@ -2,21 +2,42 @@
 
 module Top(
     input  wire        clk,
-    input  wire        btnC,
+    input  wire        btnC,   // external reset
+    input  wire        RsRx,   // UART RX
+    output wire        RsTx,   // UART TX (unused)
     output wire [15:0] led
 );
 
+    wire rst_n = ~btnC;
+
     // -------------------------------------------------------
-    // Generate a 2-cycle wide enable pulse at ~5Hz
-    // Period = 20_000_000 cycles at 100MHz
-    // We pulse ce high for 2 consecutive cycles each period
+    // UART program loader
+    // -------------------------------------------------------
+    wire        cpu_reset;
+    wire        debug_write;
+    wire [31:0] debug_write_address;
+    wire [31:0] debug_write_data;
+
+    uart_program_loader loader (
+        .clk                 (clk),
+        .rst_n               (rst_n),
+        .rx                  (RsRx),
+        .cpu_reset           (cpu_reset),
+        .debug_write         (debug_write),
+        .debug_write_address (debug_write_address),
+        .debug_write_data    (debug_write_data)
+    );
+
+    // -------------------------------------------------------
+    // 2-cycle wide enable pulse at ~5Hz
+    // Only runs when CPU is not being loaded
     // -------------------------------------------------------
     reg [23:0] ce_counter;
-    reg [1:0]  ce_phase;  // counts 0,1,2 then back to 0
+    reg [1:0]  ce_phase;
     reg        ce;
 
     always @(posedge clk) begin
-        if (btnC) begin
+        if (btnC | cpu_reset) begin
             ce_counter <= 24'd0;
             ce_phase   <= 2'd0;
             ce         <= 1'b0;
@@ -32,14 +53,12 @@ module Top(
                     end
                 end
                 2'd1: begin
-                    // First execute pulse - memory latches address
-                    ce         <= 1'b1;
-                    ce_phase   <= 2'd2;
+                    ce       <= 1'b1;
+                    ce_phase <= 2'd2;
                 end
                 2'd2: begin
-                    // Second execute pulse - memory returns data
-                    ce         <= 1'b1;
-                    ce_phase   <= 2'd0;
+                    ce       <= 1'b1;
+                    ce_phase <= 2'd0;
                 end
                 default: ce_phase <= 2'd0;
             endcase
@@ -52,15 +71,16 @@ module Top(
     wire [31:0] debug_1;
 
     Main cpu (
-        .clock                 (clk),
-        .reset                 (btnC),
-        .io_execute            (ce),
-        .io_debug_write        (1'b0),
-        .io_debug_write_address(32'h0),
-        .io_debug_write_data   (32'h0),
-        .io_debug_1            (debug_1)
+        .clock                  (clk),
+        .reset                  (cpu_reset | btnC),
+        .io_execute             (ce),
+        .io_debug_write         (debug_write),
+        .io_debug_write_address (debug_write_address),
+        .io_debug_write_data    (debug_write_data),
+        .io_debug_1             (debug_1)
     );
 
-    assign led = debug_1[15:0];
+    assign led  = debug_1[15:0];
+    assign RsTx = 1'b1;
 
 endmodule
