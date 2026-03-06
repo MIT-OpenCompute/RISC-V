@@ -20,17 +20,21 @@ class Memory() extends Module {
 
     val memory = SyncReadMem(1024, UInt(32.W))
 
-    io.read_value_1 := memory.readWrite(
-      io.address_1,
-      io.write_value_1,
-      io.read_1 || io.write_1,
-      io.write_1
-    )
+    when(io.address_1 > 0b1000000000000.U) {
+        
+    }.otherwise {
+        io.read_value_1 := memory.readWrite(
+            io.address_1,
+            io.write_value_1,
+            io.read_1 || io.write_1,
+            io.write_1
+        )
 
-    io.read_value_2 := memory.readWrite(
-      io.address_2,
-      io.write_value_2,
-      io.read_2 || io.write_2,
-      io.write_2
-    )
+        io.read_value_2 := memory.readWrite(
+            io.address_2,
+            io.write_value_2,
+            io.read_2 || io.write_2,
+            io.write_2
+        )
+    }
 }
