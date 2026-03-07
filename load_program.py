@@ -72,7 +72,7 @@ try:
 
         # Send end sequence: 4x 0xFF
         print("Sending end sequence (0xFF 0xFF 0xFF 0xFF)...")
-        ser.write(bytes([0xFF, 0xFF, 0xFF, 0xFF]))
+        ser.write(bytes([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
         time.sleep(0.1)
 
         print("Done! CPU should now be running your program.")

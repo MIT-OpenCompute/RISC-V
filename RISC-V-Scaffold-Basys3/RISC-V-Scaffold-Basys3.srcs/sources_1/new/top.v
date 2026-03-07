@@ -2,6 +2,8 @@
 module Top(
     input  wire        clk,
     input  wire        btnC,
+    input  wire        RsRx,
+    output wire        RsTx,
     output wire [15:0] led,
     output wire        vgaHSync,
     output wire        vgaVSync,
@@ -20,63 +22,25 @@ module Top(
     wire clk_25 = clk_div[1];
 
     // -------------------------------------------------------
-    // Hardcoded program loader state machine
-    // Writes 4 instructions then releases CPU to execute
+    // UART program loader
     // -------------------------------------------------------
-    reg        reset_reg;
-    reg        debug_write;
-    reg [31:0] debug_write_address;
-    reg [31:0] debug_write_data;
-    reg        execute;
-    reg [2:0]  load_state;
+    wire        cpu_reset;
+    wire        debug_write;
+    wire [31:0] debug_write_address;
+    wire [31:0] debug_write_data;
 
-    always @(posedge clk_25) begin
-        if (btnC) begin
-            reset_reg           <= 1;
-            debug_write         <= 0;
-            debug_write_address <= 0;
-            debug_write_data    <= 0;
-            execute             <= 0;
-            load_state          <= 0;
-        end else begin
-            case (load_state)
-                3'd0: begin
-                    // Release reset, start writing
-                    reset_reg           <= 0;
-                    debug_write         <= 1;
-                    debug_write_address <= 32'd0;
-                    debug_write_data    <= 32'h00004137; // LUI x2, 4
-                    load_state          <= 3'd1;
-                end
-                3'd1: begin
-                    debug_write_address <= 32'd1;
-                    debug_write_data    <= 32'h00808093; // ADDI x1, x1, 8
-                    load_state          <= 3'd2;
-                end
-                3'd2: begin
-                    debug_write_address <= 32'd2;
-                    debug_write_data    <= 32'h00112023; // SW x0, 0(x2)
-                    load_state          <= 3'd3;
-                end
-                3'd3: begin
-                    debug_write_address <= 32'd3;
-                    debug_write_data    <= 32'hFF9FF06F; // JAL x0, -8
-                    load_state          <= 3'd4;
-                end
-                3'd4: begin
-                    // Stop writing, start executing
-                    debug_write         <= 0;
-                    debug_write_address <= 0;
-                    debug_write_data    <= 0;
-                    execute             <= 1;
-                    load_state          <= 3'd5;
-                end
-                default: begin
-                    // Stay in execute mode
-                end
-            endcase
-        end
-    end
+    uart_program_loader loader (
+        .clk                 (clk_25),
+        .rst_n               (~btnC),
+        .rx                  (RsRx),
+        .cpu_reset           (cpu_reset),
+        .debug_write         (debug_write),
+        .debug_write_address (debug_write_address),
+        .debug_write_data    (debug_write_data)
+    );
+
+    wire reset    = btnC | cpu_reset;
+    wire execute  = ~reset;
 
     // -------------------------------------------------------
     // CPU + VGA
@@ -87,7 +51,7 @@ module Top(
 
     Main cpu (
         .clock                  (clk_25),
-        .reset                  (reset_reg),
+        .reset                  (reset),
         .io_execute             (execute),
         .io_debug_write         (debug_write),
         .io_debug_write_address (debug_write_address),
@@ -107,5 +71,6 @@ module Top(
     assign vgaBlue  = blanking ? 4'h0 : rgb[3:0];
 
     // debug_1 = register 1, debug_2 = program counter
-    assign led = debug_1[15:0];
+    assign led  = debug_1[15:0];
+    assign RsTx = 1'b1;
 endmodule
