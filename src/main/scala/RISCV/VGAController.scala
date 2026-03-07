@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
+// 320x240
 class VGAController extends Module {
     val H_VISIBLE = 640
     val H_FRONT = 16
@@ -26,32 +27,27 @@ class VGAController extends Module {
         val vsync = Output(Bool())
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
-        val hPos = Output(UInt(10.W))
-        val vPos = Output(UInt(10.W))
     })
 
-    val memory = SyncReadMem(1024, UInt(32.W))
+    val memory = SyncReadMem(320 * 240, UInt(8.W))
 
-    val hCount = RegInit(0.U(10.W))
-    val vCount = RegInit(0.U(10.W))
-    
-    val pixel = WireInit(0.U(12.W))
-    pixel := memory.read(0.U, true.B)
-    
     when(io.write) {
         memory.write(io.address, io.write_value)
     }
 
-    when(hCount === (H_TOTAL - 1).U) {
-        hCount := 0.U
-        
-        when(vCount === (V_TOTAL - 1).U) {
-            vCount := 0.U
+    val v_pos = RegInit(0.U(10.W))
+    val h_pos = RegInit(0.U(10.W))
+
+    when(h_pos === (H_TOTAL - 1).U) {
+        v_pos := 0.U
+
+        when(v_pos === (V_TOTAL - 1).U) {
+            h_pos := 0.U
         }.otherwise {
-            vCount := vCount + 1.U
+            v_pos := v_pos + 1.U
         }
     }.otherwise {
-        hCount := hCount + 1.U
+        h_pos := h_pos + 1.U
     }
 
     val hSyncStart = (H_VISIBLE + H_FRONT).U
@@ -59,19 +55,27 @@ class VGAController extends Module {
     val vSyncStart = (V_VISIBLE + V_FRONT).U
     val vSyncEnd = (V_VISIBLE + V_FRONT + V_SYNC).U
 
-    io.hsync := !(hCount >= hSyncStart && hCount < hSyncEnd)
-    io.vsync := !(vCount >= vSyncStart && vCount < vSyncEnd)
+    io.hsync := !(h_pos >= hSyncStart && h_pos < hSyncEnd)
+    io.vsync := !(v_pos >= vSyncStart && v_pos < vSyncEnd)
 
-    val hActive = hCount < H_VISIBLE.U
-    val vActive = vCount < V_VISIBLE.U
+    val hActive = v_pos < H_VISIBLE.U
+    val vActive = h_pos < V_VISIBLE.U
     val active = hActive && vActive
 
     io.blanking := !active
-    io.hPos := hCount
-    io.vPos := vCount
+
+    val read_address = WireInit(0.U(32.W))
+
+    when(!active) {
+        read_address := 0.U
+    }.otherwise {
+        read_address := h_pos * 320.U + v_pos
+    }
+
+    val color = memory.read(read_address, true.B)
+    val pixel := color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
 
     io.rgb := Mux(active, pixel, 0.U)
-    // io.rgb := Mux(active, 0b111111111111.U, 0.U)
 }
 
 object VGAMain extends App {
