@@ -1,0 +1,687 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_Top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_Top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="624.166 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,046.167 ns"></ZoomEndTime>
+      <Cursor1Time time="1,000.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="276"></NameColumnWidth>
+      <ValueColumnWidth column_width="116"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="166" />
+   <wvobject type="logic" fp_name="/tb_Top/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/reset">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/io_execute">
+      <obj_property name="ElementShortName">io_execute</obj_property>
+      <obj_property name="ObjectShortName">io_execute</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/io_debug_write">
+      <obj_property name="ElementShortName">io_debug_write</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_debug_write_address">
+      <obj_property name="ElementShortName">io_debug_write_address[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write_address[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_debug_write_data">
+      <obj_property name="ElementShortName">io_debug_write_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/io_hsync">
+      <obj_property name="ElementShortName">io_hsync</obj_property>
+      <obj_property name="ObjectShortName">io_hsync</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/io_vsync">
+      <obj_property name="ElementShortName">io_vsync</obj_property>
+      <obj_property name="ObjectShortName">io_vsync</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_rgb">
+      <obj_property name="ElementShortName">io_rgb[11:0]</obj_property>
+      <obj_property name="ObjectShortName">io_rgb[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/io_blanking">
+      <obj_property name="ElementShortName">io_blanking</obj_property>
+      <obj_property name="ObjectShortName">io_blanking</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_hPos">
+      <obj_property name="ElementShortName">io_hPos[9:0]</obj_property>
+      <obj_property name="ObjectShortName">io_hPos[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_vPos">
+      <obj_property name="ElementShortName">io_vPos[9:0]</obj_property>
+      <obj_property name="ObjectShortName">io_vPos[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_debug_1">
+      <obj_property name="ElementShortName">io_debug_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/io_debug_2">
+      <obj_property name="ElementShortName">io_debug_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/cycle">
+      <obj_property name="ElementShortName">cycle[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cycle[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/reset">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/io_execute">
+      <obj_property name="ElementShortName">io_execute</obj_property>
+      <obj_property name="ObjectShortName">io_execute</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/io_debug_write">
+      <obj_property name="ElementShortName">io_debug_write</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_debug_write_address">
+      <obj_property name="ElementShortName">io_debug_write_address[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write_address[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_debug_write_data">
+      <obj_property name="ElementShortName">io_debug_write_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_write_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/io_hsync">
+      <obj_property name="ElementShortName">io_hsync</obj_property>
+      <obj_property name="ObjectShortName">io_hsync</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/io_vsync">
+      <obj_property name="ElementShortName">io_vsync</obj_property>
+      <obj_property name="ObjectShortName">io_vsync</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_rgb">
+      <obj_property name="ElementShortName">io_rgb[11:0]</obj_property>
+      <obj_property name="ObjectShortName">io_rgb[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/io_blanking">
+      <obj_property name="ElementShortName">io_blanking</obj_property>
+      <obj_property name="ObjectShortName">io_blanking</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_hPos">
+      <obj_property name="ElementShortName">io_hPos[9:0]</obj_property>
+      <obj_property name="ObjectShortName">io_hPos[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_vPos">
+      <obj_property name="ElementShortName">io_vPos[9:0]</obj_property>
+      <obj_property name="ObjectShortName">io_vPos[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_debug_1">
+      <obj_property name="ElementShortName">io_debug_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/io_debug_2">
+      <obj_property name="ElementShortName">io_debug_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_debug_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_decoder_io_operation">
+      <obj_property name="ElementShortName">_decoder_io_operation[16:0]</obj_property>
+      <obj_property name="ObjectShortName">_decoder_io_operation[16:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_decoder_io_rs1">
+      <obj_property name="ElementShortName">_decoder_io_rs1[4:0]</obj_property>
+      <obj_property name="ObjectShortName">_decoder_io_rs1[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_decoder_io_rs2">
+      <obj_property name="ElementShortName">_decoder_io_rs2[4:0]</obj_property>
+      <obj_property name="ObjectShortName">_decoder_io_rs2[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_decoder_io_rd">
+      <obj_property name="ElementShortName">_decoder_io_rd[4:0]</obj_property>
+      <obj_property name="ObjectShortName">_decoder_io_rd[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_decoder_io_immediate">
+      <obj_property name="ElementShortName">_decoder_io_immediate[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_decoder_io_immediate[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_read_value_1">
+      <obj_property name="ElementShortName">_memory_io_read_value_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_read_value_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_read_value_2">
+      <obj_property name="ElementShortName">_memory_io_read_value_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_read_value_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_vga">
+      <obj_property name="ElementShortName">_memory_io_address_vga[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_vga[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_memory_io_write_vga">
+      <obj_property name="ElementShortName">_memory_io_write_vga</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_write_vga</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_write_value_vga">
+      <obj_property name="ElementShortName">_memory_io_write_value_vga[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_write_value_vga[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_out_a">
+      <obj_property name="ElementShortName">_registers_io_out_a[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_out_a[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_out_b">
+      <obj_property name="ElementShortName">_registers_io_out_b[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_out_b[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_1">
+      <obj_property name="ElementShortName">_registers_io_debug_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_2">
+      <obj_property name="ElementShortName">_registers_io_debug_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_3">
+      <obj_property name="ElementShortName">_registers_io_debug_3[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_3[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_4">
+      <obj_property name="ElementShortName">_registers_io_debug_4[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_4[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_5">
+      <obj_property name="ElementShortName">_registers_io_debug_5[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_5[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_6">
+      <obj_property name="ElementShortName">_registers_io_debug_6[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_6[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_7">
+      <obj_property name="ElementShortName">_registers_io_debug_7[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_7[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_8">
+      <obj_property name="ElementShortName">_registers_io_debug_8[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_8[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_9">
+      <obj_property name="ElementShortName">_registers_io_debug_9[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_9[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_debug_10">
+      <obj_property name="ElementShortName">_registers_io_debug_10[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_debug_10[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/program_pointer">
+      <obj_property name="ElementShortName">program_pointer[31:0]</obj_property>
+      <obj_property name="ObjectShortName">program_pointer[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/stage">
+      <obj_property name="ElementShortName">stage[1:0]</obj_property>
+      <obj_property name="ObjectShortName">stage[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN">
+      <obj_property name="ElementShortName">_GEN[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_0">
+      <obj_property name="ElementShortName">_GEN_0[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_0[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/operation_buffer">
+      <obj_property name="ElementShortName">operation_buffer[16:0]</obj_property>
+      <obj_property name="ObjectShortName">operation_buffer[16:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/immediate_buffer">
+      <obj_property name="ElementShortName">immediate_buffer[31:0]</obj_property>
+      <obj_property name="ObjectShortName">immediate_buffer[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/rs1_buffer">
+      <obj_property name="ElementShortName">rs1_buffer[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs1_buffer[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/rs2_buffer">
+      <obj_property name="ElementShortName">rs2_buffer[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs2_buffer[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/rd_buffer">
+      <obj_property name="ElementShortName">rd_buffer[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_buffer[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_1">
+      <obj_property name="ElementShortName">_GEN_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_2">
+      <obj_property name="ElementShortName">_GEN_2</obj_property>
+      <obj_property name="ObjectShortName">_GEN_2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_3">
+      <obj_property name="ElementShortName">_GEN_3</obj_property>
+      <obj_property name="ObjectShortName">_GEN_3</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_4">
+      <obj_property name="ElementShortName">_GEN_4</obj_property>
+      <obj_property name="ObjectShortName">_GEN_4</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T">
+      <obj_property name="ElementShortName">_memory_io_address_2_T[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_5">
+      <obj_property name="ElementShortName">_GEN_5</obj_property>
+      <obj_property name="ObjectShortName">_GEN_5</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_5">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_5[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_5[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_6">
+      <obj_property name="ElementShortName">_GEN_6</obj_property>
+      <obj_property name="ObjectShortName">_GEN_6</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_10">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_10[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_10[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_7">
+      <obj_property name="ElementShortName">_GEN_7</obj_property>
+      <obj_property name="ObjectShortName">_GEN_7</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_15">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_15[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_15[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_8">
+      <obj_property name="ElementShortName">_GEN_8</obj_property>
+      <obj_property name="ObjectShortName">_GEN_8</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_20">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_20[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_20[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_9">
+      <obj_property name="ElementShortName">_GEN_9</obj_property>
+      <obj_property name="ObjectShortName">_GEN_9</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_1_T_16">
+      <obj_property name="ElementShortName">_memory_io_address_1_T_16[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_1_T_16[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_10">
+      <obj_property name="ElementShortName">_GEN_10</obj_property>
+      <obj_property name="ObjectShortName">_GEN_10</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_25">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_25[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_25[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_11">
+      <obj_property name="ElementShortName">_GEN_11</obj_property>
+      <obj_property name="ObjectShortName">_GEN_11</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_12">
+      <obj_property name="ElementShortName">_GEN_12</obj_property>
+      <obj_property name="ObjectShortName">_GEN_12</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_13">
+      <obj_property name="ElementShortName">_GEN_13</obj_property>
+      <obj_property name="ObjectShortName">_GEN_13</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_30">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_30[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_30[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_14">
+      <obj_property name="ElementShortName">_GEN_14[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_14[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_15">
+      <obj_property name="ElementShortName">_GEN_15</obj_property>
+      <obj_property name="ObjectShortName">_GEN_15</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_16">
+      <obj_property name="ElementShortName">_GEN_16[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_16[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_17">
+      <obj_property name="ElementShortName">_GEN_17</obj_property>
+      <obj_property name="ObjectShortName">_GEN_17</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_18">
+      <obj_property name="ElementShortName">_GEN_18</obj_property>
+      <obj_property name="ObjectShortName">_GEN_18</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_19">
+      <obj_property name="ElementShortName">_GEN_19</obj_property>
+      <obj_property name="ObjectShortName">_GEN_19</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_20">
+      <obj_property name="ElementShortName">_GEN_20</obj_property>
+      <obj_property name="ObjectShortName">_GEN_20</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_21">
+      <obj_property name="ElementShortName">_GEN_21</obj_property>
+      <obj_property name="ObjectShortName">_GEN_21</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_22">
+      <obj_property name="ElementShortName">_GEN_22</obj_property>
+      <obj_property name="ObjectShortName">_GEN_22</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_23">
+      <obj_property name="ElementShortName">_GEN_23</obj_property>
+      <obj_property name="ObjectShortName">_GEN_23</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_24">
+      <obj_property name="ElementShortName">_GEN_24</obj_property>
+      <obj_property name="ObjectShortName">_GEN_24</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_25">
+      <obj_property name="ElementShortName">_GEN_25</obj_property>
+      <obj_property name="ObjectShortName">_GEN_25</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_26">
+      <obj_property name="ElementShortName">_GEN_26</obj_property>
+      <obj_property name="ObjectShortName">_GEN_26</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_27">
+      <obj_property name="ElementShortName">_GEN_27</obj_property>
+      <obj_property name="ObjectShortName">_GEN_27</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_28">
+      <obj_property name="ElementShortName">_GEN_28[94:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_28[94:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_in_T_12">
+      <obj_property name="ElementShortName">_registers_io_in_T_12[94:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_in_T_12[94:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_29">
+      <obj_property name="ElementShortName">_GEN_29</obj_property>
+      <obj_property name="ObjectShortName">_GEN_29</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_30">
+      <obj_property name="ElementShortName">_GEN_30</obj_property>
+      <obj_property name="ObjectShortName">_GEN_30</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_registers_io_in_T_20">
+      <obj_property name="ElementShortName">_registers_io_in_T_20[94:0]</obj_property>
+      <obj_property name="ObjectShortName">_registers_io_in_T_20[94:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_31">
+      <obj_property name="ElementShortName">_GEN_31</obj_property>
+      <obj_property name="ObjectShortName">_GEN_31</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_32">
+      <obj_property name="ElementShortName">_GEN_32</obj_property>
+      <obj_property name="ObjectShortName">_GEN_32</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_33">
+      <obj_property name="ElementShortName">_GEN_33</obj_property>
+      <obj_property name="ObjectShortName">_GEN_33</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_34">
+      <obj_property name="ElementShortName">_GEN_34</obj_property>
+      <obj_property name="ObjectShortName">_GEN_34</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_35">
+      <obj_property name="ElementShortName">_GEN_35</obj_property>
+      <obj_property name="ObjectShortName">_GEN_35</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_36">
+      <obj_property name="ElementShortName">_GEN_36</obj_property>
+      <obj_property name="ObjectShortName">_GEN_36</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_37">
+      <obj_property name="ElementShortName">_GEN_37</obj_property>
+      <obj_property name="ObjectShortName">_GEN_37</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_38">
+      <obj_property name="ElementShortName">_GEN_38</obj_property>
+      <obj_property name="ObjectShortName">_GEN_38</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_39">
+      <obj_property name="ElementShortName">_GEN_39</obj_property>
+      <obj_property name="ObjectShortName">_GEN_39</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_40">
+      <obj_property name="ElementShortName">_GEN_40</obj_property>
+      <obj_property name="ObjectShortName">_GEN_40</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_41">
+      <obj_property name="ElementShortName">_GEN_41</obj_property>
+      <obj_property name="ObjectShortName">_GEN_41</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_42">
+      <obj_property name="ElementShortName">_GEN_42</obj_property>
+      <obj_property name="ObjectShortName">_GEN_42</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_43">
+      <obj_property name="ElementShortName">_GEN_43[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_43[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_44">
+      <obj_property name="ElementShortName">_GEN_44</obj_property>
+      <obj_property name="ObjectShortName">_GEN_44</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_45">
+      <obj_property name="ElementShortName">_GEN_45</obj_property>
+      <obj_property name="ObjectShortName">_GEN_45</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_46">
+      <obj_property name="ElementShortName">_GEN_46</obj_property>
+      <obj_property name="ObjectShortName">_GEN_46</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_47">
+      <obj_property name="ElementShortName">_GEN_47</obj_property>
+      <obj_property name="ObjectShortName">_GEN_47</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_48">
+      <obj_property name="ElementShortName">_GEN_48</obj_property>
+      <obj_property name="ObjectShortName">_GEN_48</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_49">
+      <obj_property name="ElementShortName">_GEN_49</obj_property>
+      <obj_property name="ObjectShortName">_GEN_49</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_50">
+      <obj_property name="ElementShortName">_GEN_50</obj_property>
+      <obj_property name="ObjectShortName">_GEN_50</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_51">
+      <obj_property name="ElementShortName">_GEN_51</obj_property>
+      <obj_property name="ObjectShortName">_GEN_51</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_52">
+      <obj_property name="ElementShortName">_GEN_52</obj_property>
+      <obj_property name="ObjectShortName">_GEN_52</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_53">
+      <obj_property name="ElementShortName">_GEN_53</obj_property>
+      <obj_property name="ObjectShortName">_GEN_53</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_54">
+      <obj_property name="ElementShortName">_GEN_54</obj_property>
+      <obj_property name="ObjectShortName">_GEN_54</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_55">
+      <obj_property name="ElementShortName">_GEN_55</obj_property>
+      <obj_property name="ObjectShortName">_GEN_55</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_56">
+      <obj_property name="ElementShortName">_GEN_56</obj_property>
+      <obj_property name="ObjectShortName">_GEN_56</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_3">
+      <obj_property name="ElementShortName">_data_T_3[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_3[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_2">
+      <obj_property name="ElementShortName">_data_T_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_57">
+      <obj_property name="ElementShortName">_GEN_57[158:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_57[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_7">
+      <obj_property name="ElementShortName">_data_T_7[158:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_7[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/data">
+      <obj_property name="ElementShortName">data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">data[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_58">
+      <obj_property name="ElementShortName">_GEN_58</obj_property>
+      <obj_property name="ObjectShortName">_GEN_58</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_11">
+      <obj_property name="ElementShortName">_data_T_11[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_11[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_10">
+      <obj_property name="ElementShortName">_data_T_10[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_10[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_15">
+      <obj_property name="ElementShortName">_data_T_15[158:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_15[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/data_1">
+      <obj_property name="ElementShortName">data_1[15:0]</obj_property>
+      <obj_property name="ObjectShortName">data_1[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_59">
+      <obj_property name="ElementShortName">_GEN_59</obj_property>
+      <obj_property name="ObjectShortName">_GEN_59</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_19">
+      <obj_property name="ElementShortName">_data_T_19[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_19[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/data_2">
+      <obj_property name="ElementShortName">data_2[158:0]</obj_property>
+      <obj_property name="ObjectShortName">data_2[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_60">
+      <obj_property name="ElementShortName">_GEN_60</obj_property>
+      <obj_property name="ObjectShortName">_GEN_60</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_27">
+      <obj_property name="ElementShortName">_data_T_27[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_27[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_26">
+      <obj_property name="ElementShortName">_data_T_26[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_26[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_31">
+      <obj_property name="ElementShortName">_data_T_31[158:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_31[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/data_3">
+      <obj_property name="ElementShortName">data_3[7:0]</obj_property>
+      <obj_property name="ObjectShortName">data_3[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_61">
+      <obj_property name="ElementShortName">_GEN_61</obj_property>
+      <obj_property name="ObjectShortName">_GEN_61</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_62">
+      <obj_property name="ElementShortName">_GEN_62</obj_property>
+      <obj_property name="ObjectShortName">_GEN_62</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_63">
+      <obj_property name="ElementShortName">_GEN_63</obj_property>
+      <obj_property name="ObjectShortName">_GEN_63</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_35">
+      <obj_property name="ElementShortName">_data_T_35[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_35[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_34">
+      <obj_property name="ElementShortName">_data_T_34[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_34[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_data_T_39">
+      <obj_property name="ElementShortName">_data_T_39[158:0]</obj_property>
+      <obj_property name="ObjectShortName">_data_T_39[158:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/data_4">
+      <obj_property name="ElementShortName">data_4[15:0]</obj_property>
+      <obj_property name="ObjectShortName">data_4[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_64">
+      <obj_property name="ElementShortName">_GEN_64</obj_property>
+      <obj_property name="ObjectShortName">_GEN_64</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_address_T_5">
+      <obj_property name="ElementShortName">_address_T_5[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_address_T_5[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_65">
+      <obj_property name="ElementShortName">_GEN_65[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_65[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/value_1">
+      <obj_property name="ElementShortName">value_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">value_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_66">
+      <obj_property name="ElementShortName">_GEN_66</obj_property>
+      <obj_property name="ObjectShortName">_GEN_66</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_address_T_6">
+      <obj_property name="ElementShortName">_address_T_6[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_address_T_6[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_67">
+      <obj_property name="ElementShortName">_GEN_67[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_67[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_35">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_35[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_35[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_68">
+      <obj_property name="ElementShortName">_GEN_68</obj_property>
+      <obj_property name="ObjectShortName">_GEN_68</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_69">
+      <obj_property name="ElementShortName">_GEN_69</obj_property>
+      <obj_property name="ObjectShortName">_GEN_69</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_70">
+      <obj_property name="ElementShortName">_GEN_70</obj_property>
+      <obj_property name="ObjectShortName">_GEN_70</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_address_T_7">
+      <obj_property name="ElementShortName">_address_T_7[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_address_T_7[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_GEN_71">
+      <obj_property name="ElementShortName">_GEN_71[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_GEN_71[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_Top/dut/_memory_io_address_2_T_38">
+      <obj_property name="ElementShortName">_memory_io_address_2_T_38[31:0]</obj_property>
+      <obj_property name="ObjectShortName">_memory_io_address_2_T_38[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_Top/dut/_GEN_72">
+      <obj_property name="ElementShortName">_GEN_72</obj_property>
+      <obj_property name="ObjectShortName">_GEN_72</obj_property>
+   </wvobject>
+</wave_config>

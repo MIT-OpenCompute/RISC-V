@@ -24,6 +24,7 @@ class Main() extends Module {
 
     val program_pointer = RegInit(0.U(32.W))
 
+
     val registers = Module(new Registers())
     registers.io.write_enable := false.B
     registers.io.write_address := 0.U(5.W)
@@ -55,8 +56,8 @@ class Main() extends Module {
     val decoder = Module(new Decoder())
     decoder.io.instruction := 0.U;
 
-    // 0 - Load Instruction   1 - Execute Instruction A   2 - Execute Instruction B
-    val stage = RegInit(0.U(2.W));
+    // 0 - Fetch   1 - Latch fetch   2 - Decode/Execute   3 - Wait for load/store mem   4 - Complete load/store
+    val stage = RegInit(0.U(3.W));
 
     memory.io.write_1 := false.B
     memory.io.read_1 := false.B
@@ -80,15 +81,29 @@ class Main() extends Module {
     val rs2_buffer = RegInit(0.U(5.W));
     val rd_buffer = RegInit(0.U(5.W));
 
+    val data_buffer_1 = RegInit(0.U(32.W));
+    val data_buffer_2 = RegInit(0.U(32.W));
+
+    val isLoadStore = decoder.io.operation === "b000_0000011".U ||  // LB
+                  decoder.io.operation === "b001_0000011".U ||  // LH
+                  decoder.io.operation === "b010_0000011".U ||  // LW
+                  decoder.io.operation === "b100_0000011".U ||  // LBU
+                  decoder.io.operation === "b101_0000011".U ||  // LHU
+                  decoder.io.operation === "b000_0100011".U ||  // SB
+                  decoder.io.operation === "b001_0100011".U ||  // SH
+                  decoder.io.operation === "b010_0100011".U     // SW
+
+
+
     when(io.execute) {
         printf("\n");
         printf("Stage: %d\n", stage);
 
-        when(stage =/= 0.U) {
+        when(stage =/= 0.U && stage =/= 1.U && stage =/= 3.U) {
             printf("Operation: %b\n", decoder.io.operation);
             printf("Program Pointer: %d\n", program_pointer);
-            printf("Data 1: %b\n", memory.io.read_value_1);
-            printf("Data 2: %b\n", memory.io.read_value_2);
+            printf("Data 1: %b\n", data_buffer_1);
+            printf("Data 2: %b\n", data_buffer_2);
             printf("Register 1: %b\n", registers.io.debug_1);
             printf("Register 2: %b\n", registers.io.debug_2);
             printf("Register 3: %b\n", registers.io.debug_3);
@@ -101,15 +116,23 @@ class Main() extends Module {
             printf("Register10: %b\n", registers.io.debug_10);
         }
 
-        stage := stage + 1.U;
-
+        // Stage 0: Present address to memory for instruction fetch
         when(stage === 0.U) {
             memory.io.read_1 := true.B
             memory.io.address_1 := program_pointer / 4.U
+            stage := 1.U
         }
 
+        // Stage 1: Latch memory output into registers (SyncReadMem data available now)
         when(stage === 1.U) {
-            decoder.io.instruction := memory.io.read_value_1
+            data_buffer_1 := memory.io.read_value_1
+            data_buffer_2 := memory.io.read_value_2
+            stage := 2.U
+        }
+
+        // Stage 2: Data is now in data_buffer_1, decode and execute
+        when(stage === 2.U) {
+            decoder.io.instruction := data_buffer_1
             operation_buffer := decoder.io.operation;
             immediate_buffer := decoder.io.immediate;
             rs1_buffer := decoder.io.rs1;
@@ -125,6 +148,8 @@ class Main() extends Module {
                     memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
+
+                    stage := 3.U
 
                     printf(
                       "[LB] Rs1: %d Immediate: %b\n",
@@ -142,6 +167,8 @@ class Main() extends Module {
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
+                    stage := 3.U
+
                     printf(
                       "[LH] Rs1: %d Immediate: %b\n",
                       decoder.io.rs1,
@@ -157,6 +184,8 @@ class Main() extends Module {
                     memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
+
+                    stage := 3.U
 
                     printf(
                       "[LW] Rs1: %d Immediate: %b\n",
@@ -174,6 +203,8 @@ class Main() extends Module {
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
+                    stage := 3.U
+
                     printf(
                       "[LBU] Rs1: %d Immediate: %b\n",
                       decoder.io.rs1,
@@ -190,6 +221,8 @@ class Main() extends Module {
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
+                    stage := 3.U
+
                     printf(
                       "[LHU] Rs1: %d Immediate: %b\n",
                       decoder.io.rs1,
@@ -204,6 +237,8 @@ class Main() extends Module {
 
                     memory.io.read_1 := true.B
                     memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
+
+                    stage := 3.U
 
                     printf(
                       "[SB] Rs1: %d Rs2: %d Immediate: %b\n",
@@ -223,6 +258,8 @@ class Main() extends Module {
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
 
+                    stage := 3.U
+
                     printf(
                       "[SH] Rs1: %d Rs2: %d Immediate: %b\n",
                       decoder.io.rs1,
@@ -241,6 +278,8 @@ class Main() extends Module {
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
                     
+                    stage := 3.U
+
                     printf(
                       "[SW] Rs1: %d Rs2: %d Immediate: %b Raw Address: %b\n",
                       decoder.io.rs1,
@@ -849,7 +888,14 @@ class Main() extends Module {
             }
         }
 
-        when(stage === 2.U) {
+        // Stage 3: Latch load/store memory results
+        when(stage === 3.U) {
+            data_buffer_1 := memory.io.read_value_1
+            data_buffer_2 := memory.io.read_value_2
+            stage := 4.U
+        }
+
+        when(stage === 4.U) {
             stage := 0.U;
 
             switch(operation_buffer) {
@@ -860,7 +906,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+                        (data_buffer_1 >> (address % 4.U) * 8.U) | (data_buffer_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := Fill(24, data(7)) ## data(7, 0)
 
@@ -880,7 +926,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+                        (data_buffer_1 >> (address % 4.U) * 8.U) | (data_buffer_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := Fill(16, data(15)) ## data(15, 0)
 
@@ -900,7 +946,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+                        (data_buffer_1 >> (address % 4.U) * 8.U) | (data_buffer_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := data
 
@@ -920,7 +966,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+                        (data_buffer_1 >> (address % 4.U) * 8.U) | (data_buffer_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := 0.U(24.W) ## data(7, 0)
 
@@ -940,7 +986,7 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
                     val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+                        (data_buffer_1 >> (address % 4.U) * 8.U) | (data_buffer_2 << (4.U - (address % 4.U)) * 8.U)
 
                     registers.io.in := 0.U(16.W) ## data(15, 0)
 
@@ -961,33 +1007,33 @@ class Main() extends Module {
                     val address = registers.io.out_a + immediate_buffer
 
                     val value_1 =
-                        WireDefault(WireDefault(memory.io).read_value_1)
+                        WireDefault(data_buffer_1)
 
                     switch(address % 4.U) {
                         is(0.U) {
                             value_1 := Cat(
-                              memory.io.read_value_1(31, 8),
+                              data_buffer_1(31, 8),
                               registers.io.out_b(7, 0)
                             )
                         }
                         is(1.U) {
                             value_1 := Cat(
-                              memory.io.read_value_1(31, 16),
+                              data_buffer_1(31, 16),
                               registers.io.out_b(7, 0),
-                              memory.io.read_value_1(7, 0)
+                              data_buffer_1(7, 0)
                             )
                         }
                         is(2.U) {
                             value_1 := Cat(
-                              memory.io.read_value_1(31, 24),
+                              data_buffer_1(31, 24),
                               registers.io.out_b(7, 0),
-                              memory.io.read_value_1(15, 0)
+                              data_buffer_1(15, 0)
                             )
                         }
                         is(3.U) {
                             value_1 := Cat(
                               registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
+                              data_buffer_1(23, 0)
                             )
                         }
                     }
@@ -1008,39 +1054,39 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
 
-                    val value_1 = WireDefault(memory.io.read_value_1)
-                    val value_2 = WireDefault(memory.io.read_value_2)
+                    val value_1 = WireDefault(data_buffer_1)
+                    val value_2 = WireDefault(data_buffer_2)
 
                     switch(address % 4.U) {
                         is(0.U) {
                             value_1 := Cat(
-                              memory.io.read_value_1(31, 16),
+                              data_buffer_1(31, 16),
                               registers.io.out_b(15, 0)
                             )
                         }
 
                         is(1.U) {
                             value_1 := Cat(
-                              memory.io.read_value_1(31, 24),
+                              data_buffer_1(31, 24),
                               registers.io.out_b(15, 0),
-                              memory.io.read_value_1(7, 0)
+                              data_buffer_1(7, 0)
                             )
                         }
 
                         is(2.U) {
                             value_1 := Cat(
                               registers.io.out_b(15, 0),
-                              memory.io.read_value_1(15, 0)
+                              data_buffer_1(15, 0)
                             )
                         }
 
                         is(3.U) {
                             value_1 := Cat(
                               registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
+                              data_buffer_1(23, 0)
                             )
                             value_2 := Cat(
-                              memory.io.read_value_2(31, 8),
+                              data_buffer_2(31, 8),
                               registers.io.out_b(15, 8)
                             )
                         }
@@ -1050,8 +1096,11 @@ class Main() extends Module {
                     memory.io.address_1 := address / 4.U
                     memory.io.write_value_1 := value_1
 
-                    memory.io.write_2 := true.B
-                    memory.io.address_2 := address / 4.U + 1.U
+                    when(address % 4.U === 3.U) {
+                        memory.io.write_2 := true.B
+                        memory.io.address_2 := address / 4.U + 1.U
+                        memory.io.write_value_2 := value_2
+                    }
                     program_pointer := program_pointer + 4.U
 
                     printf("[SH]\n")
@@ -1064,8 +1113,8 @@ class Main() extends Module {
 
                     val address = registers.io.out_a + immediate_buffer
 
-                    val value_1 = WireDefault(memory.io.read_value_1)
-                    val value_2 = WireDefault(memory.io.read_value_2)
+                    val value_1 = WireDefault(data_buffer_1)
+                    val value_2 = WireDefault(data_buffer_2)
 
                     switch(address % 4.U) {
                         is(0.U) {
@@ -1075,10 +1124,10 @@ class Main() extends Module {
                         is(1.U) {
                             value_1 := Cat(
                               registers.io.out_b(23, 0),
-                              memory.io.read_value_1(7, 0)
+                              data_buffer_1(7, 0)
                             )
                             value_2 := Cat(
-                              memory.io.read_value_2(31, 8),
+                              data_buffer_2(31, 8),
                               registers.io.out_b(31, 24)
                             )
                         }
@@ -1086,10 +1135,10 @@ class Main() extends Module {
                         is(2.U) {
                             value_1 := Cat(
                               registers.io.out_b(15, 0),
-                              memory.io.read_value_1(15, 0)
+                              data_buffer_1(15, 0)
                             )
                             value_2 := Cat(
-                              memory.io.read_value_2(31, 16),
+                              data_buffer_2(31, 16),
                               registers.io.out_b(31, 16)
                             )
                         }
@@ -1097,10 +1146,10 @@ class Main() extends Module {
                         is(3.U) {
                             value_1 := Cat(
                               registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
+                              data_buffer_1(23, 0)
                             )
                             value_2 := Cat(
-                              memory.io.read_value_2(31, 24),
+                              data_buffer_2(31, 24),
                               registers.io.out_b(31, 8)
                             )
                         }
@@ -1110,8 +1159,11 @@ class Main() extends Module {
                     memory.io.address_1 := address / 4.U
                     memory.io.write_value_1 := value_1
 
-                    memory.io.write_2 := true.B
-                    memory.io.address_2 := address / 4.U + 1.U
+                    when(address % 4.U =/= 0.U) {
+                        memory.io.write_2 := true.B
+                        memory.io.address_2 := address / 4.U + 1.U
+                        memory.io.write_value_2 := value_2
+                    }
                     program_pointer := program_pointer + 4.U
 
                     printf("[SW]\n")

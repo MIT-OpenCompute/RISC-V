@@ -2,8 +2,6 @@
 module Top(
     input  wire        clk,
     input  wire        btnC,
-    input  wire        RsRx,
-    output wire        RsTx,
     output wire [15:0] led,
     output wire        vgaHSync,
     output wire        vgaVSync,
@@ -22,66 +20,80 @@ module Top(
     wire clk_25 = clk_div[1];
 
     // -------------------------------------------------------
-    // UART program loader
+    // Hardcoded program loader state machine
+    // Writes 4 instructions then releases CPU to execute
     // -------------------------------------------------------
-    wire        cpu_reset;
-    wire        debug_write;
-    wire [31:0] debug_write_address;
-    wire [31:0] debug_write_data;
-
-    uart_program_loader loader (
-        .clk                 (clk_25),
-        .rst_n               (~btnC),
-        .rx                  (RsRx),
-        .cpu_reset           (cpu_reset),
-        .debug_write         (debug_write),
-        .debug_write_address (debug_write_address),
-        .debug_write_data    (debug_write_data)
-    );
-
-    wire reset = btnC | cpu_reset;
-
-    // -------------------------------------------------------
-    // ce: single pulse per clock cycle - CPU runs at full speed
-    // but we gate with a slow counter so we can see LEDs
-    // Counter fires one ce pulse, CPU stage machine runs freely
-    // -------------------------------------------------------
-    reg  [22:0] ce_counter;
-    reg         ce;
+    reg        reset_reg;
+    reg        debug_write;
+    reg [31:0] debug_write_address;
+    reg [31:0] debug_write_data;
+    reg        execute;
+    reg [2:0]  load_state;
 
     always @(posedge clk_25) begin
-        if (reset) begin
-            ce_counter <= 23'd0;
-            ce         <= 1'b0;
+        if (btnC) begin
+            reset_reg           <= 1;
+            debug_write         <= 0;
+            debug_write_address <= 0;
+            debug_write_data    <= 0;
+            execute             <= 0;
+            load_state          <= 0;
         end else begin
-            ce <= 1'b0;
-            if (ce_counter == 23'd0) begin
-                ce <= 1'b1;
-            end
-            if (ce_counter == 23'd4_999_999) begin
-                ce_counter <= 23'd0;
-            end else begin
-                ce_counter <= ce_counter + 23'd1;
-            end
+            case (load_state)
+                3'd0: begin
+                    // Release reset, start writing
+                    reset_reg           <= 0;
+                    debug_write         <= 1;
+                    debug_write_address <= 32'd0;
+                    debug_write_data    <= 32'h00004137; // LUI x2, 4
+                    load_state          <= 3'd1;
+                end
+                3'd1: begin
+                    debug_write_address <= 32'd1;
+                    debug_write_data    <= 32'h00808093; // ADDI x1, x1, 8
+                    load_state          <= 3'd2;
+                end
+                3'd2: begin
+                    debug_write_address <= 32'd2;
+                    debug_write_data    <= 32'h00112023; // SW x0, 0(x2)
+                    load_state          <= 3'd3;
+                end
+                3'd3: begin
+                    debug_write_address <= 32'd3;
+                    debug_write_data    <= 32'hFF9FF06F; // JAL x0, -8
+                    load_state          <= 3'd4;
+                end
+                3'd4: begin
+                    // Stop writing, start executing
+                    debug_write         <= 0;
+                    debug_write_address <= 0;
+                    debug_write_data    <= 0;
+                    execute             <= 1;
+                    load_state          <= 3'd5;
+                end
+                default: begin
+                    // Stay in execute mode
+                end
+            endcase
         end
     end
 
     // -------------------------------------------------------
     // CPU + VGA
     // -------------------------------------------------------
-    wire [31:0] debug_1;
     wire [11:0] rgb;
     wire        blanking;
+    wire [31:0] debug_1, debug_2;
 
     Main cpu (
         .clock                  (clk_25),
-        .reset                  (reset),
-        .io_execute             (ce),
+        .reset                  (reset_reg),
+        .io_execute             (execute),
         .io_debug_write         (debug_write),
         .io_debug_write_address (debug_write_address),
         .io_debug_write_data    (debug_write_data),
         .io_debug_1             (debug_1),
-        .io_busy                (),
+        .io_debug_2             (debug_2),
         .io_hsync               (vgaHSync),
         .io_vsync               (vgaVSync),
         .io_rgb                 (rgb),
@@ -93,6 +105,7 @@ module Top(
     assign vgaRed   = blanking ? 4'h0 : rgb[11:8];
     assign vgaGreen = blanking ? 4'h0 : rgb[7:4];
     assign vgaBlue  = blanking ? 4'h0 : rgb[3:0];
-    assign led      = debug_1[15:0];
-    assign RsTx     = 1'b1;
-endmodules
+
+    // debug_1 = register 1, debug_2 = program counter
+    assign led = debug_1[15:0];
+endmodule
