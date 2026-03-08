@@ -33,7 +33,7 @@ class Memory() extends Module {
     io.read_value_2 := 0.U
 
     val isVGA = io.address_1 >= 0b1000000000000.U;
-    io.address_vga := Mux(isVGA, io.address_1 - 0b1000000000000.U, 0.U);
+    io.address_vga := Mux(isVGA, io.address_1 / 0b1000000000000.U - 1.U, 0.U);
     io.write_vga := isVGA && io.write_1
     io.write_value_vga := io.write_value_1
 
@@ -41,7 +41,7 @@ class Memory() extends Module {
         when(isVGA) {
             printf(
               "Writing to VGA! Address: %b Data: %b\n",
-              io.address_1 - 0b1000000000000.U,
+              io.address_1 / 0b1000000000000.U - 1.U,
               io.write_value_1
             );
         }.otherwise {
