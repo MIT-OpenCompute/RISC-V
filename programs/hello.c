@@ -6,16 +6,53 @@ __attribute__((naked)) void _start(void) {
 }
 
 int main() {
-    volatile unsigned char* mem = (volatile unsigned char*)0x0;
-    int counter = 0;
+    volatile unsigned char* frame = (volatile unsigned char*)0x0;
+    int ballX = 160;
+    int ballY = 120;
+    int dX = 1;
+    int dY = 1;
+
+    for (int i = 0; i < 320; i++) {
+        frame[0x4000 * i] = 0xFF;
+        frame[0x4000 * (239 * 320 + i)] = 0xFF;
+        frame[0x4000 * (320 * i + 1)] = 0xFF;
+        frame[0x4000 * (320 * i + 319)] = 0xFF;
+    }
 
     while (1) {
-        counter++;
-        mem[0x4000 * counter] = counter;
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -2; y <= 2; y++) {
+                frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0x00;
+            }
+        }
 
-        // busy-wait pause loop (~2000 iterations)
-        // for (int i = 0; i < 2000; i++) {
-        //     __asm__("nop");  // prevent compiler from optimizing away
-        // }
+        ballX += dX;
+        ballY += dY;
+
+        if (ballX == 319 - 6) {
+            dX = -1;
+        }
+
+        if (ballX == 6) {
+            dX = 1;
+        }
+
+        if (ballY == 239 - 6) {
+            dY = -1;
+        }
+
+        if (ballY == 6) {
+            dY = 1;
+        }
+
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -2; y <= 2; y++) {
+                frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0xFF;
+            }
+        }
+
+        for (int i = 0; i < 4000; i++) {
+            __asm__("nop");
+        }
     }
 }

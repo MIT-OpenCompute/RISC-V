@@ -1,0 +1,1 @@
+.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -S -O0 -march=rv32i -mabi=ilp32 ./programs/hello.c -o ./programs/hello.s
