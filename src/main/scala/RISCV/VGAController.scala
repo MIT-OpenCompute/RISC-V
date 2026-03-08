@@ -73,7 +73,7 @@ class VGAController extends Module {
     }
 
     val color = memory.read(read_address, true.B)
-    val pixel = color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
+    val pixel := color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
 
     io.rgb := Mux(active, pixel, 0.U)
 }

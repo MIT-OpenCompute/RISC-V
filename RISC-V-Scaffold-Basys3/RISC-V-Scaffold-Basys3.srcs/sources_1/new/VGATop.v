@@ -45,7 +45,9 @@ module VGATop(
         .io_hsync       (vgaHSync),
         .io_vsync       (vgaVSync),
         .io_rgb         (rgb),
-        .io_blanking    (blanking)
+        .io_blanking    (blanking),
+        .io_hPos        (),
+        .io_vPos        ()
     );
 
     assign vgaRed   = blanking ? 4'h0 : rgb[11:8];
