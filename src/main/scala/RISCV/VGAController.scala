@@ -28,13 +28,10 @@ class VGAController extends Module {
         val blanking = Output(Bool())
     })
 
-    val memory = SyncReadMem(1024, UInt(32.W))
+    val memory = SyncReadMem(320 * 240, UInt(8.W))
 
     val hCount = RegInit(0.U(10.W))
     val vCount = RegInit(0.U(10.W))
-
-    val pixel = WireInit(0.U(12.W))
-    pixel := memory.read(0.U, true.B)
 
     when(io.write) {
         memory.write(io.address, io.write_value)
@@ -66,6 +63,16 @@ class VGAController extends Module {
 
     io.blanking := !active
 
+    val read_address = WireInit(0.U(32.W))
+
+    when(active) {
+        read_address := 0.U
+    }.otherwise {
+        read_address := vCount * 320.U + hCount
+    }
+
+    val color = memory.read(read_address, true.B)
+    val pixel = color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
+
     io.rgb := Mux(active, pixel, 0.U)
-    // io.rgb := Mux(active, 0b111111111111.U, 0.U)
 }
