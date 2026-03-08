@@ -20,7 +20,7 @@ class VGAController extends Module {
     val io = IO(new Bundle {
         val address = Input(UInt(32.W))
         val write = Input(Bool())
-        val write_value = Input(UInt(32.W))
+        val write_value = Input(UInt(8.W))
 
         val hsync = Output(Bool())
         val vsync = Output(Bool())
@@ -66,9 +66,9 @@ class VGAController extends Module {
     val read_address = WireInit(0.U(32.W))
 
     when(active) {
-        read_address := 0.U
+        read_address := vCount / 2.U * 320.U + hCount / 2.U + 1.U
     }.otherwise {
-        read_address := vCount * 320.U + hCount
+        read_address := (vCount + 1.U) / 2.U * 320.U
     }
 
     val color = memory.read(read_address, true.B)
