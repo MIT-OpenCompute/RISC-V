@@ -24,39 +24,45 @@ class Memory() extends Module {
     })
 
     val memory = SyncReadMem(1024, UInt(32.W))
-    loadMemoryFromFileInline(memory, "program.hex") 
+    loadMemoryFromFileInline(memory, "program.hex")
 
     io.address_vga := 0.U
     io.write_vga := true.B
     io.write_value_vga := 0.U
-    io.read_value_1    := 0.U
-    io.read_value_2    := 0.U
+    io.read_value_1 := 0.U
+    io.read_value_2 := 0.U
 
-    val isVGA = io.address_1 >= 0b1000000000000.U; 
-    io.address_vga := Mux(isVGA, io.address_1 - 0b1000000000000.U,0.U);
-    io.write_vga   := isVGA && io.write_1
+    val isVGA = io.address_1 >= 0b1000000000000.U;
+    io.address_vga := Mux(isVGA, io.address_1 - 0b1000000000000.U, 0.U);
+    io.write_vga := isVGA && io.write_1
     io.write_value_vga := io.write_value_1
 
     when(isVGA) {
         printf(
-            "Writing to VGA! Address: %b Data: %b\n",
-            io.address_1 - 0b1000000000000.U,
-            io.write_value_1
+          "Writing to VGA! Address: %b Data: %b\n",
+          io.address_1 - 0b1000000000000.U,
+          io.write_value_1
+        );
+    }.otherwise {
+        printf(
+          "Writing to VGA! Memory: %b Data: %b\n",
+          io.address_1 - 0b1000000000000.U,
+          io.write_value_1
         );
     }
 
     io.read_value_1 := memory.readWrite(
-        io.address_1,
-        io.write_value_1,
-        (io.read_1 || io.write_1) && !isVGA,
-        io.write_1
+      io.address_1,
+      io.write_value_1,
+      (io.read_1 || io.write_1) && !isVGA,
+      io.write_1
     )
 
     io.read_value_2 := memory.readWrite(
-        io.address_2,
-        io.write_value_2,
-        (io.read_2 || io.write_2) && !isVGA,
-        io.write_2
+      io.address_2,
+      io.write_value_2,
+      (io.read_2 || io.write_2) && !isVGA,
+      io.write_2
     )
-    
+
 }
