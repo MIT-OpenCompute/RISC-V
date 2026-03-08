@@ -10,7 +10,7 @@
 _start:
  #APP
 # 2 "./programs/hello.c" 1
-	li sp, 0x8000
+	li sp, 0x4000
 call main
 loop: j loop
 
