@@ -26,25 +26,23 @@ class VGAController extends Module {
         val vsync = Output(Bool())
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
-        val hPos = Output(UInt(10.W))
-        val vPos = Output(UInt(10.W))
     })
 
     val memory = SyncReadMem(1024, UInt(32.W))
 
     val hCount = RegInit(0.U(10.W))
     val vCount = RegInit(0.U(10.W))
-    
+
     val pixel = WireInit(0.U(12.W))
     pixel := memory.read(0.U, true.B)
-    
+
     when(io.write) {
         memory.write(io.address, io.write_value)
     }
 
     when(hCount === (H_TOTAL - 1).U) {
         hCount := 0.U
-        
+
         when(vCount === (V_TOTAL - 1).U) {
             vCount := 0.U
         }.otherwise {
@@ -67,21 +65,7 @@ class VGAController extends Module {
     val active = hActive && vActive
 
     io.blanking := !active
-    io.hPos := hCount
-    io.vPos := vCount
 
     io.rgb := Mux(active, pixel, 0.U)
     // io.rgb := Mux(active, 0b111111111111.U, 0.U)
-}
-
-object VGAMain extends App {
-    ChiselStage.emitSystemVerilogFile(
-      new VGAController(),
-      firtoolOpts = Array(
-        "-disable-all-randomization",
-        "-strip-debug-info",
-        "-default-layer-specialization=enable"
-      ),
-      args = Array("--target-dir", "generated")
-    )
 }

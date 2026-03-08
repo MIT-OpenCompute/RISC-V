@@ -18,12 +18,9 @@ class Main() extends Module {
         val vsync = Output(Bool())
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
-        val hPos = Output(UInt(10.W))
-        val vPos = Output(UInt(10.W))
     })
 
     val program_pointer = RegInit(0.U(32.W))
-
 
     val registers = Module(new Registers())
     registers.io.write_enable := false.B
@@ -50,8 +47,6 @@ class Main() extends Module {
     io.vsync := vga_controller.io.vsync
     io.rgb := vga_controller.io.rgb
     io.blanking := vga_controller.io.blanking
-    io.hPos := vga_controller.io.hPos
-    io.vPos := vga_controller.io.vPos
 
     val decoder = Module(new Decoder())
     decoder.io.instruction := 0.U;
@@ -242,7 +237,7 @@ class Main() extends Module {
                     memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
                     memory.io.read_2 := true.B
                     memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-                
+
                     printf(
                       "[SW] Rs1: %d Rs2: %d Immediate: %b Raw Address: %b\n",
                       decoder.io.rs1,
