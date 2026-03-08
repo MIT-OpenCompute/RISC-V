@@ -13,7 +13,7 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
 //   "Main should execute LUI correctly" in {
 //     simulate(new Main()) { dut =>
 //       val bytes = Files.readAllBytes(Paths.get("./programs/fib-loop.bin"))
-      
+
 //       val instructions = bytes.grouped(4).map { instrBytes =>
 //         val paddedBytes = instrBytes.padTo(4, 0.toByte)
 //         val signedInt = ByteBuffer.wrap(paddedBytes).order(java.nio.ByteOrder.BIG_ENDIAN).getInt()
@@ -44,21 +44,24 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
             dut.io.debug_write.poke(true.B)
 
             dut.io.debug_write_address.poke(0.U)
-            dut.io.debug_write_data.poke(0b00000000000000000100_00010_0110111L.U) // LUI
+            dut.io.debug_write_data.poke(0x00004137.U)
             dut.clock.step(1)
 
             dut.io.debug_write_address.poke(1.U)
-            dut.io.debug_write_data.poke(0b000000001000_00001_000_00001_0010011L.U) // ADDI
+            dut.io.debug_write_data.poke(0x00408093.U)
             dut.clock.step(1)
 
             dut.io.debug_write_address.poke(2.U)
-            dut.io.debug_write_data.poke(0b000000000000_00010_010_00000_0100011L.U) // SW
+            dut.io.debug_write_data.poke(0x00110113.U)
             dut.clock.step(1)
 
             dut.io.debug_write_address.poke(3.U)
-            dut.io.debug_write_data.poke(0b11111111100111111111_00000_1101111L.U) // JAL
+            dut.io.debug_write_data.poke(0x00008023.U)
             dut.clock.step(1)
-            
+
+            dut.io.debug_write_address.poke(4.U)
+            dut.io.debug_write_data.poke(0xff1ff06f.U)
+            dut.clock.step(1)
 
             // dut.io.debug_write_address.poke(0.U)
             // dut.io.debug_write_data.poke(0b000000000111_00000_000_00001_0010011.U) // ADDI
@@ -71,12 +74,12 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
             // dut.io.debug_write_address.poke(2.U)
             // dut.io.debug_write_data.poke(0b000000000000_00000_010_00010_0000011.U) // LW
             // dut.clock.step(1)
-            
+
             dut.io.debug_write.poke(false.B)
             dut.clock.step(1)
 
             dut.io.execute.poke(true.B)
             dut.clock.step(24)
         }
-  }
+    }
 }
