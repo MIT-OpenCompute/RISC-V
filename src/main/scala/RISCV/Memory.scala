@@ -47,7 +47,7 @@ class Memory() extends Module {
         }.otherwise {
             printf(
               "Writing to Memory! Address: %b Data: %b\n",
-              io.address_1 - 0b1000000000000.U,
+              io.address_1,
               io.write_value_1
             );
         }
