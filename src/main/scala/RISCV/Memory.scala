@@ -70,9 +70,9 @@ class Memory() extends Module {
     )
 
     val is_btns = RegInit(false.B)
-    is_bts := io.address_1 === 0x12c00000.U // 0x4B000000
+    is_btns := io.read_1 && io.address_1 === 0x12c00000.U // 0x4B000000
 
-    when(is_btns && io.read_1) {
+    when(is_btns) {
         io.read_value_1 := io.btns
     }
 }
