@@ -44,23 +44,23 @@ class MainSpec extends AnyFreeSpec with Matchers with ChiselSim {
             dut.io.debug_write.poke(true.B)
 
             dut.io.debug_write_address.poke(0.U)
-            dut.io.debug_write_data.poke(0x00004137.U)
+            dut.io.debug_write_data.poke(0x00004137L.U)
             dut.clock.step(1)
 
-            dut.io.debug_write_address.poke(1.U)
-            dut.io.debug_write_data.poke(0x00408093.U)
+            dut.io.debug_write_address.poke(1L.U)
+            dut.io.debug_write_data.poke(0x00408093L.U)
             dut.clock.step(1)
 
-            dut.io.debug_write_address.poke(2.U)
-            dut.io.debug_write_data.poke(0x00110113.U)
+            dut.io.debug_write_address.poke(2L.U)
+            dut.io.debug_write_data.poke(0x00110113L.U)
             dut.clock.step(1)
 
-            dut.io.debug_write_address.poke(3.U)
-            dut.io.debug_write_data.poke(0x00208023.U)
+            dut.io.debug_write_address.poke(3L.U)
+            dut.io.debug_write_data.poke(0x00208023L.U)
             dut.clock.step(1)
 
-            dut.io.debug_write_address.poke(4.U)
-            dut.io.debug_write_data.poke(0xff1ff06f.U)
+            dut.io.debug_write_address.poke(4L.U)
+            dut.io.debug_write_data.poke(0xff1ff06fL.U)
             dut.clock.step(1)
 
             // dut.io.debug_write_address.poke(0.U)
