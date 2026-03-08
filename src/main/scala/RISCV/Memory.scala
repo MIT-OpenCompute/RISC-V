@@ -37,7 +37,7 @@ class Memory() extends Module {
     io.write_vga := isVGA && io.write_1
     io.write_value_vga := io.write_value_1
 
-    when(io.write_value_1 && isVGA) {
+    when(io.write_1 && isVGA) {
         printf(
           "Writing to VGA! Address: %b Data: %b\n",
           io.address_1 - 0b1000000000000.U,
