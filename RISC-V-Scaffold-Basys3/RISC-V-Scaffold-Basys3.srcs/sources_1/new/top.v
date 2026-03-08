@@ -2,6 +2,10 @@
 module Top(
     input  wire        clk,
     input  wire        btnC,
+    input  wire        btnR,
+    input  wire        btnU,
+    input  wire        btnD,
+    input  wire        btnL,
     input  wire        RsRx,
     output wire        RsTx,
     output wire [15:0] led,
@@ -20,7 +24,7 @@ module Top(
         else      clk_div <= clk_div + 2'h1;
     end
     wire clk_25 = clk_div[1];
-
+    wire [3:0] btns = {btnU,btnR,btnL,btnD};
     // -------------------------------------------------------
     // UART program loader
     // -------------------------------------------------------
@@ -61,7 +65,9 @@ module Top(
         .io_hsync               (vgaHSync),
         .io_vsync               (vgaVSync),
         .io_rgb                 (rgb),
-        .io_blanking            (blanking)
+        .io_blanking            (blanking),
+        .btns(btns)
+        
     );
 
     assign vgaRed   = blanking ? 4'h0 : rgb[11:8];
