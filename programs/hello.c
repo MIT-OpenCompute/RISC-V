@@ -24,88 +24,92 @@ int main() {
         frame[0x4000 * (320 * i + 319)] = 0xFF;
     }
 
+    int counter = 0;
+
     while (1) {
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0x00;
+        counter += 1;
+
+        if (counter == 8000) {
+            counter = 0;
+
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -2; y <= 2; y++) {
+                    frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0x00;
+                }
             }
-        }
 
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[0x4000 * (320 * (paddY1 + y) + 20 + x)] = 0x00;
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -20; y <= 20; y++) {
+                    frame[0x4000 * (320 * (paddY1 + y) + 20 + x)] = 0x00;
+                }
             }
-        }
 
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[0x4000 * (320 * (paddY2 + y) + 299 + x)] = 0x00;
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -20; y <= 20; y++) {
+                    frame[0x4000 * (320 * (paddY2 + y) + 299 + x)] = 0x00;
+                }
             }
-        }
 
-        if (*btns & 0b0001 && paddY1 < 239 - 21) {
-            paddY1 += 1;
-        }
-
-        if (*btns & 0b0010 && paddY1 > 21) {
-            paddY1 -= 1;
-        }
-
-        if (*btns & 0b0100 && paddY2 < 239 - 21) {
-            paddY2 += 1;
-        }
-
-        if (*btns & 0b1000 && paddY2 > 21) {
-            paddY2 -= 1;
-        }
-
-        ballX += dX;
-        ballY += dY;
-
-        if (ballX == 319 - 6) {
-            dX = -1;
-        }
-
-        if (ballX == 6) {
-            dX = 1;
-        }
-
-        if (ballY == 239 - 6) {
-            dY = -1;
-        }
-
-        if (ballY == 6) {
-            dY = 1;
-        }
-
-        if (ballX <= 25 && ballX >= 15 && ballY <= paddY1 + 25 && ballY >= paddY1 - 25) {
-            dX = 1;
-        }
-
-        if (ballX <= 304 && ballX >= 294 && ballY <= paddY2 + 25 && ballY >= paddY2 - 25) {
-            dX = -1;
-        }
-
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0xFF;
+            if (*btns & 0b0001 && paddY1 < 239 - 21) {
+                paddY1 += 1;
             }
-        }
 
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[0x4000 * (320 * (paddY1 + y) + 20 + x)] = 0x03;
+            if (*btns & 0b0010 && paddY1 > 21) {
+                paddY1 -= 1;
             }
-        }
 
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[0x4000 * (320 * (paddY2 + y) + 299 + x)] = 0xE0;
+            if (*btns & 0b0100 && paddY2 < 239 - 21) {
+                paddY2 += 1;
             }
-        }
 
-        for (int i = 0; i < 8000; i++) {
-            __asm__("nop");
+            if (*btns & 0b1000 && paddY2 > 21) {
+                paddY2 -= 1;
+            }
+
+            ballX += dX;
+            ballY += dY;
+
+            if (ballX == 319 - 6) {
+                dX = -1;
+            }
+
+            if (ballX == 6) {
+                dX = 1;
+            }
+
+            if (ballY == 239 - 6) {
+                dY = -1;
+            }
+
+            if (ballY == 6) {
+                dY = 1;
+            }
+
+            if (ballX <= 25 && ballX >= 15 && ballY <= paddY1 + 25 && ballY >= paddY1 - 25) {
+                dX = 1;
+            }
+
+            if (ballX <= 304 && ballX >= 294 && ballY <= paddY2 + 25 && ballY >= paddY2 - 25) {
+                dX = -1;
+            }
+
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -2; y <= 2; y++) {
+                    frame[0x4000 * (320 * (ballY + y) + ballX + x)] = 0xFF;
+                }
+            }
+
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -20; y <= 20; y++) {
+                    frame[0x4000 * (320 * (paddY1 + y) + 20 + x)] = 0x03;
+                }
+            }
+
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -20; y <= 20; y++) {
+                    frame[0x4000 * (320 * (paddY2 + y) + 299 + x)] = 0xE0;
+                }
+            }
         }
     }
 }
