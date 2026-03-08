@@ -4,9 +4,9 @@ RISC-V program loader for Basys3
 Sends a .hex file over UART to the uart_program_loader module.
 
 Usage:
-    python3 load_program.py program.hex
-    python3 load_program.py program.hex --port /dev/ttyUSB1
-    python3 load_program.py program.hex --port COM3 --baud 115200
+    python load_program.py program.hex
+    python load_program.py program.hex --port COM3
+    python load_program.py program.hex --port COM3 --baud 115200
 """
 
 import serial
@@ -19,7 +19,7 @@ import argparse
 # -------------------------------------------------------
 parser = argparse.ArgumentParser(description="Load a RISC-V hex program onto Basys3 over UART")
 parser.add_argument("hex_file",              help="Path to the .hex program file")
-parser.add_argument("--port",  default="/dev/ttyUSB1", help="Serial port (default: /dev/ttyUSB0)")
+parser.add_argument("--port",  default="COM3", help="Serial port (default: COM3)")
 parser.add_argument("--baud",  default=115200, type=int, help="Baud rate (default: 115200)")
 parser.add_argument("--delay", default=0.01,  type=float, help="Delay between words in seconds (default: 0.01)")
 args = parser.parse_args()
@@ -63,9 +63,9 @@ try:
             ser.write(data)
             time.sleep(args.delay)
 
-            # Progress bar
+            # Progress bar (use ASCII chars instead of unicode)
             pct = (i + 1) / len(words) * 100
-            bar = '█' * int(pct / 2) + '░' * (50 - int(pct / 2))
+            bar = '#' * int(pct / 2) + '-' * (50 - int(pct / 2))
             print(f"\r[{bar}] {pct:.1f}% ({i+1}/{len(words)} words)", end='', flush=True)
 
         print()  # newline after progress bar

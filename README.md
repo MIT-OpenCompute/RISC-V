@@ -123,3 +123,17 @@ cd simulation
 verilator --cc --sv --exe --build -j 0 -CFLAGS "-I./obj_dir" -Wall vga-image.cpp VGAController.sv
 ./obj_dir/VVGAController
 nix-shell -p imagemagick --run "convert frame.ppm frame.png"
+
+.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -S -O0 -march=rv32i -mabi=ilp32 ./programs/hello.c -o ./programs/hello.s
+
+## Compiling a C program
+
+.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -c -O0 -march=rv32i -mabi=ilp32 ./programs/hello.c -o ./programs/hello.o
+
+.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -march=rv32i -mabi=ilp32 -nostdlib "-Wl,--section-start=.text=0x0" -o ./programs/hello.elf ./programs/hello.o
+
+.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-objcopy.exe -O binary ./programs/hello.elf ./programs/hello.bin
+
+python convert.py
+
+python.exe .\load_program.py .\programs\test.hex --port COM6 

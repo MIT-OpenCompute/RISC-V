@@ -18,7 +18,13 @@ class Main() extends Module {
         val vsync = Output(Bool())
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
+
+        val debug_1 = Output(UInt(32.W))
+        val debug_2 = Output(UInt(32.W))
     })
+
+    io.debug_1 := 0.U
+    io.debug_2 := 0.U
 
     val program_pointer = RegInit(0.U(32.W))
 

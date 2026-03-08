@@ -127,7 +127,6 @@ local.properties
 *.app
 *.i*86
 *.x86_64
-*.hex
 
 # Debug files
 *.dSYM/
@@ -427,5 +426,4 @@ xvlog.*
 ## checkpoint files
 *.dcp
 
-
-
+xpack-riscv-none-elf-gcc-15.2.0-1
