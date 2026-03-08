@@ -66,7 +66,7 @@ module Top(
         .io_vsync               (vgaVSync),
         .io_rgb                 (rgb),
         .io_blanking            (blanking),
-        .btns(btns)
+        .io_btns(btns)
         
     );
 
