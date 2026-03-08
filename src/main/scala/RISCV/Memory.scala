@@ -21,6 +21,8 @@ class Memory() extends Module {
         val address_vga = Output(UInt(32.W))
         val write_vga = Output(Bool())
         val write_value_vga = Output(UInt(32.W))
+
+        val btns = Input(UInt(4.W))
     })
 
     val memory = SyncReadMem(1024, UInt(32.W))
@@ -67,4 +69,10 @@ class Memory() extends Module {
       io.write_2
     )
 
+    val is_btns = RegInit(false.B)
+    is_bts := io.address_1 === 0x12c00000.U // 0x4B000000
+
+    when(is_btns && io.read_1) {
+        io.read_value_1 := io.btns
+    }
 }
