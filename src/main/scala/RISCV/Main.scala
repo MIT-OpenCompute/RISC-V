@@ -10,6 +10,7 @@ class Main() extends Module {
     val io = IO(new Bundle {
         val execute = Input(Bool());
 
+        val vga_clk = Input(Clock());
         val debug_write = Input(Bool());
         val debug_write_address = Input(UInt(32.W));
         val debug_write_data = Input(UInt(32.W));
@@ -51,7 +52,7 @@ class Main() extends Module {
     vga_controller.io.address := memory.io.address_vga
     vga_controller.io.write := memory.io.write_vga
     vga_controller.io.write_value := memory.io.write_value_vga
-
+    vga_controller.io.read_clk := io.vga_clk
     io.hsync := vga_controller.io.hsync
     io.vsync := vga_controller.io.vsync
     io.rgb := vga_controller.io.rgb
