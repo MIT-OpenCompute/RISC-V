@@ -20,6 +20,8 @@ class Main() extends Module {
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
 
+        val btns = Input(UInt(4.W))
+
         val debug_1 = Output(UInt(32.W))
         val debug_2 = Output(UInt(32.W))
     })
@@ -44,6 +46,7 @@ class Main() extends Module {
     alu.io.b := 0.U(32.W)
 
     val memory = Module(new Memory())
+    memory.io.btns := io.btns
 
     val vga_controller = Module(new VGAController())
     vga_controller.io.address := memory.io.address_vga
