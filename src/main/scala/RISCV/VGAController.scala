@@ -70,12 +70,20 @@ class VGAController extends Module {
         io.blanking := !active
 
         val read_address = WireInit(0.U(32.W))
-
+        val vCountShifted = Mux(active, vCount,vCount + 1.U) / 2.U
+        val vCountMult = (vCountShifted << 8) + (vCountShifted << 6);
         when(active) {
-            read_address := vCount / 2.U * 320.U + hCount / 2.U + 1.U
+            
+            read_address := vCountMult + hCount / 2.U + 1.U
         }.otherwise {
-            read_address := (vCount + 1.U) / 2.U * 320.U
+            read_address := vCountMult
         }
+//old
+        // when(active) {
+        //     read_address := vCount / 2.U * 320.U + hCount / 2.U + 1.U
+        // }.otherwise {
+        //     read_address := (vCount + 1.U) / 2.U * 320.U
+        // }
 
         val color = memory.read(read_address, true.B)
         val pixel = color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
@@ -83,5 +91,6 @@ class VGAController extends Module {
         io.rgb := Mux(active, pixel, 0.U)
 
     }
+
   
 }
