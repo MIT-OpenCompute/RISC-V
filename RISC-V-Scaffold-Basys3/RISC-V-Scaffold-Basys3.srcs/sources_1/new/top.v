@@ -54,7 +54,7 @@ module Top(
     wire [31:0] debug_1, debug_2;
 
     Main cpu (
-        .clock                  (clk_25),
+        .clock                  (clk),
         .reset                  (reset),
         .io_execute             (execute),
         .io_debug_write         (debug_write),
@@ -66,8 +66,8 @@ module Top(
         .io_vsync               (vgaVSync),
         .io_rgb                 (rgb),
         .io_blanking            (blanking),
-        .io_vga_clk          (clk_25)
-//        .io_btns(btns)
+        .io_vga_clk          (clk_25),
+        .io_btns(btns)
         
     );
 

@@ -38,7 +38,7 @@ class VGAController extends Module {
         memory.write(io.address, io.write_value)
     }
 
-    withClock(io.read_clk) {
+    withClockAndReset(io.read_clk,reset) {
         val hCount = RegInit(0.U(10.W))
         val vCount = RegInit(0.U(10.W))
 
