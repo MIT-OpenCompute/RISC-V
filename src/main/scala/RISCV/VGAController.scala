@@ -78,12 +78,7 @@ class VGAController extends Module {
         }.otherwise {
             read_address := vCountMult
         }
-//old
-        // when(active) {
-        //     read_address := vCount / 2.U * 320.U + hCount / 2.U + 1.U
-        // }.otherwise {
-        //     read_address := (vCount + 1.U) / 2.U * 320.U
-        // }
+
 
         val color = memory.read(read_address, true.B)
         val pixel = color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
