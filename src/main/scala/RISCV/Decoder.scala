@@ -20,6 +20,9 @@ class Decoder(val width: Int = 32) extends Module {
         val rs2 = Output(UInt(5.W));
         val rd = Output(UInt(5.W));
         val immediate = Output(UInt(32.W));
+        val opcode = Output(UInt(7.W));
+        val func3 = Output(UInt(3.W));
+        val func7 = Output(UInt(7.W));
     })
 
     io.rs1 := io.instruction(19, 15);
@@ -29,11 +32,11 @@ class Decoder(val width: Int = 32) extends Module {
     val format = Wire(InstructionFormat());
     format := InstructionFormat.R;
 
-    val opcode = io.instruction(6, 0);
-    val func3 = io.instruction(14, 12);
-    val func7 = io.instruction(31, 25);
+    io.opcode := io.instruction(6, 0);
+    io.func3 := io.instruction(14, 12);
+    io.func7 := io.instruction(31, 25);
 
-    switch(opcode) {
+    switch(io.opcode) {
         is(0b0110111.U) { format := InstructionFormat.U; } // lui
         is(0b0010111.U) { format := InstructionFormat.U; } // auipc
         is(0b0010011.U) { format := InstructionFormat.I; } // addi, slti, sltiu, xori, ori, andi, slli, srli, srai
@@ -54,27 +57,27 @@ class Decoder(val width: Int = 32) extends Module {
 
     switch(format) {
         is(InstructionFormat.R) {
-            io.operation := io.instruction(31, 25) ## io.instruction(14, 12) ## io.instruction(6, 0);
+            io.operation := io.func7 ## io.func3 ## io.opcode;
         }
         is(InstructionFormat.I) {
-            io.operation := io.instruction(14, 12) ## io.instruction(6, 0);
+            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(30, 20);
         }
         is(InstructionFormat.S) {
-            io.operation := io.instruction(14, 12) ## io.instruction(6, 0);
+            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(31, 25) ## io.instruction(11, 7);
         }
         is(InstructionFormat.B) {
-            io.operation := io.instruction(14, 12) ## io.instruction(6, 0);
+            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(20, io.instruction(31, 31)) ## io.instruction(7, 7) ## io.instruction(31, 25) ## io.instruction(11, 8) ## 0
                 .U(1.W);
         }
         is(InstructionFormat.U) {
-            io.operation := io.instruction(6, 0);
+            io.operation := io.opcode;
             io.immediate := io.instruction(31, 12) ## 0.U(12.W);
         }
         is(InstructionFormat.J) {
-            io.operation := io.instruction(6, 0);
+            io.operation := io.opcode;
             io.immediate := Fill(12, io.instruction(31, 31)) ## io.instruction(19, 12) ## io.instruction(20, 20) ## io.instruction(
               30,
               21

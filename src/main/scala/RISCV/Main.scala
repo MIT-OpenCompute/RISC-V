@@ -6,6 +6,8 @@ import _root_.circt.stage.ChiselStage
 import scala.math._
 import os.read
 
+
+
 class Main() extends Module {
     val io = IO(new Bundle {
         val execute = Input(Bool());
@@ -85,6 +87,10 @@ class Main() extends Module {
     val rs1_buffer = RegInit(0.U(5.W));
     val rs2_buffer = RegInit(0.U(5.W));
     val rd_buffer = RegInit(0.U(5.W));
+    val opcode_buffer = RegInit(0.U(7.W));
+    val funct3_buffer = RegInit(0.U(3.W));
+    val funct7_buffer = RegInit(0.U(7.W));
+
 
     when(io.execute) {
         printf("\n");
@@ -122,6 +128,74 @@ class Main() extends Module {
             rs1_buffer := decoder.io.rs1
             rs2_buffer := decoder.io.rs2
             rd_buffer := decoder.io.rd
+            opcode_buffer := decoder.io.opcode
+            funct3_buffer := decoder.io.func3
+            funct7_buffer := decoder.io.func7
+
+
+            val pc_plus_4 = program_pointer + 4.U
+            val pc_plus_imm = (program_pointer.zext + decoder.io.immediate.asSInt).asUInt
+            val addr = registers.io.out_a + decoder.io.immediate
+
+            switch(decoder.io.opcode){
+                //Load
+                is("b0000011".U) {
+                
+
+
+                }
+                //Store
+                is("b0100011".U){
+
+                }
+                //ALU Imm
+                is("b0010011".U){
+
+                }
+                //ALU Reg
+                is("b0110011".U){
+
+                }
+                //Branch
+                is("b1100011".U){
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+                    stage := 0.U;
+                    val eq = registers.io.out_a === registers.io.out_b
+                    val lt_signed = registers.io.out_a.asSInt < registers.io.out_b.asSInt
+                    val lt_unsigned = registers.io.out_a < registers.io.out_b
+                    val lt_sel = Mux(decoder.io.func3(1), lt_unsigned,lt_signed)
+                    val lt_eq_sel = Mux(decoder.io.func3(2),lt_sel,eq)
+                    val take_branch = lt_eq_sel ^ decoder.io.func3(0)
+
+                    program_pointer := Mux(take_branch, pc_plus_imm, pc_plus_4)
+                }
+                //LUI
+                is("b0110111".U){
+
+                }
+                //AUIPC
+                is("b0010111".U){
+
+                }
+                //JAL
+                is("b1101111".U){
+
+                }
+                //JALR
+                is("b1100111".U){
+                    
+                }
+                //FENCE
+                is("b0001111".U){
+
+                }
+               
+
+
+            }
+
+
 
             switch(decoder.io.operation) {
                 // LB
