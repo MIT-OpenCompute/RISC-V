@@ -140,22 +140,38 @@ class Main() extends Module {
             switch(decoder.io.opcode){
                 //Load
                 is("b0000011".U) {
-                
 
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (addr) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (addr) / 4.U + 1.U;
 
                 }
                 //Store
                 is("b0100011".U){
+                    registers.io.read_address_a := decoder.io.rs1;
+                    registers.io.read_address_b := decoder.io.rs2;
+
+                    memory.io.read_1 := true.B
+                    memory.io.address_1 := (addr) / 4.U;
+                    memory.io.read_2 := true.B
+                    memory.io.address_2 := (addr) / 4.U + 1.U;
 
                 }
-                //ALU Imm
-                is("b0010011".U){
+                //ALU Imm,Reg
+                is("b0010011".U, "b0110011".U){
+                    registers.io.read_address_a := decoder.io.rs1
+                    registers.io.read_address_b := decoder.io.rs2
+                    registers.io.write_address := decoder.io.rd
+                    registers.io.write_enable := true.B
+                    program_pointer := pc_plus_4
+                    stage := 0.U
 
+                    val alu_b = Mux(deocer.io.opcode === "b0010011".U, decoder.io.immediate, registers.io.out_b)
                 }
-                //ALU Reg
-                is("b0110011".U){
 
-                }
                 //Branch
                 is("b1100011".U){
                     registers.io.read_address_a := decoder.io.rs1;
@@ -167,35 +183,83 @@ class Main() extends Module {
                     val lt_sel = Mux(decoder.io.func3(1), lt_unsigned,lt_signed)
                     val lt_eq_sel = Mux(decoder.io.func3(2),lt_sel,eq)
                     val take_branch = lt_eq_sel ^ decoder.io.func3(0)
-
                     program_pointer := Mux(take_branch, pc_plus_imm, pc_plus_4)
                 }
                 //LUI
                 is("b0110111".U){
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := decoder.io.immediate;
 
+                    program_pointer := pc_plus_4;
+                    stage := 0.U;
+
+                    printf(
+                      "[LUI] Rd: %d Immediate: %b\n",
+                      decoder.io.rd,
+                      decoder.io.immediate
+                    );
                 }
                 //AUIPC
                 is("b0010111".U){
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := pc_plus_imm;
 
+                    program_pointer := pc_plus_4;
+                    stage := 0.U;
+
+                    printf(
+                      "[AUIPC] Rd: %d Immediate: %b\n",
+                      decoder.io.rd,
+                      decoder.io.immediate
+                    );
                 }
                 //JAL
                 is("b1101111".U){
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in := pc_plus_4
 
+                    program_pointer := pc_plus_imm;
+                    stage := 0.U;
+
+                    printf(
+                      "[JAL] Rd: %d Immediate: %b\n",
+                      decoder.io.rd,
+                      decoder.io.immediate
+                    );
                 }
                 //JALR
                 is("b1100111".U){
+                    registers.io.read_address_a := decoder.io.rs1;
+
+                    registers.io.write_address := decoder.io.rd;
+                    registers.io.write_enable := true.B;
+                    registers.io.in :=pc_plus_4;
+
+                    program_pointer := addr & ~1.U(32.W)
+                    stage := 0.U;
+
+                    printf(
+                      "[JALR] RS1: %d Rd: %d Immediate: %b\n",
+                      decoder.io.rs1,
+                      decoder.io.rd,
+                      decoder.io.immediate
+                    );
                     
                 }
                 //FENCE
                 is("b0001111".U){
+                    program_pointer := pc_plus_4;
+                    stage := 0.U;
+                    printf("[FENCE]");
 
                 }
                
 
 
             }
-
-
 
             switch(decoder.io.operation) {
                 // LB
