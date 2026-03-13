@@ -134,7 +134,7 @@ class Main() extends Module {
 
 
             val pc_plus_4 = program_pointer + 4.U
-            val pc_plus_imm = (program_pointer.zext + decoder.io.immediate.asSInt).asUInt
+            val pc_plus_imm = program_pointer + decoder.io.immediate
             val addr = registers.io.out_a + decoder.io.immediate
 
             switch(decoder.io.opcode){
@@ -169,7 +169,51 @@ class Main() extends Module {
                     program_pointer := pc_plus_4
                     stage := 0.U
 
-                    val alu_b = Mux(deocer.io.opcode === "b0010011".U, decoder.io.immediate, registers.io.out_b)
+                    val alu_b = Mux(decoder.io.opcode === "b0010011".U, decoder.io.immediate, registers.io.out_b)
+
+                    switch(decoder.io.func3){
+                        is("b000".U){
+                            when(decoder.io.opcode === "b0110011".U && decoder.io.func7(5)) {
+                                registers.io.in := registers.io.out_a - alu_b
+                            }.otherwise {
+                                registers.io.in := registers.io.out_a + alu_b
+                            }
+                        }
+                        //SLLI
+                        is("b001".U){
+                            registers.io.in := registers.io.out_a << alu_b(4,0) 
+                        }
+                        //SLTI
+                        is("b010".U){
+                            registers.io.in := Mux(registers.io.out_a.asSInt < alu_b.asSInt, 1.U, 0.U)
+                        }
+                        //SLTIU
+                        is("b011".U){
+                            registers.io.in := Mux(registers.io.out_a < alu_b, 1.U, 0.U)
+                        }
+                        //XOR
+                        is("b100".U){
+                            registers.io.in := registers.io.out_a ^ alu_b;
+                        }
+                        //SRAI, SRLI
+                        is("b101".U) {
+                            when(decoder.io.func7(5)) {
+                                registers.io.in := (registers.io.out_a.asSInt >> alu_b(4, 0)).asUInt
+                            }.otherwise {
+                                registers.io.in := registers.io.out_a >> alu_b(4, 0)
+                            }
+                        }
+                        // OR
+                        is("b110".U) {
+                            registers.io.in := registers.io.out_a | alu_b
+                        }
+                        //AND
+                        is("b111".U) {
+                            registers.io.in := registers.io.out_a & alu_b
+                        }
+
+
+                    }
                 }
 
                 //Branch
@@ -261,1011 +305,106 @@ class Main() extends Module {
 
             }
 
-            switch(decoder.io.operation) {
-                // LB
-                is("b000_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[LB] Rs1: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // LH
-                is("b001_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[LH] Rs1: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // LW
-                is("b010_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[LW] Rs1: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // LBU
-                is("b100_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[LBU] Rs1: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // LHU
-                is("b101_0000011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[LHU] Rs1: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // SB
-                is("b000_0100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-
-                    printf(
-                      "[SB] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // SH
-                is("b001_0100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[SH] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      registers.io.out_a + decoder.io.immediate
-                    );
-                }
-
-                // SW
-                is("b010_0100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    memory.io.read_1 := true.B
-                    memory.io.address_1 := (registers.io.out_a + decoder.io.immediate) / 4.U;
-                    memory.io.read_2 := true.B
-                    memory.io.address_2 := (registers.io.out_a + decoder.io.immediate) / 4.U + 1.U;
-
-                    printf(
-                      "[SW] Rs1: %d Rs2: %d Immediate: %b Raw Address: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      registers.io.out_a + decoder.io.immediate,
-                      (registers.io.out_a + decoder.io.immediate) / 4.U
-                    );
-                }
-
-                // LUI
-                is("b0110111".U) {
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[LUI] Rd: %d Immediate: %b\n",
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // AUIPC
-                is("b0010111".U) {
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := program_pointer + decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[AUIPC] Rd: %d Immediate: %b\n",
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // ADDI
-                is("b000_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a + decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[ADDI] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // SLTI
-                is("b010_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(
-                      registers.io.out_a.asSInt < decoder.io.immediate.asSInt
-                    ) {
-                        registers.io.in := 1.U;
-                    }.otherwise {
-                        registers.io.in := 0.U;
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLTI] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // SLTIU
-                is("b011_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(registers.io.out_a < decoder.io.immediate) {
-                        registers.io.in := 1.U;
-                    }.otherwise {
-                        registers.io.in := 0.U;
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLTIU] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // XORI
-                is("b100_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a ^ decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[XORI] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // ORI
-                is("b110_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a | decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[ORI] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // ANDI
-                is("b111_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a & decoder.io.immediate;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[ANDI] Rs1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // ADD
-                is("b0000000_000_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a + registers.io.out_b;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[ADD] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // SUB
-                is("b0110000_000_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a - registers.io.out_b;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SUB] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // SLLI
-                is("b001_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a << decoder.io
-                        .immediate(5, 0);
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLLI] Rs1: %d Rd: %d Shift: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate(5, 0)
-                    );
-                }
-
-                // SRLI and SRAI
-                is("b101_0010011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(decoder.io.immediate(10) === 1.U) { // SRAI
-                        registers.io.in := (registers.io.out_a.asSInt >> decoder.io
-                            .immediate(5, 0)).asUInt;
-                    }.otherwise { // SLAI
-                        registers.io.in := registers.io.out_a >> decoder.io
-                            .immediate(5, 0);
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    when(decoder.io.immediate(10) === 1.U) { // SRAI
-                        printf(
-                          "[SRAI] Rs1: %d Rd: %d Shift: %d\n",
-                          decoder.io.rs1,
-                          decoder.io.rd,
-                          decoder.io.immediate(5, 0)
-                        );
-                    }.otherwise { // SLAI
-                        printf(
-                          "[SRLI] Rs1: %d Rd: %d Shift: %d\n",
-                          decoder.io.rs1,
-                          decoder.io.rd,
-                          decoder.io.immediate(5, 0)
-                        );
-                    }
-                }
-
-                // SLL
-                is("b001_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a << registers.io.out_b(
-                      5,
-                      0
-                    );
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLL] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // SRL and SRA
-                is("b101_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(decoder.io.immediate(10) === 1.U) { // SRA
-                        registers.io.in := (registers.io.out_a.asSInt >> decoder.io
-                            .immediate(5, 0)).asUInt;
-                    }.otherwise { // SLA
-                        registers.io.in := registers.io.out_a >> decoder.io
-                            .immediate(5, 0);
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    when(decoder.io.immediate(10) === 1.U) { // SRA
-                        printf(
-                          "[SRA] Rs1: %d Rd: %d Shift: %d\n",
-                          decoder.io.rs1,
-                          decoder.io.rd,
-                          decoder.io.immediate(5, 0)
-                        );
-                    }.otherwise { // SLA
-                        printf(
-                          "[SRL] Rs1: %d Rd: %d Shift: %d\n",
-                          decoder.io.rs1,
-                          decoder.io.rd,
-                          decoder.io.immediate(5, 0)
-                        );
-                    }
-                }
-
-                // SLT
-                is("b010_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(
-                      registers.io.out_a.asSInt < registers.io.out_b.asSInt
-                    ) {
-                        registers.io.in := 1.U;
-                    }.otherwise {
-                        registers.io.in := 0.U;
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLT] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // SLTU
-                is("b011_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-
-                    when(registers.io.out_a < registers.io.out_b) {
-                        registers.io.in := 1.U;
-                    }.otherwise {
-                        registers.io.in := 0.U;
-                    }
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[SLTU] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // XOR
-                is("b100_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a ^ registers.io.out_b;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[XOR] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // OR
-                is("b110_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a | registers.io.out_b;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[OR] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // AND
-                is("b111_0110011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := registers.io.out_a & registers.io.out_b;
-
-                    program_pointer := program_pointer + 4.U;
-                    stage := 0.U;
-
-                    printf(
-                      "[AND] Rs1: %d Rs2: %d Rd: %d\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.rd
-                    );
-                }
-
-                // JAL
-                is("b1101111".U) {
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := program_pointer + 4.U;
-
-                    program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    stage := 0.U;
-
-                    printf(
-                      "[JAL] Rd: %d Immediate: %b\n",
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // JALR
-                is("b000_1100111".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-
-                    registers.io.write_address := decoder.io.rd;
-                    registers.io.write_enable := true.B;
-                    registers.io.in := program_pointer + 4.U;
-
-                    program_pointer := (registers.io.out_a.zext + decoder.io.immediate.asSInt).asUInt;
-                    stage := 0.U;
-
-                    printf(
-                      "[JALR] RS1: %d Rd: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rd,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BEQ
-                is("b000_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(registers.io.out_a === registers.io.out_b) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BEQ] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BNEQ
-                is("b001_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(registers.io.out_a =/= registers.io.out_b) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BNEQ] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BLT
-                is("b100_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(
-                      registers.io.out_a.asSInt < registers.io.out_b.asSInt
-                    ) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BLT] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BGE
-                is("b101_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(
-                      registers.io.out_a.asSInt >= registers.io.out_b.asSInt
-                    ) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BGE] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BLTU
-                is("b110_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(registers.io.out_a < registers.io.out_b) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BLTU] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // BGEU
-                is("b111_1100011".U) {
-                    registers.io.read_address_a := decoder.io.rs1;
-                    registers.io.read_address_b := decoder.io.rs2;
-
-                    when(registers.io.out_a >= registers.io.out_b) {
-                        program_pointer := (program_pointer.zext + decoder.io.immediate.asSInt).asUInt;
-                    }.otherwise {
-                        program_pointer := program_pointer + 4.U;
-                    }
-
-                    stage := 0.U;
-
-                    printf(
-                      "[BGEU] Rs1: %d Rs2: %d Immediate: %b\n",
-                      decoder.io.rs1,
-                      decoder.io.rs2,
-                      decoder.io.immediate
-                    );
-                }
-
-                // FENCE - NoOP
-                is("b000_0001111".U) {
-                    program_pointer := program_pointer + 4.U;
-
-                    stage := 0.U;
-
-                    printf("[FENCE]");
-                }
-            }
         }
 
         when(stage === 2.U) {
-            stage := 0.U;
+            stage := 0.U
+            program_pointer := program_pointer + 4.U
 
-            switch(operation_buffer) {
-                // LB
-                is("b000_0000011".U) {
-                    registers.io.write_address := rd_buffer
-                    registers.io.write_enable := true.B
+            val addr = registers.io.out_a + immediate_buffer
+            val byte_offset = addr(1, 0)  
+            val shift_amount = byte_offset ## 0.U(3.W)  
 
-                    val address = registers.io.out_a + immediate_buffer
-                    val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
+            switch(opcode_buffer){
+                //Loads
+                is("b0000011".U){
 
-                    registers.io.in := Fill(24, data(7)) ## data(7, 0)
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf(
-                      "[LB] Rd: %d Data: %b\n",
-                      rd_buffer,
-                      Fill(24, data(7)) ## data(7, 0)
-                    )
-                }
-
-                // LH
-                is("b001_0000011".U) {
-                    registers.io.write_address := rd_buffer
-                    registers.io.write_enable := true.B
-
-                    val address = registers.io.out_a + immediate_buffer
-                    val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
-
-                    registers.io.in := Fill(16, data(15)) ## data(15, 0)
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf(
-                      "[LH] Rd: %d Data: %b\n",
-                      rd_buffer,
-                      Fill(16, data(15)) ## data(15, 0)
-                    )
-                }
-
-                // LW
-                is("b010_0000011".U) {
-                    registers.io.write_address := rd_buffer
-                    registers.io.write_enable := true.B
-
-                    val address = registers.io.out_a + immediate_buffer
-                    val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
-
-                    registers.io.in := data
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf(
-                      "[LW] Rd: %d Data: %b\n",
-                      rd_buffer,
-                      data
-                    )
-                }
-
-                // LBU
-                is("b100_0000011".U) {
-                    registers.io.write_address := rd_buffer
-                    registers.io.write_enable := true.B
-
-                    val address = registers.io.out_a + immediate_buffer
-                    val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
-
-                    registers.io.in := 0.U(24.W) ## data(7, 0)
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf(
-                      "[LBU] Rd: %d Data: %b\n",
-                      rd_buffer,
-                      0.U(24.W) ## data(7, 0)
-                    )
-                }
-
-                // LHU
-                is("b101_0000011".U) {
-                    registers.io.write_address := rd_buffer
-                    registers.io.write_enable := true.B
-
-                    val address = registers.io.out_a + immediate_buffer
-                    val data =
-                        (memory.io.read_value_1 >> (address % 4.U) * 8.U) | (memory.io.read_value_2 << (4.U - (address % 4.U)) * 8.U)
-
-                    registers.io.in := 0.U(16.W) ## data(15, 0)
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf(
-                      "[LHU] Rd: %d Data: %b\n",
-                      rd_buffer,
-                      0.U(16.W) ## data(15, 0)
-                    )
-                }
-
-                // SB
-                is("b000_0100011".U) {
                     registers.io.read_address_a := rs1_buffer
-                    registers.io.read_address_b := rs2_buffer
+                    registers.io.write_address := rd_buffer
+                    registers.io.write_enable := true.B
 
-                    val address = registers.io.out_a + immediate_buffer
+                    val raw_data = (memory.io.read_value_1 >> shift_amount | memory.io.read_value_2 << (32.U - shift_amount))
 
-                    val value_1 =
-                        WireDefault(memory.io.read_value_1)
-
-                    switch(address % 4.U) {
-                        is(0.U) {
-                            value_1 := Cat(
-                              memory.io.read_value_1(31, 8),
-                              registers.io.out_b(7, 0)
-                            )
+                    switch(funct3_buffer){
+                        //LB
+                        is("b000".U){ 
+                            registers.io.in := Fill(24, raw_data(7)) ## raw_data(7, 0)
                         }
-                        is(1.U) {
-                            value_1 := Cat(
-                              memory.io.read_value_1(31, 16),
-                              registers.io.out_b(7, 0),
-                              memory.io.read_value_1(7, 0)
-                            )
+                        //LH
+                        is("b001".U){
+                            registers.io.in := Fill(16, raw_data(15)) ## raw_data(15, 0)
                         }
-                        is(2.U) {
-                            value_1 := Cat(
-                              memory.io.read_value_1(31, 24),
-                              registers.io.out_b(7, 0),
-                              memory.io.read_value_1(15, 0)
-                            )
+                        //LW
+                        is("b010".U){
+                            registers.io.in := raw_data
                         }
-                        is(3.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
-                            )
+                        //LBU
+                        is("b100".U){
+                            registers.io.in := 0.U(24.W) ## raw_data(7, 0)
+                        }
+                        //LHU
+                        is("b101".U){
+                            registers.io.in := 0.U(16.W) ## raw_data(15, 0)
                         }
                     }
-
-                    memory.io.write_1 := true.B
-                    memory.io.address_1 := address / 4.U
-                    memory.io.write_value_1 := value_1
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf("[SB] Address: %d Value 1: %b\n", address, value_1)
                 }
-
-                // SH
-                is("b001_0100011".U) {
+                is("b0100011".U){
                     registers.io.read_address_a := rs1_buffer
                     registers.io.read_address_b := rs2_buffer
 
-                    val address = registers.io.out_a + immediate_buffer
+                    memory.io.write_1 := true.B
+                    memory.io.address_1 := addr / 4.U
+                    memory.io.write_2 := true.B
+                    memory.io.address_2 := addr / 4.U + 1.U
 
                     val value_1 = WireDefault(memory.io.read_value_1)
                     val value_2 = WireDefault(memory.io.read_value_2)
 
-                    switch(address % 4.U) {
-                        is(0.U) {
-                            value_1 := Cat(
-                              memory.io.read_value_1(31, 16),
-                              registers.io.out_b(15, 0)
-                            )
+                    switch(funct3_buffer){
+                        is("b000".U) { // SB
+                            switch(byte_offset) {
+                                is(0.U) { value_1 := Cat(memory.io.read_value_1(31, 8), registers.io.out_b(7, 0)) }
+                                is(1.U) { value_1 := Cat(memory.io.read_value_1(31, 16), registers.io.out_b(7, 0), memory.io.read_value_1(7, 0)) }
+                                is(2.U) { value_1 := Cat(memory.io.read_value_1(31, 24), registers.io.out_b(7, 0), memory.io.read_value_1(15, 0)) }
+                                is(3.U) { value_1 := Cat(registers.io.out_b(7, 0), memory.io.read_value_1(23, 0)) }
+                            }
                         }
-
-                        is(1.U) {
-                            value_1 := Cat(
-                              memory.io.read_value_1(31, 24),
-                              registers.io.out_b(15, 0),
-                              memory.io.read_value_1(7, 0)
-                            )
+                        is("b001".U){ //SH
+                            switch(byte_offset) {
+                                is(0.U) { value_1 := Cat(memory.io.read_value_1(31, 16), registers.io.out_b(15, 0)) }
+                                is(1.U) { value_1 := Cat(memory.io.read_value_1(31, 24), registers.io.out_b(15, 0), memory.io.read_value_1(7, 0)) }
+                                is(2.U) { value_1 := Cat(registers.io.out_b(15, 0), memory.io.read_value_1(15, 0)) }
+                                is(3.U) {
+                                    value_1 := Cat(registers.io.out_b(7, 0), memory.io.read_value_1(23, 0))
+                                    value_2 := Cat(memory.io.read_value_2(31, 8), registers.io.out_b(15, 8))
+                                }
+                            }
                         }
-
-                        is(2.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(15, 0),
-                              memory.io.read_value_1(15, 0)
-                            )
-                        }
-
-                        is(3.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
-                            )
-                            value_2 := Cat(
-                              memory.io.read_value_2(31, 8),
-                              registers.io.out_b(15, 8)
-                            )
-                        }
-                    }
-
-                    memory.io.write_1 := true.B
-                    memory.io.address_1 := address / 4.U
-                    memory.io.write_value_1 := value_1
-
-                    memory.io.write_2 := true.B
-                    memory.io.address_2 := address / 4.U + 1.U
-                    memory.io.write_value_2 := value_2
-
-                    program_pointer := program_pointer + 4.U
-
-                    printf("[SH]\n")
-                }
-
-                // SW
-                is("b010_0100011".U) {
-                    registers.io.read_address_a := rs1_buffer
-                    registers.io.read_address_b := rs2_buffer
-
-                    val address = registers.io.out_a + immediate_buffer
-
-                    val value_1 = WireDefault(memory.io.read_value_1)
-                    val value_2 = WireDefault(memory.io.read_value_2)
-
-                    switch(address % 4.U) {
-                        is(0.U) {
-                            value_1 := registers.io.out_b
-                        }
-
-                        is(1.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(23, 0),
-                              memory.io.read_value_1(7, 0)
-                            )
-                            value_2 := Cat(
-                              memory.io.read_value_2(31, 8),
-                              registers.io.out_b(31, 24)
-                            )
-                        }
-
-                        is(2.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(15, 0),
-                              memory.io.read_value_1(15, 0)
-                            )
-                            value_2 := Cat(
-                              memory.io.read_value_2(31, 16),
-                              registers.io.out_b(31, 16)
-                            )
-                        }
-
-                        is(3.U) {
-                            value_1 := Cat(
-                              registers.io.out_b(7, 0),
-                              memory.io.read_value_1(23, 0)
-                            )
-                            value_2 := Cat(
-                              memory.io.read_value_2(31, 24),
-                              registers.io.out_b(31, 8)
-                            )
+                        is("b010".U) { // SW
+                            switch(byte_offset) {
+                                is(0.U) { value_1 := registers.io.out_b }
+                                is(1.U) {
+                                    value_1 := Cat(registers.io.out_b(23, 0), memory.io.read_value_1(7, 0))
+                                    value_2 := Cat(memory.io.read_value_2(31, 8), registers.io.out_b(31, 24))
+                                }
+                                is(2.U) {
+                                    value_1 := Cat(registers.io.out_b(15, 0), memory.io.read_value_1(15, 0))
+                                    value_2 := Cat(memory.io.read_value_2(31, 16), registers.io.out_b(31, 16))
+                                }
+                                is(3.U) {
+                                    value_1 := Cat(registers.io.out_b(7, 0), memory.io.read_value_1(23, 0))
+                                    value_2 := Cat(memory.io.read_value_2(31, 24), registers.io.out_b(31, 8))
+                                }
+                            }
                         }
                     }
-
-                    memory.io.write_1 := true.B
-                    memory.io.address_1 := address / 4.U
                     memory.io.write_value_1 := value_1
-
-                    memory.io.write_2 := true.B
-                    memory.io.address_2 := address / 4.U + 1.U
                     memory.io.write_value_2 := value_2
 
-                    program_pointer := program_pointer + 4.U
-
-                    printf("[SW]\n")
                 }
             }
+
+        
         }
     }
 }

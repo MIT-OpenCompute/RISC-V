@@ -18,12 +18,25 @@ module Top(
     // -------------------------------------------------------
     // Clock divider: 100MHz -> 25MHz
     // -------------------------------------------------------
-    reg [1:0] clk_div;
-    always @(posedge clk) begin
-        if (btnC) clk_div <= 2'h0;
-        else      clk_div <= clk_div + 2'h1;
-    end
-    wire clk_25 = clk_div[1];
+      wire cpu_clk;
+      wire clk_25;
+      wire locked;
+      clk_wiz_0 instance_name
+       (
+        // Clock out ports
+        .clk_out1(clk_25),     // output clk_out1
+        .clk_out2(cpu_clk),     // output clk_out2
+        // Status and control signals
+        .reset(btnC), // input reset
+        .locked(locked),       // output locked
+        .clk_in1(clk)      // input clk_in1
+    );
+//    reg [1:0] clk_div;
+//    always @(posedge clk) begin
+//        if (btnC) clk_div <= 2'h0;
+//        else      clk_div <= clk_div + 2'h1;
+//    end
+//    wire clk_25 = clk_div[1];
     wire [3:0] btns = {btnU,btnR,btnL,btnD};
     // -------------------------------------------------------
     // UART program loader
@@ -54,7 +67,7 @@ module Top(
     wire [31:0] debug_1, debug_2;
 
     Main cpu (
-        .clock                  (clk),
+        .clock                  (cpu_clk),
         .reset                  (reset),
         .io_execute             (execute),
         .io_debug_write         (debug_write),
