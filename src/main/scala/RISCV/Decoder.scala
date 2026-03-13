@@ -15,7 +15,6 @@ object InstructionFormat extends ChiselEnum {
 class Decoder(val width: Int = 32) extends Module {
     val io = IO(new Bundle {
         val instruction = Input(UInt(32.W));
-        val operation = Output(UInt(17.W));
         val rs1 = Output(UInt(5.W));
         val rs2 = Output(UInt(5.W));
         val rd = Output(UInt(5.W));
@@ -52,32 +51,25 @@ class Decoder(val width: Int = 32) extends Module {
         is(0b1100011.U) { format := InstructionFormat.B; } // beq, bne, blt, bge, bltu, bgeu
     }
 
-    io.operation := 0.U;
+
     io.immediate := 0.U;
 
     switch(format) {
-        is(InstructionFormat.R) {
-            io.operation := io.func7 ## io.func3 ## io.opcode;
-        }
+
         is(InstructionFormat.I) {
-            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(30, 20);
         }
         is(InstructionFormat.S) {
-            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(31, 25) ## io.instruction(11, 7);
         }
         is(InstructionFormat.B) {
-            io.operation := io.func3 ## io.opcode;
             io.immediate := Fill(20, io.instruction(31, 31)) ## io.instruction(7, 7) ## io.instruction(31, 25) ## io.instruction(11, 8) ## 0
                 .U(1.W);
         }
         is(InstructionFormat.U) {
-            io.operation := io.opcode;
             io.immediate := io.instruction(31, 12) ## 0.U(12.W);
         }
         is(InstructionFormat.J) {
-            io.operation := io.opcode;
             io.immediate := Fill(12, io.instruction(31, 31)) ## io.instruction(19, 12) ## io.instruction(20, 20) ## io.instruction(
               30,
               21
