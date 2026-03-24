@@ -95,7 +95,7 @@ class Main() extends Module {
     io.debug_2 := stage ## opcode_buffer
 
     val alu = Module(new ALU())
-    alu.io.func7 = funct7_buffer;
+    alu.io.func7 := funct7_buffer;
     alu.io.func3 := funct3_buffer;
     alu.io.a := out_a_buffer;
     alu.io.b := 0.U(32.W)
@@ -184,7 +184,7 @@ class Main() extends Module {
                     val neg = Mux(opcode_buffer === "b0110011".U && funct7_buffer(5), - out_b_buffer, out_b_buffer)
                     val alu_b = Mux(opcode_buffer === "b0010011".U, immediate_buffer, neg)
                     alu.io.b := alu_b
-                    registers.io.in = alu.io.output
+                    registers.io.in := alu.io.output
 
                 }
                 //Branch
