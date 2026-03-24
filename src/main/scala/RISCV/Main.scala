@@ -40,11 +40,7 @@ class Main() extends Module {
     registers.io.read_address_c := 0.U(5.W)
     registers.io.in := 0.U(32.W)
 
-    // val alu = Module(new ALU())
-    // alu.io.operation := 0.U(3.W)
-    // alu.io.signed := false.B
-    // alu.io.a := 0.U(32.W)
-    // alu.io.b := 0.U(32.W)
+
 
     val memory = Module(new Memory())
     memory.io.btns := io.btns
@@ -97,6 +93,12 @@ class Main() extends Module {
 
     io.debug_1 := program_pointer
     io.debug_2 := stage ## opcode_buffer
+
+    val alu = Module(new ALU())
+    alu.io.func7 = funct7_buffer;
+    alu.io.func3 := funct3_buffer;
+    alu.io.a := out_a_buffer;
+    alu.io.b := 0.U(32.W)
 
     when(io.execute) {
         printf("\n");
@@ -181,48 +183,9 @@ class Main() extends Module {
                     stage := 0.U
                     val neg = Mux(opcode_buffer === "b0110011".U && funct7_buffer(5), - out_b_buffer, out_b_buffer)
                     val alu_b = Mux(opcode_buffer === "b0010011".U, immediate_buffer, neg)
-                    
-                    switch(funct3_buffer){
-                        is("b000".U){
+                    alu.io.b := alu_b
+                    registers.io.in = alu.io.output
 
-                            registers.io.in := out_a_buffer + alu_b
-                            
-                        }
-                        //SLLI
-                        is("b001".U){
-                            registers.io.in := out_a_buffer << alu_b(4,0) 
-                        }
-                        //SLTI
-                        is("b010".U){
-                            registers.io.in := Mux(out_a_buffer.asSInt < alu_b.asSInt, 1.U, 0.U)
-                        }
-                        //SLTIU
-                        is("b011".U){
-                            registers.io.in := Mux(out_a_buffer < alu_b, 1.U, 0.U)
-                        }
-                        //XOR
-                        is("b100".U){
-                            registers.io.in := out_a_buffer ^ alu_b;
-                        }
-                        //SRAI, SRLI
-                        is("b101".U) {
-                            when(funct7_buffer(5)) {
-                                registers.io.in := (out_a_buffer.asSInt >> alu_b(4, 0)).asUInt
-                            }.otherwise {
-                                registers.io.in := out_a_buffer >> alu_b(4, 0)
-                            }
-                        }
-                        // OR
-                        is("b110".U) {
-                            registers.io.in := out_a_buffer | alu_b
-                        }
-                        //AND
-                        is("b111".U) {
-                            registers.io.in := out_a_buffer & alu_b
-                        }
-
-
-                    }
                 }
                 //Branch
                 is("b1100011".U){
