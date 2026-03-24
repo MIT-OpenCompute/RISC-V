@@ -40,11 +40,11 @@ class Main() extends Module {
     registers.io.read_address_c := 0.U(5.W)
     registers.io.in := 0.U(32.W)
 
-    val alu = Module(new ALU())
-    alu.io.operation := 0.U(3.W)
-    alu.io.signed := false.B
-    alu.io.a := 0.U(32.W)
-    alu.io.b := 0.U(32.W)
+    // val alu = Module(new ALU())
+    // alu.io.operation := 0.U(3.W)
+    // alu.io.signed := false.B
+    // alu.io.a := 0.U(32.W)
+    // alu.io.b := 0.U(32.W)
 
     val memory = Module(new Memory())
     memory.io.btns := io.btns
@@ -179,16 +179,14 @@ class Main() extends Module {
                     registers.io.write_enable := true.B
                     program_pointer := pc_plus_4
                     stage := 0.U
-
-                    val alu_b = Mux(opcode_buffer === "b0010011".U, immediate_buffer, out_b_buffer)
-
+                    val neg = Mux(opcode_buffer === "b0110011".U && funct7_buffer(5), - out_b_buffer, out_b_buffer)
+                    val alu_b = Mux(opcode_buffer === "b0010011".U, immediate_buffer, neg)
+                    
                     switch(funct3_buffer){
                         is("b000".U){
-                            when(opcode_buffer === "b0110011".U && funct7_buffer(5)) {
-                                registers.io.in := out_a_buffer - alu_b
-                            }.otherwise {
-                                registers.io.in := out_a_buffer + alu_b
-                            }
+
+                            registers.io.in := out_a_buffer + alu_b
+                            
                         }
                         //SLLI
                         is("b001".U){
