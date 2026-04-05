@@ -9,6 +9,7 @@ class ALU(val width: Int = 32) extends Module {
     val io = IO(new Bundle {
         val func7 = Input(UInt(7.W));
         val func3 = Input(UInt(3.W));
+        val isM = Input(Bool());
         val a = Input(UInt(width.W)); // First operand
         val b = Input(UInt(width.W)); // Second operand
         val output = Output(UInt(width.W)); // Result of the operation
@@ -124,6 +125,7 @@ class ALU(val width: Int = 32) extends Module {
         }
 
     }
-    io.output := Mux(io.func7(0), m_alu, i_alu)
+    io.output := Mux(io.isM, m_alu, i_alu)
+    // io.output := i_alu
 
   }

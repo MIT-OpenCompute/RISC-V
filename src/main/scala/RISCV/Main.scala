@@ -99,7 +99,7 @@ class Main() extends Module {
     alu.io.func3 := funct3_buffer;
     alu.io.a := out_a_buffer;
     alu.io.b := 0.U(32.W)
-
+    alu.io.isM := false.B
     when(io.execute) {
         printf("\n");
         printf("Stage: %d\n", stage);
@@ -184,6 +184,7 @@ class Main() extends Module {
                     val neg = Mux(opcode_buffer === "b0110011".U && funct7_buffer(5), - out_b_buffer, out_b_buffer)
                     val alu_b = Mux(opcode_buffer === "b0010011".U, immediate_buffer, neg)
                     alu.io.b := alu_b
+                    alu.io.isM := opcode_buffer === "b0110011".U && funct7_buffer === "b0000001".U
                     registers.io.in := alu.io.output
 
                 }
