@@ -14,39 +14,85 @@ class ALU(val width: Int = 32) extends Module {
         val output = Output(UInt(width.W)); // Result of the operation
     })
     io.output := 0.U;
+    val i_alu = Wire(UInt(width.W));
+    val m_alu = Wire(UInt(width.W));
     i_alu := 0.U;
-    i_alu = Wire(UInt(width.W));
-    m_alu = Wire(UInt(width.W));
+    m_alu := 0.U
 
 
-    val m_in_a = io.a;
-    val m_in_b = io.b;
-    val mult_out = Wire(64.W);
-    mult_out := m_in_a * m_in_b;
-    switch(io.func3){
-        is("b000".U,"b001".U,"b010".U,"b011".U){
-            
-            val m_in_a = Mux(io.func3(1) && io.func3(0),io.a, io.a.asSInt)
-            val m_in_b = Mux(io.func3(1) ,io.b, io.b.asSInt)
-            val mult_out = Wire(64.W)
+  
 
-            mult_out := m_in_a * m_in_b;
-            m_alu := Mux(io.func3 === "b000".U, mult_out(31,0), mult_out(63,32))
+
+
+    val a_s = io.a.asSInt
+    val b_s = io.b.asSInt
+
+    switch(io.func3) {
+        //MUL
+        is("b000".U) {
+            m_alu := (a_s * b_s).asUInt(31, 0)
+        }
+        //MULH
+        is("b001".U) {
+            m_alu := (a_s * b_s).asUInt(63, 32)
+        }
+        //MULHSU
+        is("b010".U) {
+            val a_ext = Cat(io.a(31), io.a).asSInt
+            val b_ext = Cat(0.U(1.W), io.b).asSInt
+            m_alu := (a_ext * b_ext).asUInt(63, 32)
+        }
+        //MULHU
+        is("b011".U) {
+            m_alu := (io.a * io.b)(63, 32)
+        }
+        //DIV
+        is("b100".U) {
+            when(io.b === 0.U) {
+                m_alu := Fill(width, 1.U)
+            }.elsewhen(io.a === (1.U << (width-1)) && b_s === (-1).S) {
+                m_alu := io.a
+            }.otherwise {
+                m_alu := (a_s / b_s).asUInt
+            }
+        }
+        //DIVU
+        is("b101".U) {
+            when(io.b === 0.U) {
+                m_alu := Fill(width, 1.U)
+            }.otherwise {
+                m_alu := io.a / io.b
+            }
+        }
+        //REM
+        is("b110".U) {
+            when(io.b === 0.U) {
+                m_alu := io.a
+            }.elsewhen(io.a === (1.U << (width-1)) && b_s === (-1).S){
+                m_alu := 0.U
+            }.otherwise {
+                m_alu := (a_s % b_s).asUInt
+            }
+        }
+        //REMU
+        is("b111".U) {
+            when(io.b === 0.U) {
+                m_alu := io.a
+            }.otherwise {
+                m_alu := io.a % io.b
+            }
         }
     }
     
     switch(io.func3){
         is("b000".U){
             i_alu := io.a + io.b
-            m_alu := mult_out(31,0)
 
         }
         //SLLI
         is("b001".U){
             i_alu := io.a << io.b(4,0) 
-            m_in_a := io.a.asSInt;
-            m_in_b := io.a.asSInt;
-            m_alu := mult_out(63,32)
+      
         }
         //SLTI
         is("b010".U){
@@ -78,6 +124,6 @@ class ALU(val width: Int = 32) extends Module {
         }
 
     }
-    io.output = Mux(func7(0), m_alu, i_alu);
+    io.output := Mux(io.func7(0), m_alu, i_alu)
 
   }
