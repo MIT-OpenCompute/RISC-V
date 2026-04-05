@@ -4,71 +4,128 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
-/** @param width
-  *   Bit width (default: 32 bits)
-  *
-  * The Arithmetic Logic Unit (ALU) for RISC-V Supports: Addition, Multiplication, Comparison, Bitwise operations
-  *
-  * I/O: operation: 4-bit operation code signed: boolean to indicate if operands are signed (Only used for comparisons) a: first operand b:
-  * second operand output: result of the operation
-  *
-  * Operation Codes: 0000: Addition 0001: Multiplication 0010: Comparison (outputs 3 bits: gt, eq, lt) 0011: Bitwise AND 0100: Bitwise OR
-  * 0101: Bitwise XOR 0110: Bitwise NOT (outputs NOT a) 0111: Logical shift left 1000: Logical shift right 1001: Arithmetic shift right
-  */
+
 class ALU(val width: Int = 32) extends Module {
     val io = IO(new Bundle {
-        val operation = Input(UInt(4.W)); // 4-bit operation code
-        val signed = Input(Bool()); // Treat operands as signed if true
+        val func7 = Input(UInt(7.W));
+        val func3 = Input(UInt(3.W));
+        val isM = Input(Bool());
         val a = Input(UInt(width.W)); // First operand
         val b = Input(UInt(width.W)); // Second operand
         val output = Output(UInt(width.W)); // Result of the operation
     })
-
     io.output := 0.U;
+    val i_alu = Wire(UInt(width.W));
+    val m_alu = Wire(UInt(width.W));
+    i_alu := 0.U;
+    m_alu := 0.U
 
-    switch(io.operation) {
-        is("b0000".U) {
-            io.output := io.a + io.b; // Addition
+
+  
+
+
+
+    val a_s = io.a.asSInt
+    val b_s = io.b.asSInt
+
+    switch(io.func3) {
+        //MUL
+        is("b000".U) {
+            m_alu := (a_s * b_s).asUInt(31, 0)
         }
-        is("b0001".U) {
-            io.output := io.a * io.b; // Multiplication
+        //MULH
+        is("b001".U) {
+            m_alu := (a_s * b_s).asUInt(63, 32)
         }
-        is("b0010".U) {
-            when(io.signed) {
-                val a_s = io.a.asSInt
-                val b_s = io.b.asSInt
-                val gt_s = a_s > b_s
-                val eq_s = a_s === b_s
-                val lt_s = a_s < b_s
-                io.output := Cat(0.U((width - 3).W), gt_s, eq_s, lt_s);
+        //MULHSU
+        is("b010".U) {
+            val a_ext = Cat(io.a(31), io.a).asSInt
+            val b_ext = Cat(0.U(1.W), io.b).asSInt
+            m_alu := (a_ext * b_ext).asUInt(63, 32)
+        } 
+        //MULHU
+        is("b011".U) {
+            m_alu := (io.a * io.b)(63, 32)
+        }
+        //DIV
+        is("b100".U) {
+            when(io.b === 0.U) {
+                m_alu := Fill(width, 1.U)
+            }.elsewhen(io.a === (1.U << (width-1)) && b_s === (-1).S) {
+                m_alu := io.a
             }.otherwise {
-                val gt = io.a > io.b; // Comparison
-                val eq = io.a === io.b;
-                val lt = io.a < io.b;
-
-                io.output := Cat(0.U((width - 3).W), gt, eq, lt);
+                m_alu := (a_s / b_s).asUInt
             }
         }
-        is("b0011".U) {
-            io.output := io.a & io.b; // Bitwise AND
+        //DIVU
+        is("b101".U) {
+            when(io.b === 0.U) {
+                m_alu := Fill(width, 1.U)
+            }.otherwise {
+                m_alu := io.a / io.b
+            }
         }
-        is("b0100".U) {
-            io.output := io.a | io.b; // Bitwise OR
+        //REM
+        is("b110".U) {
+            when(io.b === 0.U) {
+                m_alu := io.a
+            }.elsewhen(io.a === (1.U << (width-1)) && b_s === (-1).S){
+                m_alu := 0.U
+            }.otherwise {
+                m_alu := (a_s % b_s).asUInt
+            }
         }
-        is("b0101".U) {
-            io.output := io.a ^ io.b; // Bitwise XOR
-        }
-        is("b0110".U) {
-            io.output := ~io.a; // Bitwise NOT
-        }
-        is("b0111".U) {
-            io.output := io.a << io.b(4, 0); // Logical shift left
-        }
-        is("b1000".U) {
-            io.output := io.a >> io.b(4, 0); // Logical shift right
-        }
-        is("b1001".U) {
-            io.output := (io.a.asSInt >> io.b(4, 0)).asUInt // Arithmetic shift right
+        //REMU
+        is("b111".U) {
+            when(io.b === 0.U) {
+                m_alu := io.a
+            }.otherwise {
+                m_alu := io.a % io.b
+            }
         }
     }
-}
+    
+    switch(io.func3){
+        is("b000".U){
+            i_alu := io.a + io.b
+
+        }
+        //SLLI
+        is("b001".U){
+            i_alu := io.a << io.b(4,0) 
+      
+        }
+        //SLTI
+        is("b010".U){
+            i_alu := Mux(io.a.asSInt < io.b.asSInt, 1.U, 0.U)
+        }
+        //SLTIU
+        is("b011".U){
+            i_alu := Mux(io.a < io.b, 1.U, 0.U)
+        }
+        //XOR
+        is("b100".U){
+            i_alu := io.a ^ io.b;
+        }
+        //SRAI, SRLI
+        is("b101".U) {
+            when(io.func7(5)) {
+                i_alu := (io.a.asSInt >> io.b(4, 0)).asUInt
+            }.otherwise {
+                i_alu := io.a >> io.b(4, 0)
+            }
+        }
+        // OR
+        is("b110".U) {
+            i_alu := io.a | io.b
+        }
+        //AND
+        is("b111".U) {
+            i_alu := io.a & io.b
+        }
+
+    }
+    io.output := Mux(io.isM, m_alu, i_alu)
+    // io.output := i_alu
+
+  }
