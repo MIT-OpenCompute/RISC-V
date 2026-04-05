@@ -41,7 +41,7 @@ class ALU(val width: Int = 32) extends Module {
             val a_ext = Cat(io.a(31), io.a).asSInt
             val b_ext = Cat(0.U(1.W), io.b).asSInt
             m_alu := (a_ext * b_ext).asUInt(63, 32)
-        }
+        } 
         //MULHU
         is("b011".U) {
             m_alu := (io.a * io.b)(63, 32)
