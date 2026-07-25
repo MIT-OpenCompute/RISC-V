@@ -238,16 +238,9 @@ class Execute() extends Module {
 
     is(ExecState.MEM_WAIT) {
       io.memory_stall := true.B
-      // io.dcache_start := true.B
-      when(io.flush) {
+     when(io.dcache_valid || io.handshake_bypass) {
         state := ExecState.IDLE
-        valid := false.B
-      }.elsewhen(io.dcache_valid || io.handshake_bypass) {
-        bundle.rd_val := io.dcache_data
-        state := ExecState.IDLE
-        // when(io.dcache_data.asUInt === 100.U){
-        // printf("LOADED LOADED %x\n",io.dcache_data)
-        // }
+  
         io.memory_stall := false.B
         io.next_instruction.valid := true.B
         io.next_instruction.bits := bundle

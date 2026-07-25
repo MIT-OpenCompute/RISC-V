@@ -82,7 +82,7 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
   mem.io.dcache_req := io.dcache_req
   mem.io.dcache_start := io.dcache_start && !is_excep
   io.dcache_ready := mem.io.dcache_ready
-  io.dcache_valid := mem.io.dcache_valid
+  io.dcache_valid := mem.io.dcache_valid || is_excep
   io.dcache_data := mem.io.dcache_data
 
 

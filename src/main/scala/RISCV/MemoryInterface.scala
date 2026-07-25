@@ -7,11 +7,11 @@ object MemOp extends ChiselEnum {
   val LW,LH,LB,LBU,LHU,SW,SH,SB = Value
 }
 class MemReq extends Bundle {
-  val address    = UInt(32.W)
+  val address = UInt(32.W)
   val write_data = UInt(32.W)
-  val op         = MemOp()
-  val read       = Bool()
-  val write      = Bool()
+  val op = MemOp()
+  val read = Bool()
+  val write = Bool()
 }
 
 class MemoryInterface(lineWidth: Int = 128) extends Module {
