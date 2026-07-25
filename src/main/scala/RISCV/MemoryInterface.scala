@@ -38,6 +38,7 @@ class MemoryInterface(lineWidth: Int = 128) extends Module {
   val icache = Module(new ICache(lineWidth))
   val dcache = Module(new DCache(lineWidth))
   val arbiter = Module(new CacheArbiter(lineWidth))
+  val dcache_queue = Module(new DCacheQueue(lineWidth))
 
 
 
@@ -53,11 +54,21 @@ class MemoryInterface(lineWidth: Int = 128) extends Module {
   io.icache_valid := icache.io.done
   io.icache_data := icache.io.data
 
-  dcache.io.req := io.dcache_req
-  dcache.io.start := io.dcache_start
-  io.dcache_ready := dcache.io.ready 
-  io.dcache_valid := dcache.io.done
-  io.dcache_data := dcache.io.data
+  dcache.io.req := dcache_queue.io.dcache_req
+  dcache.io.start := dcache_queue.io.dcache_start
+  dcache_queue.io.req.req := io.dcache_req
+  dcache_queue.io.req.rd := 0.U
+  dcache_queue.io.req.wen := false.B
+  dcache_queue.io.start :=io.dcache_start
+  dcache_queue.io.dcache_ready := dcache.io.ready
+  dcache_queue.io.dcache_valid := dcache.io.done
+  dcache_queue.io.dcache_data := dcache.io.data
+
+  io.dcache_ready := dcache_queue.io.ready 
+  io.dcache_valid := dcache_queue.io.valid
+  io.dcache_data := dcache_queue.io.data
+
+
 
   arbiter.io.icache_req.valid := icache.io.miss
   arbiter.io.icache_req.bits.addr := icache.io.line_addr
