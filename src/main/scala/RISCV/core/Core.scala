@@ -151,6 +151,28 @@ class Core() extends Module {
         printf("[IDQ] Broadcast Mark Register: %b\n", instruction_dispatch_queue.io.broadcast_mark_register);
         printf("[IDQ] Ready: %b\n\n", instruction_dispatch_queue.io.ready);
 
+        printf("[ALU] Next Ready: %b\n", alu_pe.io.next_ready);
+        printf("[ALU] Instruction Opcode: %b\n", alu_pe.io.instruction.opcode);
+        printf("[ALU] Instruction Rs1: %b\n", alu_pe.io.instruction.rs1);
+        printf("[ALU] Instruction Rs1 Valid: %b\n", alu_pe.io.instruction.rs1_valid);
+        printf("[ALU] Instruction Rs1 Value: %b\n", alu_pe.io.instruction.rs1_value);
+        printf("[ALU] Instruction Rs2: %b\n", alu_pe.io.instruction.rs2);
+        printf("[ALU] Instruction Rs2 Valid: %b\n", alu_pe.io.instruction.rs2_valid);
+        printf("[ALU] Instruction Rs2 Value: %b\n", alu_pe.io.instruction.rs2_value);
+        printf("[ALU] Valid: %b\n", alu_pe.io.valid);
+        printf("[ALU] Next Instruction Opcode: %b\n", alu_pe.io.out.opcode);
+        printf("[ALU] Next Instruction Immediate: %b\n", alu_pe.io.out.immediate);
+        printf("[ALU] Next Instruction Rs1: %b\n", alu_pe.io.out.rs1);
+        printf("[ALU] Next Instruction Rs1 Valid: %b\n", alu_pe.io.out.rs1_valid);
+        printf("[ALU] Next Instruction Rs1 Value: %b\n", alu_pe.io.out.rs1_value);
+        printf("[ALU] Next Instruction Rs2: %b\n", alu_pe.io.out.rs2);
+        printf("[ALU] Next Instruction Rs2 Valid: %b\n", alu_pe.io.out.rs2_valid);
+        printf("[ALU] Next Instruction Rs2 Value: %b\n", alu_pe.io.out.rs2_value);
+        printf("[ALU] Next Instruction Rd: %b\n", alu_pe.io.out.rd);
+        printf("[ALU] Next Instruction Rd Value: %b\n", alu_pe.io.out.rd_value);
+        printf("[ALU] Next Valid: %b\n", alu_pe.io.out_valid);
+        printf("[ALU] Ready: %b\n\n", alu_pe.io.ready);
+
         printf("\n\n\n");
     }
 }

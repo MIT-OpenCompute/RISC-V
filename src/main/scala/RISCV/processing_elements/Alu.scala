@@ -6,6 +6,8 @@ import _root_.circt.stage.ChiselStage
 
 class Alu(val width: Int = 32) extends Module {
     val io = IO(new Bundle {
+        val next_ready = Input(Bool())
+
         val instruction = Input(new InstructionBundle())
         val valid = Input(Bool())
 
@@ -13,7 +15,6 @@ class Alu(val width: Int = 32) extends Module {
         val out_valid = Output(Bool())
 
         val ready = Output(Bool())
-        val next_ready = Input(Bool())
     })
 
     val out = RegInit(0.U.asTypeOf(new InstructionBundle))
