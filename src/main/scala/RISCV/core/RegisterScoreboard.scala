@@ -6,11 +6,10 @@ import _root_.circt.stage.ChiselStage
 
 class RegisterScoreboard() extends Module {
     val io = IO(new Bundle {
+        val next_ready = Input(Bool())
+
         val instruction = Input(new InstructionBundle())
         val valid = Input(Bool())
-
-        val idq_ready = Input(Bool())
-        val ready = Output(Bool())
 
         val broadcast_free_valid = Input(Bool())
         val broadcast_free_register = Input(UInt(5.W))
@@ -26,11 +25,13 @@ class RegisterScoreboard() extends Module {
 
         val next_instruction = Output(new InstructionBundle())
         val next_valid = Output(Bool())
+
+        val ready = Output(Bool())
     })
 
     val in_use = RegInit(VecInit(Seq.fill(32)(false.B)))
 
-    io.ready := io.idq_ready
+    io.ready := io.next_ready
 
     when(io.broadcast_free_valid) {
         in_use(io.broadcast_free_register) := false.B
@@ -98,7 +99,7 @@ class RegisterScoreboard() extends Module {
         held_instruction.rs2_valid := false.B
     }
 
-    when(io.idq_ready) {
+    when(io.next_ready) {
         held_instruction := io.instruction
         held_valid := io.valid
 

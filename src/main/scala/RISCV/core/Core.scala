@@ -68,7 +68,7 @@ class Core() extends Module {
     instruction_dispatch_queue.io.broadcast_free_register := 0.U
     instruction_dispatch_queue.io.broadcast_free_value := 0.U
 
-    register_scoreboard.io.idq_ready := instruction_dispatch_queue.io.ready
+    register_scoreboard.io.next_ready := instruction_dispatch_queue.io.ready
     register_scoreboard.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
     register_scoreboard.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
 
@@ -114,6 +114,30 @@ class Core() extends Module {
         printf("[Decode] Next Instruction Opcode: %b\n", decode_stage.io.next_instruction.opcode);
         printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
         printf("[Decode] Ready: %b\n\n", decode_stage.io.ready);
+
+        printf("[RSB] Next Ready: %b\n", register_scoreboard.io.next_ready);
+        printf("[RSB] Instruction Opcode: %b\n", register_scoreboard.io.instruction.opcode);
+        printf("[RSB] Instruction Rs1: %b\n", register_scoreboard.io.instruction.rs1);
+        printf("[RSB] Instruction Rs2: %b\n", register_scoreboard.io.instruction.rs2);
+        printf("[RSB] Valid: %b\n", register_scoreboard.io.valid);
+        printf("[RSB] Broadcast Free Valid: %b\n", register_scoreboard.io.broadcast_free_valid);
+        printf("[RSB] Broadcast Free Register: %b\n", register_scoreboard.io.broadcast_free_register);
+        printf("[RSB] Broadcast Free Value: %b\n", register_scoreboard.io.broadcast_free_value);
+        printf("[RSB] Broadcast Mark Valid: %b\n", register_scoreboard.io.broadcast_mark_valid);
+        printf("[RSB] Broadcast Mark Register: %b\n", register_scoreboard.io.broadcast_mark_register);
+        printf("[RSB] Read Register 1: %b\n", register_scoreboard.io.read_register_1);
+        printf("[RSB] Read Result 1: %b\n", register_scoreboard.io.read_result_1);
+        printf("[RSB] Read Register 2: %b\n", register_scoreboard.io.read_register_2);
+        printf("[RSB] Read Result 2: %b\n", register_scoreboard.io.read_result_2);
+        printf("[RSB] Next Instruction Opcode: %b\n", register_scoreboard.io.next_instruction.opcode);
+        printf("[RSB] Next Instruction Rs1: %b\n", register_scoreboard.io.next_instruction.rs1);
+        printf("[RSB] Next Instruction Rs1 Valid: %b\n", register_scoreboard.io.next_instruction.rs1_valid);
+        printf("[RSB] Next Instruction Rs1 Value: %b\n", register_scoreboard.io.next_instruction.rs1_value);
+        printf("[RSB] Next Instruction Rs2: %b\n", register_scoreboard.io.next_instruction.rs2);
+        printf("[RSB] Next Instruction Rs2 Valid: %b\n", register_scoreboard.io.next_instruction.rs2_valid);
+        printf("[RSB] Next Instruction Rs2 Value: %b\n", register_scoreboard.io.next_instruction.rs2_value);
+        printf("[RSB] Next Valid: %b\n", register_scoreboard.io.next_valid);
+        printf("[RSB] Ready: %b\n\n", register_scoreboard.io.ready);
 
         printf("\n\n\n");
     }

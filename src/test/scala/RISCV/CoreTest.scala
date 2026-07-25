@@ -24,6 +24,8 @@ class CoreTest extends AnyFreeSpec with Matchers with ChiselSim {
             dut.io.program_memory_valid.poke(false.B)
 
             dut.clock.step(1)
+
+            dut.clock.step(1)
         }
     }
 }

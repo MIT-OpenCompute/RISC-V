@@ -20,6 +20,7 @@ class FetchStage() extends Module {
         val next_instruction = Output(UInt(32.W))
         val next_instruction_pointer = Output(UInt(32.W))
         val next_valid = Output(Bool())
+
         val ready = Output(Bool())
     })
 
