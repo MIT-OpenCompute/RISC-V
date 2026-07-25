@@ -26,6 +26,8 @@ class CoreTest extends AnyFreeSpec with Matchers with ChiselSim {
             dut.clock.step(1)
 
             dut.clock.step(1)
+
+            dut.clock.step(1)
         }
     }
 }

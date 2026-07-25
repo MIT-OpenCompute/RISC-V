@@ -18,14 +18,14 @@ class InstructionDispatchQueue() extends Module {
         val alu_out_valid = Output(Bool())
         val alu_ready = Input(Bool())
 
-        val ready = Output(Bool())
-
         val broadcast_free_valid = Input(Bool())
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
 
         val broadcast_mark_valid = Output(Bool())
         val broadcast_mark_register = Output(UInt(5.W))
+
+        val ready = Output(Bool())
     })
 
     val queue = RegInit(VecInit(Seq.fill(8)(0.U.asTypeOf(new QueueEntry))))

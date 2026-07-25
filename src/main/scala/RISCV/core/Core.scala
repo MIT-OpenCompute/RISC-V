@@ -139,6 +139,18 @@ class Core() extends Module {
         printf("[RSB] Next Valid: %b\n", register_scoreboard.io.next_valid);
         printf("[RSB] Ready: %b\n\n", register_scoreboard.io.ready);
 
+        printf("[IDQ] Instruction: %b\n", instruction_dispatch_queue.io.instruction.opcode);
+        printf("[IDQ] Valid: %b\n", instruction_dispatch_queue.io.valid);
+        printf("[IDQ] ALU Out Opcode: %b\n", instruction_dispatch_queue.io.alu_out.opcode);
+        printf("[IDQ] ALU Out Valid: %b\n", instruction_dispatch_queue.io.alu_out_valid);
+        printf("[IDQ] ALU Out Ready: %b\n", instruction_dispatch_queue.io.alu_ready);
+        printf("[IDQ] Broadcast Free Valid: %b\n", instruction_dispatch_queue.io.broadcast_free_valid);
+        printf("[IDQ] Broadcast Free Register: %b\n", instruction_dispatch_queue.io.broadcast_free_register);
+        printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);
+        printf("[IDQ] Broadcast Mark Valid: %b\n", instruction_dispatch_queue.io.broadcast_mark_valid);
+        printf("[IDQ] Broadcast Mark Register: %b\n", instruction_dispatch_queue.io.broadcast_mark_register);
+        printf("[IDQ] Ready: %b\n\n", instruction_dispatch_queue.io.ready);
+
         printf("\n\n\n");
     }
 }
