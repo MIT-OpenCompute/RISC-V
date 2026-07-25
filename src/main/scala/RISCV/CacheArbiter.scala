@@ -2,20 +2,20 @@ package RISCV
 import chisel3._
 import chisel3.util._
 
-class MemLineReq extends Bundle {
+class MemLineReq(lineWidth: Int = 128) extends Bundle {
   val addr    = UInt(32.W)
   val write   = Bool()
-  val wdata   = UInt(128.W)
+  val wdata   = UInt(lineWidth.W)
 }
 
 
 
-class CacheArbiter() extends Module {
+class CacheArbiter(lineWidth: Int = 128) extends Module {
     val io = IO(new Bundle {
-      val icache_req = Flipped(Decoupled(new MemLineReq))
-      val dcache_req = Flipped(Decoupled(new MemLineReq))
-      val mem_req = Decoupled(new MemLineReq)
-      val mem_resp = Input(UInt(128.W))
+      val icache_req = Flipped(Decoupled(new MemLineReq(lineWidth)))
+      val dcache_req = Flipped(Decoupled(new MemLineReq(lineWidth)))
+      val mem_req = Decoupled(new MemLineReq(lineWidth))
+      val mem_resp = Input(UInt(lineWidth.W))
       val mem_valid = Input(Bool())
       val resp_to_icache = Output(Bool())
       val resp_to_dcache = Output(Bool())
@@ -29,7 +29,7 @@ class CacheArbiter() extends Module {
 
     val idle = !serving_icache && !serving_dcache
 
-    val latched_req = RegInit(0.U.asTypeOf(new MemLineReq))
+    val latched_req = RegInit(0.U.asTypeOf(new MemLineReq(lineWidth)))
 
     when(idle) {
       when(io.dcache_req.valid) {

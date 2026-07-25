@@ -9,7 +9,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
 
 
 
-class ICache() extends Module {
+class ICache(lineWidth: Int = 128) extends Module {
     val io = IO(new Bundle {
         val req = Input(new MemReq)
         val start = Input(Bool())
@@ -19,10 +19,10 @@ class ICache() extends Module {
         val data = Output(UInt(32.W))
 
         val wb = Output(Bool())
-        val wb_data = Output(UInt(128.W))
+        val wb_data = Output(UInt(lineWidth.W))
         val wb_addr = Output(UInt(32.W))
 
-        val line_result = Input(UInt(128.W))
+        val line_result = Input(UInt(lineWidth.W))
         val line_addr = Output(UInt(32.W))
         val line_valid = Input(Bool())
 
@@ -31,7 +31,7 @@ class ICache() extends Module {
 
 
     val CACHE_SETS = 2048
-    val LINE_WIDTH_WORDS = 4
+    val LINE_WIDTH_WORDS = lineWidth/32
     val LOG_CACHE_SETS = log2Up(CACHE_SETS)
     val LOG_LINE_WIDTH_WORDS = log2Up(LINE_WIDTH_WORDS)
     val byte_offset = Wire(UInt(2.W))
@@ -89,7 +89,7 @@ class ICache() extends Module {
     io.line_addr := Cat(line_addr, 0.U((LOG_LINE_WIDTH_WORDS + 2).W))
 
     val words = VecInit(
-    (0 until 4).map(i => data_out(32*i + 31, 32*i))
+    (0 until LINE_WIDTH_WORDS).map(i => data_out(32*i + 31, 32*i))
     )
 
 switch(state) {
@@ -167,7 +167,7 @@ switch(state) {
             }.otherwise {
                 data_array.write(cache_index, io.line_result)
                 meta_array.write(cache_index, Cat("b10".U(2.W), cache_tag))//valid not dirty
-                val lwords = VecInit((0 until 4).map(i => io.line_result(32*i + 31, 32*i)))
+                val lwords = VecInit((0 until LINE_WIDTH_WORDS).map(i => io.line_result(32*i + 31, 32*i)))
                 val updated_word = lwords(word_offset)
                 switch(current_mem_req.op){
                     is(MemOp.LW){

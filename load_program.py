@@ -21,7 +21,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Load a RIsSC-V hex program onto FPGA over UART")
 parser.add_argument("hex_file",              help="Path to the .hex program file")
 parser.add_argument("--port",  default="COM3", help="Serial port (default: COM3)")
-parser.add_argument("--baud",  default=1000000, type=int, help="Baud rate (default: 115200)")
+parser.add_argument("--baud",  default=6000000, type=int, help="Baud rate (default: 115200)")
 parser.add_argument("--delay", default=0.00,  type=float, help="Delay between words in seconds (default: 0.01)")
 args = parser.parse_args()
 
@@ -60,9 +60,9 @@ if not words:
 # -------------------------------------------------------
 # The hardware packs bytes into 16-byte lines before writing to DDR3.
 # If we don't pad it, the final partial line will be discarded.
-remainder = len(words) % 4
+remainder = len(words) % 16
 if remainder != 0:
-    padding_needed = 4 - remainder
+    padding_needed = 16 - remainder
     words.extend([0x00000000] * padding_needed)
     print(f"Note: Padded program with {padding_needed} empty word(s) to align to 16-byte Cache Line boundaries.")
 

@@ -14,7 +14,7 @@ class MemReq extends Bundle {
   val write      = Bool()
 }
 
-class MemoryInterface() extends Module {
+class MemoryInterface(lineWidth: Int = 128) extends Module {
   val io = IO(new Bundle {
     val icache_req = Input(new MemReq)
     val icache_start = Input(Bool())
@@ -26,48 +26,26 @@ class MemoryInterface() extends Module {
     val dcache_ready = Output(Bool())
     val dcache_valid = Output(Bool())
     val dcache_data = Output(UInt(32.W))
-    val debug_req = Input(new MemReq)
-    val debug_start = Input(Bool())
-    val debug_ready = Output(Bool())
-    val debug_valid = Output(Bool())
-    val debug_data = Output(UInt(32.W))
 
-    val mem_req = Decoupled(new MemLineReq)   
-    val mem_resp = Input(UInt(128.W))
+
+    val mem_req = Decoupled(new MemLineReq(lineWidth))   
+    val mem_resp = Input(UInt(lineWidth.W))
     val mem_valid = Input(Bool())      
 
     
 
 })
-  val icache = Module(new ICache())
-  val dcache = Module(new DCache())
-  val arbiter = Module(new CacheArbiter())
+  val icache = Module(new ICache(lineWidth))
+  val dcache = Module(new DCache(lineWidth))
+  val arbiter = Module(new CacheArbiter(lineWidth))
 
 
 
-  val debug_buf = RegInit(VecInit(Seq.fill(4)(0.U(32.W))))
 
-  val debug_word_off = io.debug_req.address(3, 2)
-  val debug_line_addr = io.debug_req.address >> 4   
-  val debug_line_byte_addr = Cat(debug_line_addr, 0.U(4.W))  
 
-  object DebugState extends ChiselEnum {
-    val D_IDLE, D_ISSUE, D_WAIT = Value
-  }
-  val debug_state = RegInit(DebugState.D_IDLE)
-  val debug_pending_addr  = RegInit(0.U(32.W))
-  val debug_pending_wdata = RegInit(0.U(128.W))
 
-  val debug_can_start = arbiter.io.idle && (debug_state === DebugState.D_IDLE)
-  io.debug_ready := debug_can_start
-  io.debug_valid := false.B
-  io.debug_data := 0.U   
 
-  val debug_req_valid = WireDefault(false.B)
-  val debug_req_write = WireDefault(true.B)
-  val debug_req_addr  = WireDefault(0.U(32.W))
-  val debug_req_wdata = WireDefault(0.U(128.W))
-
+  
   
   icache.io.req := io.icache_req
   icache.io.start := io.icache_start 
@@ -92,7 +70,6 @@ class MemoryInterface() extends Module {
   arbiter.io.dcache_req.bits.wdata := dcache.io.wb_data
 
 
-  val debug_owns_port = (debug_state === DebugState.D_ISSUE)
 
   io.mem_req.valid := arbiter.io.mem_req.valid
   io.mem_req.bits.write := arbiter.io.mem_req.bits.write

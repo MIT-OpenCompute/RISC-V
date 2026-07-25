@@ -106,10 +106,8 @@ class Registers() extends Module {
     io.debug_31 := regs(31);
 
 
-    // Uncomment to print the register contents every time they are accessed
     //printf("Regs: [%d]=%d, [%d]=%d, WE=%b, WA=%d, IN=%d\n", io.read_address_a, io.out_a, io.read_address_b, io.out_b, io.write_enable, io.write_address, io.in)
 
-    // Single write port
     when (io.write_enable && (io.write_address =/= 0.U)) {
         regs(io.write_address) := io.in
     }

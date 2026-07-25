@@ -6,14 +6,9 @@ import scala.math._
 import chisel3.util._
 
 
-class Main() extends Module {
+class Main(lineWidth: Int = 512) extends Module {
     val io = IO(new Bundle {
 		val execute = Input(Bool())
-
-    val flash = Input(Bool())
-		val flash_address = Input(UInt(32.W))
-		val flash_value = Input(UInt(32.W))
-    val debug_ready = Output(Bool())
 
 
     val vga_clk = Input(Clock());
@@ -22,8 +17,8 @@ class Main() extends Module {
     val rgb = Output(UInt(24.W))
     val blanking = Output(Bool())
 
-    val mem_req   = Decoupled(new MemLineReq)   
-    val mem_resp  = Input(UInt(128.W))
+    val mem_req   = Decoupled(new MemLineReq(lineWidth))   
+    val mem_resp  = Input(UInt(lineWidth.W))
     val mem_valid = Input(Bool()) 
 
     val debug_reg = Output(UInt(32.W))
@@ -37,11 +32,10 @@ class Main() extends Module {
 
     })
 
-    val memory = Module(new MemoryWrapper())
+    val memory = Module(new MemoryWrapper(lineWidth))
     val core = Module(new Core())
     core.io.latch_in := memory.io.latch_out > 0.U
     io.debug_reg := core.io.debug_reg
-    io.debug_ready := memory.io.debug_ready
     io.debug_pc := core.io.debug_pc
     memory.io.icache_req := core.io.icache_req
     memory.io.icache_start := core.io.icache_start
@@ -58,12 +52,7 @@ class Main() extends Module {
     core.io.handshake_bypass := memory.io.handshake_bypass
 
     core.io.execute := io.execute
-    memory.io.debug_req.address    := io.flash_address
-    memory.io.debug_req.write_data := io.flash_value
-    memory.io.debug_req.op        := MemOp.SW
-    memory.io.debug_req.read      := false.B
-    memory.io.debug_req.write     := true.B
-    memory.io.debug_start         := io.flash && !io.execute
+   
 
     io.mem_req       <> memory.io.mem_req
     memory.io.mem_resp := io.mem_resp

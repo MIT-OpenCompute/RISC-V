@@ -8,7 +8,7 @@ object CacheState extends ChiselEnum {
   val IDLE, LOOKUP, WRITEBACK, MISS = Value
 }
 
-class DCache() extends Module {
+class DCache( lineWidth: Int = 128) extends Module {
     val io = IO(new Bundle {
         val req = Input(new MemReq)
         val start = Input(Bool())
@@ -18,16 +18,16 @@ class DCache() extends Module {
         val data = Output(UInt(32.W))
 
         val wb = Output(Bool())
-        val wb_data = Output(UInt(128.W))
+        val wb_data = Output(UInt(lineWidth.W))
         val wb_addr = Output(UInt(32.W))
 
-        val line_result = Input(UInt(128.W))
+        val line_result = Input(UInt(lineWidth.W))
         val line_addr = Output(UInt(32.W))
         val line_valid = Input(Bool())
     })
 
     val CACHE_SETS = 2048
-    val LINE_WIDTH_WORDS = 4
+    val LINE_WIDTH_WORDS = lineWidth/32
     val LOG_CACHE_SETS = log2Up(CACHE_SETS)
     val LOG_LINE_WIDTH_WORDS = log2Up(LINE_WIDTH_WORDS)
     
@@ -78,7 +78,7 @@ class DCache() extends Module {
     val status = meta_out(meta_out.getWidth-1, meta_out.getWidth-2) 
     val tag    = meta_out(meta_out.getWidth-3, 0)    
 
-    val wb_data_reg = RegInit(0.U(128.W))
+    val wb_data_reg = RegInit(0.U(lineWidth.W))
     val wb_addr_reg = RegInit(0.U(32.W))
 
     val valid_cleared = RegInit(true.B)
@@ -90,7 +90,7 @@ class DCache() extends Module {
     io.wb_addr   := wb_addr_reg
     io.line_addr := Cat(getLineAddr(current_mem_req.address), 0.U((LOG_LINE_WIDTH_WORDS + 2).W))
 
-    val words = VecInit((0 until 4).map(i => data_out(32*i + 31, 32*i)))
+    val words = VecInit((0 until LINE_WIDTH_WORDS).map(i => data_out(32*i + 31, 32*i)))
 
     switch(state) {
         is(CacheState.IDLE) {
@@ -111,9 +111,9 @@ class DCache() extends Module {
                     }
 
                 when(current_mem_req.write) {
-                    val updated_line = Wire(UInt(128.W))
+                    val updated_line = Wire(UInt(lineWidth.W))
                     updated_line := data_out
-                    val lwords = VecInit((0 until 4).map(i => data_out(32*i + 31, 32*i)))
+                    val lwords = VecInit((0 until LINE_WIDTH_WORDS).map(i => data_out(32*i + 31, 32*i)))
                     val old_word = lwords(word_offset)
                     val updated_word = WireDefault(old_word)
 
@@ -139,12 +139,8 @@ class DCache() extends Module {
                         }
                     }
 
-                    switch(word_offset) {
-                        is(0.U) { updated_line := Cat(data_out(127, 32),  updated_word) }
-                        is(1.U) { updated_line := Cat(data_out(127, 64),  updated_word, data_out(31,  0)) }
-                        is(2.U) { updated_line := Cat(data_out(127, 96),  updated_word, data_out(63,  0)) }
-                        is(3.U) { updated_line := Cat(updated_word, data_out(95, 0)) }
-                    }
+                    val new_lwords = VecInit((0 until LINE_WIDTH_WORDS).map { i => Mux(word_offset === i.U, updated_word, lwords(i))})
+                    updated_line := new_lwords.asUInt
 
                     data_wr_en   := true.B
                     data_wr_data := updated_line
@@ -210,9 +206,9 @@ class DCache() extends Module {
                     io.miss := true.B
                 }.otherwise {
                     when(current_mem_req.write) {
-                        val updated_line = Wire(UInt(128.W))
+                        val updated_line = Wire(UInt(lineWidth.W))
                         updated_line := io.line_result
-                        val lwords = VecInit((0 until 4).map(i => io.line_result(32*i + 31, 32*i)))
+                        val lwords = VecInit((0 until LINE_WIDTH_WORDS).map(i => io.line_result(32*i + 31, 32*i)))
                         val old_word = lwords(word_offset)
                         val updated_word = WireDefault(old_word)
 
@@ -238,12 +234,8 @@ class DCache() extends Module {
                             }
                         }
 
-                        switch(word_offset) {
-                            is(0.U) { updated_line := Cat(io.line_result(127, 32),  updated_word) }
-                            is(1.U) { updated_line := Cat(io.line_result(127, 64),  updated_word, io.line_result(31,  0)) }
-                            is(2.U) { updated_line := Cat(io.line_result(127, 96),  updated_word, io.line_result(63,  0)) }
-                            is(3.U) { updated_line := Cat(updated_word, io.line_result(95, 0)) }
-                        }
+                        val new_lwords = VecInit((0 until LINE_WIDTH_WORDS).map { i => Mux(word_offset === i.U, updated_word, lwords(i))})
+                        updated_line := new_lwords.asUInt
 
                         data_wr_en   := true.B
                         data_wr_data := updated_line
@@ -256,7 +248,7 @@ class DCache() extends Module {
                         data_wr_data := io.line_result
                         meta_wr_en   := true.B
                         meta_wr_data := Cat("b10".U(2.W), getTag(current_mem_req.address))
-                        val lwords = VecInit((0 until 4).map(i => io.line_result(32*i + 31, 32*i)))
+                        val lwords = VecInit((0 until LINE_WIDTH_WORDS).map(i => io.line_result(32*i + 31, 32*i)))
                         val updated_word = lwords(word_offset)
                         
                         switch(current_mem_req.op){

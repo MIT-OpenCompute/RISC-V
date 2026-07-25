@@ -54,7 +54,7 @@ class UartKeyboardTracker(val clockFreq: Int, val baudRate: Int) extends Module 
       }
     }
   }
-}            io.line_valid,
+}           
 
 object UartKeyboardTracker extends App {
     ChiselStage.emitSystemVerilogFile(

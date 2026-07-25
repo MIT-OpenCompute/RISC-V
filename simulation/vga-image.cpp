@@ -22,28 +22,39 @@ static constexpr int V_TOTAL   = V_VISIBLE + V_FRONT + V_SYNC + V_BACK;
 
 static constexpr uint32_t AXI_ADDR_MASK = 0x07FFFFFF;
 
+// ----------------------------------------------------------------------
+// NUM_BEATS: must match the NUM_BEATS used to build the Verilog design
+// (ddr4_line_memory / the top module). Everything below is derived from
+// it -- io_mem_req_bits_wdata/io_mem_resp are (NUM_BEATS*128)-bit ports,
+// which Verilator represents as arrays of NUM_BEATS*4 uint32_t words
+// (any port over 64 bits becomes a uint32_t[] with ceil(width/32) words).
+// Bump this one constant when NUM_BEATS changes in the RTL.
+// ----------------------------------------------------------------------
+static constexpr int NUM_BEATS       = 4;
+static constexpr int LINE_BYTES      = NUM_BEATS * 16;
+static constexpr int WORDS_PER_LINE  = NUM_BEATS * 4;   // 32-bit words per line
 
-static constexpr long long CYCLE_LIMIT = -1; 
+static constexpr long long CYCLE_LIMIT = -1;
 
 static inline uint32_t axi_window(uint32_t addr) {
     return addr & AXI_ADDR_MASK;
 }
 
-// Commits a write request's 128-bit wdata into the mock DDR3 row at the aligned address.
+// Commits a write request's line-width wdata into the mock DDR row at the
+// aligned address. Loop bound and row size both scale with NUM_BEATS.
 static void handle_mem_write(std::unique_ptr<VMain>& dut,
                               std::map<uint32_t, std::vector<uint8_t>>& mock_ddr3) {
     uint32_t addr = axi_window(dut->io_mem_req_bits_addr);
-    uint32_t line_base_addr = (addr / 16) * 16;
+    uint32_t line_base_addr = (addr / LINE_BYTES) * LINE_BYTES;
 
     if (mock_ddr3.find(line_base_addr) == mock_ddr3.end()) {
-        mock_ddr3[line_base_addr] = std::vector<uint8_t>(16, 0);
+        mock_ddr3[line_base_addr] = std::vector<uint8_t>(LINE_BYTES, 0);
     }
     auto& data_row = mock_ddr3[line_base_addr];
 
-    *(uint32_t*)&data_row[0]  = dut->io_mem_req_bits_wdata[0];
-    *(uint32_t*)&data_row[4]  = dut->io_mem_req_bits_wdata[1];
-    *(uint32_t*)&data_row[8]  = dut->io_mem_req_bits_wdata[2];
-    *(uint32_t*)&data_row[12] = dut->io_mem_req_bits_wdata[3];
+    for (int w = 0; w < WORDS_PER_LINE; w++) {
+        *(uint32_t*)&data_row[w * 4] = dut->io_mem_req_bits_wdata[w];
+    }
 
     uint32_t raw = dut->io_mem_req_bits_addr;
     if (raw > AXI_ADDR_MASK) {
@@ -52,6 +63,26 @@ static void handle_mem_write(std::unique_ptr<VMain>& dut,
             printf("WARNING: access above 27-bit AXI window: addr=0x%08X (%s) -> aliases to 0x%08X\n",
                    raw, dut->io_mem_req_bits_write ? "write" : "read", axi_window(raw));
             warned = true;
+        }
+    }
+}
+
+// Copies a mock DDR row's contents out into io_mem_resp (or zeros if the
+// line was never written). Loop bound scales with NUM_BEATS.
+static void handle_mem_read_resp(std::unique_ptr<VMain>& dut,
+                                  std::map<uint32_t, std::vector<uint8_t>>& mock_ddr3,
+                                  uint32_t active_read_addr) {
+    uint32_t target_aligned_addr = (active_read_addr / LINE_BYTES) * LINE_BYTES;
+
+    auto it = mock_ddr3.find(target_aligned_addr);
+    if (it != mock_ddr3.end()) {
+        auto& data_row = it->second;
+        for (int w = 0; w < WORDS_PER_LINE; w++) {
+            dut->io_mem_resp[w] = *(uint32_t*)&data_row[w * 4];
+        }
+    } else {
+        for (int w = 0; w < WORDS_PER_LINE; w++) {
+            dut->io_mem_resp[w] = 0;
         }
     }
 }
@@ -68,9 +99,9 @@ int main(int argc, char** argv) {
     };
 
     dut->io_execute = 0;
-    dut->io_flash   = 0;
-    dut->io_flash_address = 0;
-    dut->io_flash_value   = 0;
+    // dut->io_flash   = 0;
+    // dut->io_flash_address = 0;
+    // dut->io_flash_value   = 0;
     dut->reset      = 1;
     dut->clock      = 0;
     dut->io_vga_clk = 0;
@@ -91,11 +122,11 @@ int main(int argc, char** argv) {
         if (line.empty()) continue;
         uint32_t instruction = std::stoul(line, nullptr, 16);
 
-        uint32_t line_base_addr = (axi_window(current_byte_addr) / 16) * 16;
-        uint32_t byte_offset    = current_byte_addr % 16;
+        uint32_t line_base_addr = (axi_window(current_byte_addr) / LINE_BYTES) * LINE_BYTES;
+        uint32_t byte_offset    = current_byte_addr % LINE_BYTES;
 
         if (mock_ddr3.find(line_base_addr) == mock_ddr3.end()) {
-            mock_ddr3[line_base_addr] = std::vector<uint8_t>(16, 0);
+            mock_ddr3[line_base_addr] = std::vector<uint8_t>(LINE_BYTES, 0);
         }
 
         mock_ddr3[line_base_addr][byte_offset + 0] = (instruction >> 0)  & 0xFF;
@@ -105,7 +136,8 @@ int main(int argc, char** argv) {
 
         current_byte_addr += 4;
     }
-    printf("Preloaded %d instructions into mock DDR3 space.\n", current_byte_addr / 4);
+    printf("Preloaded %d instructions into mock DDR3 space (NUM_BEATS=%d, LINE_BYTES=%d).\n",
+           current_byte_addr / 4, NUM_BEATS, LINE_BYTES);
     if (limited) {
         printf("Cycle limit set: will stop after %lld cycles.\n", CYCLE_LIMIT);
     } else {
@@ -172,18 +204,7 @@ int main(int argc, char** argv) {
                     dut->io_mem_valid = 0;
                 } else {
                     dut->io_mem_valid = 1;
-                    uint32_t target_aligned_addr = (active_read_addr / 16) * 16;
-
-                    if (mock_ddr3.find(target_aligned_addr) != mock_ddr3.end()) {
-                        auto& data_row = mock_ddr3[target_aligned_addr];
-                        dut->io_mem_resp[0] = *(uint32_t*)&data_row[0];
-                        dut->io_mem_resp[1] = *(uint32_t*)&data_row[4];
-                        dut->io_mem_resp[2] = *(uint32_t*)&data_row[8];
-                        dut->io_mem_resp[3] = *(uint32_t*)&data_row[12];
-                    } else {
-                        dut->io_mem_resp[0] = 0; dut->io_mem_resp[1] = 0;
-                        dut->io_mem_resp[2] = 0; dut->io_mem_resp[3] = 0;
-                    }
+                    handle_mem_read_resp(dut, mock_ddr3, active_read_addr);
                     read_in_progress = false;
                 }
             } else {
@@ -245,17 +266,7 @@ int main(int argc, char** argv) {
                     dut->io_mem_valid = 0;
                 } else {
                     dut->io_mem_valid = 1;
-                    uint32_t target_aligned_addr = (active_read_addr / 16) * 16;
-                    if (mock_ddr3.find(target_aligned_addr) != mock_ddr3.end()) {
-                        auto& data_row = mock_ddr3[target_aligned_addr];
-                        dut->io_mem_resp[0] = *(uint32_t*)&data_row[0];
-                        dut->io_mem_resp[1] = *(uint32_t*)&data_row[4];
-                        dut->io_mem_resp[2] = *(uint32_t*)&data_row[8];
-                        dut->io_mem_resp[3] = *(uint32_t*)&data_row[12];
-                    } else {
-                        dut->io_mem_resp[0] = 0; dut->io_mem_resp[1] = 0;
-                        dut->io_mem_resp[2] = 0; dut->io_mem_resp[3] = 0;
-                    }
+                    handle_mem_read_resp(dut, mock_ddr3, active_read_addr);
                     read_in_progress = false;
                 }
             } else {

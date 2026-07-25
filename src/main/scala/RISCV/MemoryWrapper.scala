@@ -6,7 +6,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
 
 
 
-class MemoryWrapper() extends Module {
+class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int = 6000000) extends Module {
   val io = IO(new Bundle {
     val icache_req = Input(new MemReq)
     val icache_start = Input(Bool())
@@ -20,14 +20,10 @@ class MemoryWrapper() extends Module {
     val dcache_valid = Output(Bool())
     val dcache_data = Output(UInt(32.W))
 
-    val debug_req = Input(new MemReq)
-    val debug_start = Input(Bool())
-    val debug_ready = Output(Bool())
-    val debug_valid = Output(Bool())
-    val debug_data = Output(UInt(32.W))
 
-    val mem_req = Decoupled(new MemLineReq)   
-    val mem_resp = Input(UInt(128.W))
+
+    val mem_req = Decoupled(new MemLineReq(lineWidth))   
+    val mem_resp = Input(UInt(lineWidth.W))
     val mem_valid = Input(Bool()) 
 
     val address_vga = Output(UInt(32.W))
@@ -42,10 +38,10 @@ class MemoryWrapper() extends Module {
   })
 
 
-  val mem = Module(new MemoryInterface())
-  val hardwareTimer = Module(new HardwareTimer(125000000))
-  val keyTracker = Module(new UartKeyboardTracker(125000000, 1000000))
-  val uartTx = Module(new UartTxFifo(125000000, 1000000)) 
+  val mem = Module(new MemoryInterface(lineWidth))
+  val hardwareTimer = Module(new HardwareTimer(clockFreq))
+  val keyTracker = Module(new UartKeyboardTracker(clockFreq, baud))
+  val uartTx = Module(new UartTxFifo(clockFreq, baud)) 
 
   io.txd := uartTx.io.out
   uartTx.io.in.bits  := 0.U
@@ -131,11 +127,7 @@ class MemoryWrapper() extends Module {
   }
 
 
-  mem.io.debug_req := io.debug_req
-  mem.io.debug_start := io.debug_start
-  io.debug_ready := mem.io.debug_ready
-  io.debug_valid := mem.io.debug_valid
-  io.debug_data := mem.io.debug_data
+
 
   io.mem_req <> mem.io.mem_req
   mem.io.mem_resp := io.mem_resp
