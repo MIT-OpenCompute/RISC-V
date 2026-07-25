@@ -51,7 +51,7 @@ class Core() extends Module {
     decode_stage.io.valid := fetch_stage.io.next_valid
     decode_stage.io.flush := false.B
 
-    register_scoreboard.io.instruction := decode_stage.io.decoded
+    register_scoreboard.io.instruction := decode_stage.io.next_instruction
     register_scoreboard.io.valid := decode_stage.io.next_valid
     register_scoreboard.io.broadcast_free_value := 0.U
     register_scoreboard.io.broadcast_free_valid := false.B
@@ -77,10 +77,10 @@ class Core() extends Module {
 
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
 
-    reorder_buffer.io.buffer_entry.value := decode_stage.io.decoded.rd_value
-    reorder_buffer.io.buffer_entry.rd := decode_stage.io.decoded.rd
-    reorder_buffer.io.buffer_entry.program_pointer := decode_stage.io.decoded.instruction_pointer
-    reorder_buffer.io.buffer_entry.mode := decode_stage.io.decoded.write_mode
+    reorder_buffer.io.buffer_entry.value := decode_stage.io.next_instruction.rd_value
+    reorder_buffer.io.buffer_entry.rd := decode_stage.io.next_instruction.rd
+    reorder_buffer.io.buffer_entry.program_pointer := decode_stage.io.next_instruction.instruction_pointer
+    reorder_buffer.io.buffer_entry.mode := decode_stage.io.next_instruction.write_mode
     reorder_buffer.io.buffer_entry.complete := false.B
     reorder_buffer.io.valid := decode_stage.io.next_valid
     reorder_buffer.io.write_complete := true.B
@@ -91,7 +91,7 @@ class Core() extends Module {
     alu_pe.io.next_ready := true.B
 
     when(io.execute) {
-        printf("Program Pointer: %d\n", program_pointer);
+        printf("Program Pointer: %d\n\n", program_pointer);
 
         printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
         printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
@@ -104,9 +104,16 @@ class Core() extends Module {
         printf("[Fetch] Next Instruction: %b\n", fetch_stage.io.next_instruction);
         printf("[Fetch] Next Instruction Pointer: %b\n", fetch_stage.io.next_instruction_pointer);
         printf("[Fetch] Next Valid: %b\n", fetch_stage.io.next_valid);
-        printf("[Fetch] Ready: %b\n", fetch_stage.io.ready);
+        printf("[Fetch] Ready: %b\n\n", fetch_stage.io.ready);
 
-        printf("[Decode] Ready: %b\n", decode_stage.io.ready);
+        printf("[Decode] Next Ready: %b\n", decode_stage.io.next_ready);
+        printf("[Decode] Instruction: %b\n", decode_stage.io.instruction);
+        printf("[Decode] Instruction Pointer: %b\n", decode_stage.io.instruction_pointer);
+        printf("[Decode] Valid: %b\n", decode_stage.io.valid);
+        printf("[Decode] Flush: %b\n", decode_stage.io.flush);
+        printf("[Decode] Next Instruction Opcode: %b\n", decode_stage.io.next_instruction.opcode);
+        printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
+        printf("[Decode] Ready: %b\n\n", decode_stage.io.ready);
 
         printf("\n\n\n");
     }

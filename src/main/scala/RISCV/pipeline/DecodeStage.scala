@@ -28,16 +28,16 @@ class InstructionBundle extends Bundle {
 
 class DecodeStage() extends Module {
     val io = IO(new Bundle {
+        val next_ready = Input(Bool())
+
         val instruction = Input(UInt(32.W))
         val instruction_pointer = Input(UInt(32.W))
         val valid = Input(Bool())
-
-        val decoded = Output(new InstructionBundle())
-        val next_valid = Output(Bool())
-
         val flush = Input(Bool())
 
-        val next_ready = Input(Bool())
+        val next_instruction = Output(new InstructionBundle())
+        val next_valid = Output(Bool())
+
         val ready = Output(Bool())
     })
 
@@ -67,20 +67,20 @@ class DecodeStage() extends Module {
     }
 
     io.ready := io.next_ready
-    io.decoded.rs1 := rs1
-    io.decoded.rs1_value := 0.U
-    io.decoded.rs1_valid := false.B
-    io.decoded.rs2 := rs2
-    io.decoded.rs2_value := 0.U
-    io.decoded.rs2_valid := false.B
-    io.decoded.rd := rd
-    io.decoded.rd_value := 0.U
-    io.decoded.immediate := immediate
-    io.decoded.opcode := opcode
-    io.decoded.func3 := func3
-    io.decoded.func7 := func7
-    io.decoded.reorder_pointer := 0.U
-    io.decoded.write_mode := WriteMode.Register
-    io.decoded.instruction_pointer := instruction_pointer
+    io.next_instruction.rs1 := rs1
+    io.next_instruction.rs1_value := 0.U
+    io.next_instruction.rs1_valid := false.B
+    io.next_instruction.rs2 := rs2
+    io.next_instruction.rs2_value := 0.U
+    io.next_instruction.rs2_valid := false.B
+    io.next_instruction.rd := rd
+    io.next_instruction.rd_value := 0.U
+    io.next_instruction.immediate := immediate
+    io.next_instruction.opcode := opcode
+    io.next_instruction.func3 := func3
+    io.next_instruction.func7 := func7
+    io.next_instruction.reorder_pointer := 0.U
+    io.next_instruction.write_mode := WriteMode.Register
+    io.next_instruction.instruction_pointer := instruction_pointer
     io.next_valid := valid
 }
