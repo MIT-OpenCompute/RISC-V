@@ -59,6 +59,10 @@ class Core() extends Module {
 
     register_scoreboard.io.read_result_1 := registers.io.out_a
     register_scoreboard.io.read_result_2 := registers.io.out_b
+    register_scoreboard.io.next_ready := instruction_dispatch_queue.io.ready
+    register_scoreboard.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
+    register_scoreboard.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
+
     registers.io.read_address_a := register_scoreboard.io.read_register_1
     registers.io.read_address_b := register_scoreboard.io.read_register_2
 
@@ -67,15 +71,11 @@ class Core() extends Module {
     instruction_dispatch_queue.io.broadcast_free_valid := false.B
     instruction_dispatch_queue.io.broadcast_free_register := 0.U
     instruction_dispatch_queue.io.broadcast_free_value := 0.U
-
-    register_scoreboard.io.next_ready := instruction_dispatch_queue.io.ready
-    register_scoreboard.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
-    register_scoreboard.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
+    instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
 
     alu_pe.io.instruction := instruction_dispatch_queue.io.alu_out
     alu_pe.io.valid := instruction_dispatch_queue.io.alu_out_valid
-
-    instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
+    alu_pe.io.next_ready := true.B
 
     reorder_buffer.io.buffer_entry.value := decode_stage.io.next_instruction.rd_value
     reorder_buffer.io.buffer_entry.rd := decode_stage.io.next_instruction.rd
@@ -87,8 +87,6 @@ class Core() extends Module {
 
     reorder_buffer.io.complete_pointer := alu_pe.io.out.reorder_pointer
     reorder_buffer.io.complete_valid := alu_pe.io.out_valid
-
-    alu_pe.io.next_ready := true.B
 
     when(io.execute) {
         printf("Program Pointer: %d\n\n", program_pointer);
@@ -170,8 +168,19 @@ class Core() extends Module {
         printf("[ALU] Next Instruction Rs2 Value: %b\n", alu_pe.io.out.rs2_value);
         printf("[ALU] Next Instruction Rd: %b\n", alu_pe.io.out.rd);
         printf("[ALU] Next Instruction Rd Value: %b\n", alu_pe.io.out.rd_value);
+        printf("[ALU] Next Instruction Reorder Pointer: %b\n", alu_pe.io.out.reorder_pointer);
         printf("[ALU] Next Valid: %b\n", alu_pe.io.out_valid);
         printf("[ALU] Ready: %b\n\n", alu_pe.io.ready);
+
+        printf("[RB] Full: %b\n", reorder_buffer.io.full);
+        printf("[RB] Buffer Entry Program Pointer: %b\n", reorder_buffer.io.buffer_entry.program_pointer);
+        printf("[RB] Valid: %b\n", reorder_buffer.io.valid);
+        printf("[RB] Complete Pointer: %b\n", reorder_buffer.io.complete_pointer);
+        printf("[RB] Complete Valid: %b\n", reorder_buffer.io.complete_valid);
+        printf("[RB] Write Value: %b\n", reorder_buffer.io.write_value);
+        printf("[RB] Write Address: %b\n", reorder_buffer.io.write_address);
+        printf("[RB] Write Mode: %b\n", reorder_buffer.io.write_mode.asUInt);
+        printf("[RB] Write Complete: %b\n\n", reorder_buffer.io.write_complete);
 
         printf("\n\n\n");
     }
