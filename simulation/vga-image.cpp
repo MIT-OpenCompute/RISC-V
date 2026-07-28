@@ -30,7 +30,7 @@ static constexpr uint32_t AXI_ADDR_MASK = 0x07FFFFFF;
 // (any port over 64 bits becomes a uint32_t[] with ceil(width/32) words).
 // Bump this one constant when NUM_BEATS changes in the RTL.
 // ----------------------------------------------------------------------
-static constexpr int NUM_BEATS       = 1;
+static constexpr int NUM_BEATS       = 4;
 static constexpr int LINE_BYTES      = NUM_BEATS * 16;
 static constexpr int WORDS_PER_LINE  = NUM_BEATS * 4;   // 32-bit words per line
 
@@ -49,8 +49,8 @@ static constexpr long long CYCLE_LIMIT = -1;
 // a fixed number, since real DDR4 latency isn't perfectly constant either
 // (refresh, bank conflicts, etc. all add variable delay).
 // ----------------------------------------------------------------------
-static constexpr int  READ_LATENCY_CYCLES  = 30;
-static constexpr int  WRITE_LATENCY_CYCLES = 20;
+static constexpr int  READ_LATENCY_CYCLES  = 50;
+static constexpr int  WRITE_LATENCY_CYCLES = 50;
 
 static constexpr bool RANDOMIZE_LATENCY = false;
 static constexpr int  READ_LATENCY_MIN  = 4;

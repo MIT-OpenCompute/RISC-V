@@ -35,9 +35,7 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
   enq.bits  := io.req
   enq.valid := io.start
 
-   when(io.start && ! enq.ready){
-            printf("\n\n8 pushed val pushed enq ready  %b\n\n ", enq.ready)
-  }
+  
   io.ready := enq.ready 
   io.dcache_start := false.B
   io.valid := false.B

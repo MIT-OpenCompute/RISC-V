@@ -6,7 +6,7 @@ import scala.math._
 import chisel3.util._
 
 
-class Main(lineWidth: Int = 128) extends Module {
+class Main(lineWidth: Int = 512) extends Module {
     val io = IO(new Bundle {
 		val execute = Input(Bool())
 
