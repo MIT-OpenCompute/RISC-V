@@ -45,6 +45,7 @@ class Decode() extends Module {
   val func7 = RegInit(0.U(7.W))
   val pc = RegInit(0.U(32.W))
   val valid = RegInit(false.B)
+  val wen = RegInit(false.B)
 
   when(io.flush) {
     valid := false.B
@@ -58,6 +59,7 @@ class Decode() extends Module {
     func7 := decoder.io.func7
     pc := io.f2d.bits.pc
     valid := io.f2d.valid
+    wen := decoder.io.wen
   }
 
 
@@ -66,7 +68,7 @@ class Decode() extends Module {
   io.decoded.bits.rs1_val := 0.U
   io.decoded.bits.rs2_val := 0.U
   io.decoded.bits.rd_val := 0.U
-  io.decoded.bits.rd_wen := false.B
+  io.decoded.bits.rd_wen := wen
   io.decoded.bits.rd := rd
   io.decoded.bits.immediate := immediate
   io.decoded.bits.opcode := opcode

@@ -14,6 +14,7 @@ class Decoder() extends Module {
         val rs1 = Output(UInt(5.W));
         val rs2 = Output(UInt(5.W));
         val rd = Output(UInt(5.W));
+        val wen = Output(Bool())
         val immediate = Output(UInt(32.W));
         val opcode = Output(UInt(7.W));
         val func3 = Output(UInt(3.W));
@@ -49,16 +50,18 @@ class Decoder() extends Module {
 
 
     io.immediate := 0.U;
-
+    io.wen := true.B
     switch(format) {
 
         is(InstructionFormat.I) {
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(30, 20);
         }
         is(InstructionFormat.S) {
+            io.wen := false.B
             io.immediate := Fill(21, io.instruction(31, 31)) ## io.instruction(31, 25) ## io.instruction(11, 7);
         }
         is(InstructionFormat.B) {
+            io.wen := false.B
             io.immediate := Fill(20, io.instruction(31, 31)) ## io.instruction(7, 7) ## io.instruction(30, 25) ## io.instruction(11, 8) ## 0.U(1.W);
         }
         is(InstructionFormat.U) {

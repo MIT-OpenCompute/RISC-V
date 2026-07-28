@@ -19,7 +19,7 @@ class Read() extends Module {
   })
 
   val rum_t = io.rum & "hFFFFFFFE".U
-  val raw_hazard = io.instruction.valid && (rum_t(io.instruction.bits.rs1) || rum_t(io.instruction.bits.rs2) || ( rum_t(io.instruction.bits.rd)))
+  val raw_hazard = io.instruction.valid && (rum_t(io.instruction.bits.rs1) || rum_t(io.instruction.bits.rs2) || (io.instruction.bits.rd_wen && rum_t(io.instruction.bits.rd)))
   io.raw_hazard_stall := raw_hazard
 
   io.register_read_a := io.instruction.bits.rs1
