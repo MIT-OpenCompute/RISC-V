@@ -31,8 +31,6 @@ class RegisterScoreboard() extends Module {
 
     val in_use = RegInit(VecInit(Seq.fill(32)(false.B)))
 
-    io.ready := io.next_ready
-
     when(io.broadcast_free_valid) {
         in_use(io.broadcast_free_register) := false.B
     }
@@ -88,7 +86,7 @@ class RegisterScoreboard() extends Module {
     }
 
     when(io.broadcast_mark_valid && io.broadcast_mark_register === held_instruction.rs1) {
-        io.next_instruction.rs2_valid := false.B
+        io.next_instruction.rs1_valid := false.B
 
         held_instruction.rs1_valid := false.B
     }
@@ -128,6 +126,8 @@ class RegisterScoreboard() extends Module {
             held_requires_2 := false.B
         }
     }
+
+    io.ready := io.next_ready
 
     // printf("\n\n")
 

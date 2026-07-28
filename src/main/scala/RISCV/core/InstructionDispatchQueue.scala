@@ -134,11 +134,13 @@ class InstructionDispatchQueue() extends Module {
 
     // for (n <- 0 to 7) {
     //     printf(
-    //       "Queue %d -> valid: %b opcode: %b rs1: %b rs2: %b \n",
+    //       "Queue %d -> valid: %b opcode: %b rs1: %b %b rs2: %b %b \n",
     //       n.U,
     //       queue(n.U).valid,
     //       queue(n.U).instruction.opcode,
+    //       queue(n.U).instruction.rs1,
     //       queue(n.U).instruction.rs1_valid,
+    //       queue(n.U).instruction.rs2,
     //       queue(n.U).instruction.rs2_valid
     //     )
     // }
