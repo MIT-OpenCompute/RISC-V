@@ -30,11 +30,43 @@ static constexpr uint32_t AXI_ADDR_MASK = 0x07FFFFFF;
 // (any port over 64 bits becomes a uint32_t[] with ceil(width/32) words).
 // Bump this one constant when NUM_BEATS changes in the RTL.
 // ----------------------------------------------------------------------
-static constexpr int NUM_BEATS       = 4;
+static constexpr int NUM_BEATS       = 1;
 static constexpr int LINE_BYTES      = NUM_BEATS * 16;
 static constexpr int WORDS_PER_LINE  = NUM_BEATS * 4;   // 32-bit words per line
 
 static constexpr long long CYCLE_LIMIT = -1;
+
+// ----------------------------------------------------------------------
+// Mock memory latency. Bump these to stress-test timing-sensitive paths
+// (non-blocking load overlap, CDC handshaking, etc.) that low, fixed
+// latency may never exercise. READ_LATENCY_CYCLES/WRITE_LATENCY_CYCLES
+// are the cycle counts the mock waits after accepting a request before
+// asserting io_mem_valid -- same units as the old hardcoded 4 / 1.
+//
+// Set RANDOMIZE_LATENCY to true to jitter each request's latency within
+// [*_LATENCY_MIN, *_LATENCY_MAX] instead of using a fixed value -- this
+// is often more effective at surfacing race conditions than just raising
+// a fixed number, since real DDR4 latency isn't perfectly constant either
+// (refresh, bank conflicts, etc. all add variable delay).
+// ----------------------------------------------------------------------
+static constexpr int  READ_LATENCY_CYCLES  = 30;
+static constexpr int  WRITE_LATENCY_CYCLES = 20;
+
+static constexpr bool RANDOMIZE_LATENCY = false;
+static constexpr int  READ_LATENCY_MIN  = 4;
+static constexpr int  READ_LATENCY_MAX  = 40;
+static constexpr int  WRITE_LATENCY_MIN = 1;
+static constexpr int  WRITE_LATENCY_MAX = 20;
+
+static inline int get_read_latency() {
+    if (!RANDOMIZE_LATENCY) return READ_LATENCY_CYCLES;
+    return READ_LATENCY_MIN + (std::rand() % (READ_LATENCY_MAX - READ_LATENCY_MIN + 1));
+}
+
+static inline int get_write_latency() {
+    if (!RANDOMIZE_LATENCY) return WRITE_LATENCY_CYCLES;
+    return WRITE_LATENCY_MIN + (std::rand() % (WRITE_LATENCY_MAX - WRITE_LATENCY_MIN + 1));
+}
 
 static inline uint32_t axi_window(uint32_t addr) {
     return addr & AXI_ADDR_MASK;
@@ -90,6 +122,10 @@ static void handle_mem_read_resp(std::unique_ptr<VMain>& dut,
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     auto dut = std::make_unique<VMain>();
+
+    if (RANDOMIZE_LATENCY) {
+        std::srand(12345); // fixed seed -- reproducible runs; change or use time(nullptr) for varied runs
+    }
 
     long long total_cycles = 0;
     bool limited = CYCLE_LIMIT >= 0;
@@ -188,10 +224,10 @@ int main(int argc, char** argv) {
                 if (dut->io_mem_req_bits_write) {
                     handle_mem_write(dut, mock_ddr3);
                     write_in_progress = true;
-                    write_latency_counter = 1; // 1-cycle latency response for writes
+                    write_latency_counter = get_write_latency();
                 } else {
                     read_in_progress = true;
-                    read_latency_counter = 4;
+                    read_latency_counter = get_read_latency();
                     active_read_addr = axi_window(dut->io_mem_req_bits_addr);
                 }
             }
@@ -246,10 +282,10 @@ int main(int argc, char** argv) {
                 if (dut->io_mem_req_bits_write) {
                     handle_mem_write(dut, mock_ddr3);
                     write_in_progress = true;
-                    write_latency_counter = 1;
+                    write_latency_counter = get_write_latency();
                 } else {
                     read_in_progress = true;
-                    read_latency_counter = 4;
+                    read_latency_counter = get_read_latency();
                     active_read_addr = dut->io_mem_req_bits_addr;
                 }
             }

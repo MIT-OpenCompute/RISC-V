@@ -90,6 +90,11 @@ class Core() extends Module {
 
     execute.io.flush := RegNext(jump_flush)
     execute.io.stall := false.B
+    when(!io.dcache_ready){
+            //  printf("not stall rum %b  pc: %x stall: %b\n ",rum,fetch.io.f2d.bits.pc, fetch_stall)
+    }.otherwise{
+            //  printf("not stall rum %b  pc: %x stall: %b\n ",rum,fetch.io.f2d.bits.pc, fetch_stall)
+    }
 
 
     io.dcache_req := execute.io.dcache_req

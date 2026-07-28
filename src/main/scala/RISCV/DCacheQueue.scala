@@ -30,11 +30,14 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
     })
 
   val enq = Wire(Decoupled(new MemReqWrapped))
-  val deq = Queue(enq, entries = 64, flow = true)
+  val deq = Queue(enq, entries = 64, flow = false)
 
   enq.bits  := io.req
   enq.valid := io.start
 
+   when(io.start && ! enq.ready){
+            printf("\n\n8 pushed val pushed enq ready  %b\n\n ", enq.ready)
+  }
   io.ready := enq.ready 
   io.dcache_start := false.B
   io.valid := false.B
@@ -45,10 +48,16 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
 
   val current_req = RegInit(0.U.asTypeOf(new MemReqWrapped))
   io.dcache_req:= deq.bits.req
+  when(!deq.valid) {
+    // printf("Queue ENMPTY")
+  }
   when(io.dcache_ready && deq.valid){
     deq.ready := true.B
     current_req := deq.bits
     io.dcache_start := true.B
+            when(deq.bits.rd === 8.U){
+            // printf("\n\n8 popped 8 popped\n\n")
+          }
         // printf("DCACHEQUEUE DEQ: rd=%d wen=%d addr=%d data=%d\n", deq.bits.rd, deq.bits.wen, deq.bits.req.address, deq.bits.req.write_data)
     
   }

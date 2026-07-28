@@ -188,17 +188,20 @@ class Execute() extends Module {
               "b101".U -> MemOp.LHU   
             ))
 
-            io.dcache_start := true.B
+            io.dcache_start := io.dcache_ready
             io.dcache_rd := inst.rd
             // printf("LOADLOADLOALDOALDOLAODLOLADO RD: %d addr: %d\n\n", inst.rd,addr)
             io.dcache_wen := true.B
             io.memory_stall := !io.dcache_ready
-            
+          //   when(inst.rd === 8.U){
+          //   printf("\n\n8 dumps 8 dumped stall: %b\n\n",  !io.dcache_ready)
+          // }
             
 
             when(!io.handshake_bypass){
               // state := ExecState.MEM_WAIT
-              bundle.rd_wen := false.B   
+              bundle.rd_wen := false.B  
+              valid := io.dcache_ready
             }.otherwise{
               valid := true.B
               bundle.hbp := true.B
@@ -223,7 +226,7 @@ class Execute() extends Module {
               "b001".U -> MemOp.SH,
               "b010".U -> MemOp.SW
             ))
-            io.dcache_start := true.B
+            io.dcache_start := io.dcache_ready
             io.dcache_rd := 0.U
             io.dcache_wen := false.B
             io.memory_stall := !io.dcache_ready

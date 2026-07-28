@@ -19,7 +19,7 @@ class Read() extends Module {
   })
 
   val rum_t = io.rum & "hFFFFFFFE".U
-  val raw_hazard = io.instruction.valid && (rum_t(io.instruction.bits.rs1) || rum_t(io.instruction.bits.rs2))
+  val raw_hazard = io.instruction.valid && (rum_t(io.instruction.bits.rs1) || rum_t(io.instruction.bits.rs2) || ( rum_t(io.instruction.bits.rd)))
   io.raw_hazard_stall := raw_hazard
 
   io.register_read_a := io.instruction.bits.rs1
@@ -29,16 +29,15 @@ class Read() extends Module {
   val valid  = RegInit(false.B)
   val bundle_w = WireDefault(bundle)
   when(io.flush) {
-    valid := false.B
-  }.elsewhen(raw_hazard) {
-    valid := false.B
+      valid := false.B
   }.elsewhen(io.stall) {
-
+  }.elsewhen(raw_hazard) {
+      valid := false.B
   }.otherwise {
-    bundle := io.instruction.bits
-    valid := io.instruction.valid
-    bundle.rs1_val := io.register_value_a
-    bundle.rs2_val := io.register_value_b
+      bundle := io.instruction.bits
+      valid := io.instruction.valid
+      bundle.rs1_val := io.register_value_a
+      bundle.rs2_val := io.register_value_b
   }
 
   // when(!io.stall){

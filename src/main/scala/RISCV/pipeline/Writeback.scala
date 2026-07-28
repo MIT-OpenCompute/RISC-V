@@ -45,7 +45,7 @@ class Writeback() extends Module {
     // printf("WRITING MEM: rd: %d   val: %d", io.mem_rd, io.mem_write_data )
   }
   when(io.instruction.valid || io.mem_write_enable){
-    when(io.instruction.valid && !io.instruction.bits.hbp && !io.stall &&io.instruction.bits.opcode === "b0000011".U){
+    when(io.instruction.valid && !io.instruction.bits.hbp &&io.instruction.bits.opcode === "b0000011".U){
       mem_rum_w := mem_rum | (1.U(32.W) << io.instruction.bits.rd)
     }
     mem_rum_w2 := mem_rum_w
@@ -54,18 +54,11 @@ class Writeback() extends Module {
     }
   }
   mem_rum := mem_rum_w2
-  io.reg_mem_rum := mem_rum_w
+  io.reg_mem_rum := mem_rum
 
-  // --- double-outstanding-load detector ---
-val issuing_load = io.instruction.valid && !io.instruction.bits.hbp &&
-                    io.instruction.bits.opcode === "b0000011".U
-val rd_already_pending = mem_rum(io.instruction.bits.rd)
-val double_outstanding = issuing_load && rd_already_pending && (io.instruction.bits.rd =/= 0.U)
-val lastPC = RegNext(io.instruction.bits.pc)
-when(double_outstanding && !io.stall ) {
-  printf("!!! DOUBLE-OUTSTANDING LOAD: rd=%d pc=%x mem_rum=%b lastpc %x(existing load into this reg not yet resolved)\n",
-    io.instruction.bits.rd, io.instruction.bits.pc, mem_rum,lastPC)
-}
+// when(io.mem_rd === 8.U){
+//   printf("\n\n8 recieved 8 recieved\n\n")
+// }
 
 //check if its the current oSne in the stage if it is replace, otherwise pipe through
 
