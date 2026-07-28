@@ -1,6 +1,9 @@
 package RISCV
 
+
 import chisel3._
+import chisel3.util._
+
 import _root_.circt.stage.ChiselStage
 import scala.math._
 
@@ -90,11 +93,7 @@ class Core() extends Module {
 
     execute.io.flush := RegNext(jump_flush)
     execute.io.stall := false.B
-    when(!io.dcache_ready){
-            //  printf("not stall rum %b  pc: %x stall: %b\n ",rum,fetch.io.f2d.bits.pc, fetch_stall)
-    }.otherwise{
-            //  printf("not stall rum %b  pc: %x stall: %b\n ",rum,fetch.io.f2d.bits.pc, fetch_stall)
-    }
+
 
 
     io.dcache_req := execute.io.dcache_req
@@ -121,6 +120,46 @@ class Core() extends Module {
     registers.io.in2            := writeback.io.mem_write_val
 
     io.icache_start := fetch.io.icache_start
+
+
+    val clockCount = RegInit(0.U(32.W))
+    val instCount  = RegInit(0.U(32.W))
+
+    clockCount := clockCount + 1.U
+
+    val last_fetched_inst = RegNext(fetch.io.f2d.bits.inst, 0.U)
+    val new_inst_detected = fetch.io.f2d.valid && (fetch.io.f2d.bits.inst =/= last_fetched_inst)
+    when(new_inst_detected) {
+    instCount := instCount + 1.U
+    }
+
+    val mem_stall_cycles = RegInit(0.U(32.W))
+    when(memory_stall) {
+    mem_stall_cycles := mem_stall_cycles + 1.U
+    }
+
+    val raw_stall_cycles = RegInit(0.U(32.W))
+    when(raw_stall) {
+    raw_stall_cycles := raw_stall_cycles + 1.U
+    }
+
+    val flush_count = RegInit(0.U(32.W))
+    when(jump_flush) {
+    flush_count := flush_count + 1.U
+    }
+
+    val LOG_INTERVAL = 1000000
+    val log_counter = RegInit(0.U(log2Up(LOG_INTERVAL).W))
+    val log_fire = log_counter === (LOG_INTERVAL - 1).U
+    log_counter := Mux(log_fire, 0.U, log_counter + 1.U)
+
+    when(log_fire) {
+    printf("\n=== PERF @ cycle %d ===\n", clockCount)
+    printf("instructions retired: %d\n", instCount)
+    printf("mem_stall_cycles: %d  raw_stall_cycles: %d  flushes: %d\n",
+        mem_stall_cycles, raw_stall_cycles, flush_count)
+    }
+
 
 // when(io.latch_in || io.execute) {
 // printf("=== Fetch ===\n")
