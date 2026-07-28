@@ -9,10 +9,16 @@ class Core() extends Module {
         val execute = Input(Bool())
 
         val program_memory_requested = Output(Bool())
-        val program_memory_adress = Output(UInt(32.W))
+        val program_memory_address = Output(UInt(32.W))
         val program_memory_value = Input(UInt(32.W))
         val program_memory_ready = Input(Bool())
         val program_memory_valid = Input(Bool())
+
+        val data_memory_write_requested = Output(Bool())
+        val data_memory_write_address = Output(UInt(32.W))
+        val data_memory_write_value = Output(UInt(32.W))
+        val data_memory_write_ready = Input(Bool())
+        val data_memory_write_complete = Input(Bool())
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -24,14 +30,15 @@ class Core() extends Module {
     val alu_pe = Module(new Alu)
     val reorder_buffer = Module(new ReorderBuffer())
 
-    io.program_memory_adress := program_pointer
+    io.program_memory_address := program_pointer
     io.program_memory_requested := fetch_stage.io.memory_read_requested
 
-    registers.io.write_enable := false.B
-    registers.io.write_address := 0.U(5.W)
-    registers.io.in := 0.U(32.W)
-    registers.io.read_address_a := 0.U(5.W)
-    registers.io.read_address_b := 0.U(5.W)
+    registers.io.write_enable := reorder_buffer.io.write_mode === WriteMode.Register
+    registers.io.write_address := reorder_buffer.io.write_address
+    registers.io.in := reorder_buffer.io.write_value
+
+    registers.io.read_address_a := register_scoreboard.io.read_register_1
+    registers.io.read_address_b := register_scoreboard.io.read_register_2
 
     fetch_stage.io.next_ready := decode_stage.io.ready
     fetch_stage.io.execute := io.execute
@@ -53,9 +60,9 @@ class Core() extends Module {
 
     register_scoreboard.io.instruction := decode_stage.io.next_instruction
     register_scoreboard.io.valid := decode_stage.io.next_valid
-    register_scoreboard.io.broadcast_free_value := 0.U
-    register_scoreboard.io.broadcast_free_valid := false.B
-    register_scoreboard.io.broadcast_free_register := 0.U
+    register_scoreboard.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
+    register_scoreboard.io.broadcast_free_value := reorder_buffer.io.write_value
+    register_scoreboard.io.broadcast_free_register := reorder_buffer.io.write_address
 
     register_scoreboard.io.read_result_1 := registers.io.out_a
     register_scoreboard.io.read_result_2 := registers.io.out_b
@@ -63,14 +70,11 @@ class Core() extends Module {
     register_scoreboard.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
     register_scoreboard.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
 
-    registers.io.read_address_a := register_scoreboard.io.read_register_1
-    registers.io.read_address_b := register_scoreboard.io.read_register_2
-
     instruction_dispatch_queue.io.instruction := register_scoreboard.io.next_instruction
     instruction_dispatch_queue.io.valid := register_scoreboard.io.next_valid
-    instruction_dispatch_queue.io.broadcast_free_valid := false.B
-    instruction_dispatch_queue.io.broadcast_free_register := 0.U
-    instruction_dispatch_queue.io.broadcast_free_value := 0.U
+    instruction_dispatch_queue.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
+    instruction_dispatch_queue.io.broadcast_free_value := reorder_buffer.io.write_value
+    instruction_dispatch_queue.io.broadcast_free_register := reorder_buffer.io.write_address
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
 
     alu_pe.io.instruction := instruction_dispatch_queue.io.alu_out
@@ -83,10 +87,16 @@ class Core() extends Module {
     reorder_buffer.io.buffer_entry.mode := decode_stage.io.next_instruction.write_mode
     reorder_buffer.io.buffer_entry.complete := false.B
     reorder_buffer.io.valid := decode_stage.io.next_valid
-    reorder_buffer.io.write_complete := true.B
 
     reorder_buffer.io.complete_pointer := alu_pe.io.out.reorder_pointer
     reorder_buffer.io.complete_valid := alu_pe.io.out_valid
+
+    reorder_buffer.io.write_ready := io.data_memory_write_ready
+    reorder_buffer.io.write_complete := io.data_memory_write_complete
+
+    io.data_memory_write_value := reorder_buffer.io.write_value
+    io.data_memory_write_address := reorder_buffer.io.write_address
+    io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
 
     when(io.execute) {
         printf("Program Pointer: %d\n\n", program_pointer);
@@ -182,7 +192,7 @@ class Core() extends Module {
         printf("[RB] Write Mode: %b\n", reorder_buffer.io.write_mode.asUInt);
         printf("[RB] Write Complete: %b\n\n", reorder_buffer.io.write_complete);
 
-        printf("\n\n\n");
+        printf("\n\n\n\n\n\n");
     }
 }
 
