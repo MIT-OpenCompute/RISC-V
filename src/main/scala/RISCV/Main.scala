@@ -50,6 +50,8 @@ class Main(lineWidth: Int = 512) extends Module {
     core.io.dcache_valid := memory.io.dcache_valid
     core.io.dcache_data := memory.io.dcache_data
     core.io.handshake_bypass := memory.io.handshake_bypass
+    memory.io.dcache_rd := core.io.dcache_rd
+    memory.io.dcache_wen := core.io.dcache_wen 
 
     core.io.execute := io.execute
    
@@ -57,6 +59,8 @@ class Main(lineWidth: Int = 512) extends Module {
     io.mem_req       <> memory.io.mem_req
     memory.io.mem_resp := io.mem_resp
     memory.io.mem_valid := io.mem_valid
+    core.io.mem_rd := memory.io.dcache_rd_out
+    core.io.mem_wen := memory.io.dcache_wen_out
 
     memory.io.rxd := io.rxd
     io.txd := memory.io.txd

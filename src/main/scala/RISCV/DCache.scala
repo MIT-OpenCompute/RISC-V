@@ -285,7 +285,7 @@ class DCache( lineWidth: Int = 128) extends Module {
     // printf("\n\nMETA WRITE addr %x  data: %b\n\n ",write_addr,meta_wr_data)}
 
 
-    when(false.B) {
+    when(false.B&&(io.start || state =/= CacheState.IDLE)) {
         printf(
             "DCACHE cycle: state=%d ready=%d done=%d miss=%d | req_v=%d req_w=%d req_op=%d req_addr=%x req_data=%x | lookup_addr=%x idx=%d tag=%x word_off=%d byte_off=%d | array_meta=%x array_data=%x | wb_v=%d wb_addr=%x wb_data=%x | line_in_v=%d line_in_addr=%x line_in_data=%x\n",
             state.asUInt,

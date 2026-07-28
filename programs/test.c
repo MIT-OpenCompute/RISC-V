@@ -1,213 +1,219 @@
-/*
- * Standalone bare-metal test for mul / mulh / mulhu / mulhsu.
- *
- * Goal: verify the FPGA's multiplier produces correct HIGH-WORD results,
- * independent of Doom, libgcc, or any 64-bit C multiplication (which the
- * compiler could itself lower to mulh/mulhu, making it useless as a
- * reference). The reference value is computed using only 16x16->32
- * multiplies (which always fit in 32 bits, so the compiler will never need
- * to emit mulh/mulhu for them), combined with shifts/adds.
- *
- * Wire up like the working pong test: sp at 0x7000000, UART tx at
- * 0x08000034 (single byte, poll-free write assumed like the pong code).
- */
-
 #include <stdint.h>
-
-#define UART_TX ((volatile unsigned char*)0x08000034)
 
 __attribute__((naked)) void _start(void) {
     __asm__ volatile(
-        "li sp, 0x7000000\n"
+        "li sp, 0x8000000\n"
         "call main\n"
         "loop: j loop\n"
     );
 }
 
-static void uart_putc(char c) {
-    *UART_TX = (unsigned char)c;
+/* ---- provided debug hooks ---- */
+void debug_log(char* character) {
+    while (*character != '\0') {
+        *((volatile unsigned int*)0x70000000) = *(character);
+        *((volatile unsigned char*)0x8000034) = *(character);
+        character++;
+    }
 }
 
-static void uart_puts(const char *s) {
-    while (*s) uart_putc(*s++);
+static void debug_putc(char c) {
+    char s[2] = { c, 0 };
+    debug_log(s);
 }
 
-static void uart_puthex32(uint32_t v) {
+static void debug_hex32(unsigned int value) {
     static const char hex[] = "0123456789ABCDEF";
     for (int i = 7; i >= 0; i--) {
-        uart_putc(hex[(v >> (i * 4)) & 0xF]);
+        debug_putc(hex[(value >> (i * 4)) & 0xF]);
     }
 }
 
-/* ---- Reference 64-bit multiply using only 16x16->32 partial products ---- */
-/* No 64-bit C multiplication anywhere here, and every intermediate multiply
- * has 16-bit operands (product always fits in 32 bits), so the compiler
- * cannot lower any of this to mulh/mulhu. Pure mul + shifts + adds. */
-
-static void ref_umul64(uint32_t a, uint32_t b, uint32_t *hi, uint32_t *lo) {
-    uint32_t a_lo = a & 0xFFFF, a_hi = a >> 16;
-    uint32_t b_lo = b & 0xFFFF, b_hi = b >> 16;
-
-    uint32_t p0 = a_lo * b_lo; /* up to 32 bits, fine */
-    uint32_t p1 = a_lo * b_hi; /* up to 32 bits, fine */
-    uint32_t p2 = a_hi * b_lo; /* up to 32 bits, fine */
-    uint32_t p3 = a_hi * b_hi; /* up to 32 bits, fine */
-
-    /* combine: result = p3<<32 + (p1+p2)<<16 + p0, done with carries */
-    uint32_t mid = p1 + p2;
-    uint32_t carry_mid = (mid < p1) ? 1u : 0u; /* overflow of 32-bit add */
-
-    uint32_t lo_ = p0 + (mid << 16);
-    uint32_t carry_lo = (lo_ < p0) ? 1u : 0u;
-
-    uint32_t hi_ = p3 + (mid >> 16) + (carry_mid << 16) + carry_lo;
-
-    *hi = hi_;
-    *lo = lo_;
+static void trace(char *label, unsigned int value) {
+    debug_log(label);
+    debug_hex32(value);
+    debug_log("\n");
 }
 
-/* signed x signed high word, via unsigned ref + sign correction */
-static uint32_t ref_mulh(int32_t a, int32_t b) {
-    uint32_t ua = (uint32_t)(a < 0 ? -a : a);
-    uint32_t ub = (uint32_t)(b < 0 ? -b : b);
-    uint32_t hi, lo;
-    ref_umul64(ua, ub, &hi, &lo);
-    int neg = ((a < 0) ^ (b < 0)) ? 1 : 0;
-    if (neg) {
-        /* negate 64-bit {hi,lo} */
-        lo = ~lo;
-        hi = ~hi;
-        lo += 1;
-        if (lo == 0) hi += 1;
+/* ---- framebuffer ---- */
+#define FRAME_BASE  ((volatile unsigned int*)0x10000000)
+#define FRAME_W     320
+#define FRAME_H     240
+#define COLOR_GREEN 0x00FF00
+#define COLOR_RED   0xFF0000
+#define COLOR_BLUE  0x0000FF /* used as "in progress" so red/green are unambiguous */
+
+static void fill_screen(unsigned int color) {
+    volatile unsigned int* f = FRAME_BASE;
+    for (int i = 0; i < FRAME_W * FRAME_H; i++) {
+        f[i] = color;
     }
-    return hi;
 }
 
-/* signed a, unsigned b, high word */
-static uint32_t ref_mulhsu(int32_t a, uint32_t b) {
-    uint32_t ua = (uint32_t)(a < 0 ? -a : a);
-    uint32_t hi, lo;
-    ref_umul64(ua, b, &hi, &lo);
-    if (a < 0) {
-        lo = ~lo;
-        hi = ~hi;
-        lo += 1;
-        if (lo == 0) hi += 1;
+/* ---- test region ----
+ * RAM is 0x00000000 - 0x07FFFFFF (128MB). Stack starts at 0x08000000 and
+ * grows down, so this sits well clear of it, and well clear of the
+ * loaded program at the bottom of RAM. */
+#define TEST_BASE  ((volatile unsigned int*)0x01000000)
+#define TEST_WORDS 0x8000u   /* 32768 words = 128KB */
+#define BURST      16u       /* outstanding loads issued back-to-back per check */
+
+static unsigned int lfsr_state;
+
+static unsigned int lfsr_next(void) {
+    unsigned int x = lfsr_state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    lfsr_state = x;
+    return x;
+}
+
+/* ---- failure path: stop, log everything, paint the screen red ---- */
+static void fail(char *stage, volatile unsigned int *addr, unsigned int expected, unsigned int got) {
+    debug_log("FAIL @ stage: ");
+    debug_log(stage);
+    debug_log("\n");
+    trace("  addr=", (unsigned int)(uintptr_t)addr);
+    trace("  expected=", expected);
+    trace("  got=", got);
+    fill_screen(COLOR_RED);
+    while (1) {
+        __asm__ volatile("nop");
     }
-    return hi;
 }
 
-static uint32_t ref_mulhu(uint32_t a, uint32_t b) {
-    uint32_t hi, lo;
-    ref_umul64(a, b, &hi, &lo);
-    return hi;
+/* Write a pattern across the whole test region. */
+static void write_pattern(char *name, unsigned int (*pattern)(unsigned int idx)) {
+    debug_log("writing pattern: ");
+    debug_log(name);
+    debug_log("\n");
+    volatile unsigned int *mem = TEST_BASE;
+    for (unsigned int i = 0; i < TEST_WORDS; i++) {
+        mem[i] = pattern(i);
+    }
 }
 
-/* ---- Force actual hardware instructions via inline asm ---- */
+/* Hammer the region with bursts of BURST non-blocking-style loads (issued
+ * back-to-back before any of them are checked), then verify every value.
+ * Runs the sweep forward, then backward, then strided, to vary the access
+ * order the load queue sees. */
+#define PROGRESS_EVERY 128u   /* print every N groups of BURST */
 
-static inline uint32_t hw_mul(uint32_t a, uint32_t b) {
-    uint32_t r;
-    __asm__ volatile("mul %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
-    return r;
-}
-static inline uint32_t hw_mulh(int32_t a, int32_t b) {
-    uint32_t r;
-    __asm__ volatile("mulh %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
-    return r;
-}
-static inline uint32_t hw_mulhu(uint32_t a, uint32_t b) {
-    uint32_t r;
-    __asm__ volatile("mulhu %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
-    return r;
-}
-static inline uint32_t hw_mulhsu(int32_t a, uint32_t b) {
-    uint32_t r;
-    __asm__ volatile("mulhsu %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
-    return r;
+static void progress(char *stage, unsigned int group, unsigned int total_groups) {
+    if (group % PROGRESS_EVERY != 0) return;
+    debug_log("  ");
+    debug_log(stage);
+    debug_log(": group ");
+    debug_hex32(group);
+    debug_log(" / ");
+    debug_hex32(total_groups);
+    debug_log("\n");
 }
 
-typedef struct { uint32_t a, b; } pair_t;
+static void verify_burst(char *name, unsigned int (*pattern)(unsigned int idx)) {
+    debug_log("verifying pattern (burst): ");
+    debug_log(name);
+    debug_log("\n");
+    volatile unsigned int *mem = TEST_BASE;
+    unsigned int vals[BURST];
+    unsigned int groups = TEST_WORDS / BURST;
 
-/* operand pairs chosen to stress sign handling, boundary values, and
- * patterns typical of a reciprocal-based software divide (which is what
- * libgcc emits for rv32i_zmmul) */
-static const pair_t pairs[] = {
-    {0x00000000u, 0x00000000u},
-    {0x00000001u, 0x00000001u},
-    {0xFFFFFFFFu, 0xFFFFFFFFu},   /* -1 * -1 (signed) */
-    {0x80000000u, 0x80000000u},  /* INT32_MIN * INT32_MIN */
-    {0x7FFFFFFFu, 0x7FFFFFFFu},  /* INT32_MAX * INT32_MAX */
-    {0x80000000u, 0x00000001u},
-    {0x7FFFFFFFu, 0x00000002u},
-    {0x12345678u, 0x9ABCDEF0u},
-    {0xDEADBEEFu, 0xCAFEBABEu},
-    {0x0000FFFFu, 0x0000FFFFu},
-    {0xFFFF0000u, 0x0000FFFFu},
-    {0x55555555u, 0xAAAAAAAAu},
-    {0x00000064u, 0x000003E8u}, /* small values like Doom fixed-point mults */
-    {0xFFFFFF9Cu, 0x00000064u}, /* -100 * 100 */
-    {0x40000000u, 0x00000004u},
-    {0x89ABCDEFu, 0x01234567u},
-};
-
-int main(void) {
-    int n = (int)(sizeof(pairs) / sizeof(pairs[0]));
-    int fails = 0;
-
-    uart_puts("MUL/MULH/MULHU/MULHSU HW TEST\n");
-
-    for (int i = 0; i < n; i++) {
-        uint32_t a = pairs[i].a;
-        uint32_t b = pairs[i].b;
-
-        uint32_t hi_ref, lo_ref;
-        ref_umul64(a, b, &hi_ref, &lo_ref);
-
-        uint32_t lo_hw   = hw_mul(a, b);
-        uint32_t mulh_hw  = hw_mulh((int32_t)a, (int32_t)b);
-        uint32_t mulh_ref = ref_mulh((int32_t)a, (int32_t)b);
-        uint32_t mulhu_hw  = hw_mulhu(a, b);
-        uint32_t mulhu_ref = hi_ref;
-        uint32_t mulhsu_hw  = hw_mulhsu((int32_t)a, b);
-        uint32_t mulhsu_ref = ref_mulhsu((int32_t)a, b);
-
-        int mul_ok    = (lo_hw == lo_ref);
-        int mulh_ok   = (mulh_hw == mulh_ref);
-        int mulhu_ok  = (mulhu_hw == mulhu_ref);
-        int mulhsu_ok = (mulhsu_hw == mulhsu_ref);
-
-        uart_puts("a=");    uart_puthex32(a);
-        uart_puts(" b=");   uart_puthex32(b);
-        uart_puts(" mul:");    uart_putc(mul_ok    ? 'P' : 'F');
-        uart_puts(" mulh:");   uart_putc(mulh_ok   ? 'P' : 'F');
-        uart_puts(" mulhu:");  uart_putc(mulhu_ok  ? 'P' : 'F');
-        uart_puts(" mulhsu:"); uart_putc(mulhsu_ok ? 'P' : 'F');
-
-        if (!mul_ok) {
-            uart_puts(" [mul hw="); uart_puthex32(lo_hw);
-            uart_puts(" ref=");     uart_puthex32(lo_ref); uart_puts("]");
+    /* forward sweep */
+    for (unsigned int g = 0; g < groups; g++) {
+        progress("fwd", g, groups);
+        unsigned int base = g * BURST;
+        for (unsigned int j = 0; j < BURST; j++) {
+            vals[j] = mem[base + j];        /* issue all loads before checking any */
         }
-        if (!mulh_ok) {
-            uart_puts(" [mulh hw="); uart_puthex32(mulh_hw);
-            uart_puts(" ref=");      uart_puthex32(mulh_ref); uart_puts("]");
+        for (unsigned int j = 0; j < BURST; j++) {
+            unsigned int expected = pattern(base + j);
+            if (vals[j] != expected) {
+                fail(name, &mem[base + j], expected, vals[j]);
+            }
         }
-        if (!mulhu_ok) {
-            uart_puts(" [mulhu hw="); uart_puthex32(mulhu_hw);
-            uart_puts(" ref=");       uart_puthex32(mulhu_ref); uart_puts("]");
-        }
-        if (!mulhsu_ok) {
-            uart_puts(" [mulhsu hw="); uart_puthex32(mulhsu_hw);
-            uart_puts(" ref=");        uart_puthex32(mulhsu_ref); uart_puts("]");
-        }
-        uart_putc('\n');
-
-        if (!mul_ok || !mulh_ok || !mulhu_ok || !mulhsu_ok) fails++;
     }
 
-    uart_puts("DONE fails=");
-    uart_puthex32((uint32_t)fails);
-    uart_putc('\n');
+    /* reverse sweep */
+    for (unsigned int g = groups; g > 0; g--) {
+        progress("rev", groups - g, groups);
+        unsigned int base = (g - 1) * BURST;
+        for (unsigned int j = 0; j < BURST; j++) {
+            vals[j] = mem[base + j];
+        }
+        for (unsigned int j = 0; j < BURST; j++) {
+            unsigned int expected = pattern(base + j);
+            if (vals[j] != expected) {
+                fail(name, &mem[base + j], expected, vals[j]);
+            }
+        }
+    }
 
-    while (1) { __asm__ volatile("nop"); }
-    return 0;
+    /* strided sweep: hit every 7th burst-group first, wrapping around, to
+     * decorrelate access order from anything the memory system might be
+     * pipelining based on sequential stride */
+    for (unsigned int g = 0; g < groups; g++) {
+        progress("stride", g, groups);
+        unsigned int base = ((g * 7u) % groups) * BURST;
+        for (unsigned int j = 0; j < BURST; j++) {
+            vals[j] = mem[base + j];
+        }
+        for (unsigned int j = 0; j < BURST; j++) {
+            unsigned int expected = pattern(base + j);
+            if (vals[j] != expected) {
+                fail(name, &mem[base + j], expected, vals[j]);
+            }
+        }
+    }
+}
+
+/* ---- patterns ---- */
+static unsigned int pat_address(unsigned int idx) {
+    return (unsigned int)(uintptr_t)&TEST_BASE[idx];
+}
+static unsigned int pat_inv_address(unsigned int idx) {
+    return ~pat_address(idx);
+}
+static unsigned int pat_checkerboard(unsigned int idx) {
+    return (idx & 1) ? 0xAAAAAAAAu : 0x55555555u;
+}
+static unsigned int lfsr_expected[TEST_WORDS];
+static unsigned int pat_lfsr(unsigned int idx) {
+    return lfsr_expected[idx];
+}
+
+int main() {
+    debug_log("boot: memory stress test\n");
+    fill_screen(COLOR_BLUE);
+
+    trace("test base=", (unsigned int)(uintptr_t)TEST_BASE);
+    trace("test words=", TEST_WORDS);
+    trace("burst depth=", BURST);
+
+    write_pattern("address", pat_address);
+    verify_burst("address", pat_address);
+
+    write_pattern("inverted-address", pat_inv_address);
+    verify_burst("inverted-address", pat_inv_address);
+
+    write_pattern("checkerboard", pat_checkerboard);
+    verify_burst("checkerboard", pat_checkerboard);
+
+    lfsr_state = 0xC001D00D;
+    {
+        volatile unsigned int *mem = TEST_BASE;
+        for (unsigned int i = 0; i < TEST_WORDS; i++) {
+            unsigned int v = lfsr_next();
+            mem[i] = v;
+            lfsr_expected[i] = v;
+        }
+    }
+    verify_burst("lfsr", pat_lfsr);
+
+    debug_log("all patterns verified OK\n");
+    fill_screen(COLOR_GREEN);
+
+    while (1) {
+        __asm__ volatile("nop");
+    }
 }

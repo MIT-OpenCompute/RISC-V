@@ -28,50 +28,53 @@ class Registers() extends Module {
     val write_enable   = Input(Bool())
     val write_address  = Input(UInt(5.W))
     val in             = Input(UInt(32.W))
+    val write_enable2   = Input(Bool())
+    val write_address2  = Input(UInt(5.W))
+    val in2            = Input(UInt(32.W))
     val read_address_a = Input(UInt(5.W))
     val read_address_b = Input(UInt(5.W))
     val out_a          = Output(UInt(32.W))
     val out_b          = Output(UInt(32.W))
 
-  val debug_1  = Output(UInt(32.W))
-        val debug_2  = Output(UInt(32.W))
-        val debug_3  = Output(UInt(32.W))
-        val debug_4  = Output(UInt(32.W))
-        val debug_5  = Output(UInt(32.W))
-        val debug_6  = Output(UInt(32.W))
-        val debug_7  = Output(UInt(32.W))
-        val debug_8  = Output(UInt(32.W))
-        val debug_9  = Output(UInt(32.W))
-        val debug_10 = Output(UInt(32.W))
-        val debug_11 = Output(UInt(32.W))
-        val debug_12 = Output(UInt(32.W))
-        val debug_13 = Output(UInt(32.W))
-        val debug_14 = Output(UInt(32.W))
-        val debug_15 = Output(UInt(32.W))
-        val debug_16 = Output(UInt(32.W))
-        val debug_17 = Output(UInt(32.W))
-        val debug_18 = Output(UInt(32.W))
-        val debug_19 = Output(UInt(32.W))
-        val debug_20 = Output(UInt(32.W))
-        val debug_21 = Output(UInt(32.W))
-        val debug_22 = Output(UInt(32.W))
-        val debug_23 = Output(UInt(32.W))
-        val debug_24 = Output(UInt(32.W))
-        val debug_25 = Output(UInt(32.W))
-        val debug_26 = Output(UInt(32.W))
-        val debug_27 = Output(UInt(32.W))
-        val debug_28 = Output(UInt(32.W))
-        val debug_29 = Output(UInt(32.W))
-        val debug_30 = Output(UInt(32.W))
-        val debug_31 = Output(UInt(32.W))
+    val debug_1  = Output(UInt(32.W))
+    val debug_2  = Output(UInt(32.W))
+    val debug_3  = Output(UInt(32.W))
+    val debug_4  = Output(UInt(32.W))
+    val debug_5  = Output(UInt(32.W))
+    val debug_6  = Output(UInt(32.W))
+    val debug_7  = Output(UInt(32.W))
+    val debug_8  = Output(UInt(32.W))
+    val debug_9  = Output(UInt(32.W))
+    val debug_10 = Output(UInt(32.W))
+    val debug_11 = Output(UInt(32.W))
+    val debug_12 = Output(UInt(32.W))
+    val debug_13 = Output(UInt(32.W))
+    val debug_14 = Output(UInt(32.W))
+    val debug_15 = Output(UInt(32.W))
+    val debug_16 = Output(UInt(32.W))
+    val debug_17 = Output(UInt(32.W))
+    val debug_18 = Output(UInt(32.W))
+    val debug_19 = Output(UInt(32.W))
+    val debug_20 = Output(UInt(32.W))
+    val debug_21 = Output(UInt(32.W))
+    val debug_22 = Output(UInt(32.W))
+    val debug_23 = Output(UInt(32.W))
+    val debug_24 = Output(UInt(32.W))
+    val debug_25 = Output(UInt(32.W))
+    val debug_26 = Output(UInt(32.W))
+    val debug_27 = Output(UInt(32.W))
+    val debug_28 = Output(UInt(32.W))
+    val debug_29 = Output(UInt(32.W))
+    val debug_30 = Output(UInt(32.W))
+    val debug_31 = Output(UInt(32.W))
   })
 
 
     val regs = RegInit(VecInit(Seq.fill(32.toInt)(0.U(32.W))))
 
     // Dual read ports
-    io.out_a := RegNext(regs(io.read_address_a))
-    io.out_b := RegNext(regs(io.read_address_b))
+    io.out_a := (regs(io.read_address_a))
+    io.out_b := (regs(io.read_address_b))
 
     io.debug_1 := regs(1);
     io.debug_2 := regs(2);
@@ -110,6 +113,9 @@ class Registers() extends Module {
 
     when (io.write_enable && (io.write_address =/= 0.U)) {
         regs(io.write_address) := io.in
+    }
+    when (io.write_enable2 && (io.write_address2 =/= 0.U) && !(io.write_enable&&io.write_address === io.write_address2)) {
+        regs(io.write_address2) := io.in2
     }
 
   // val REG_COUNT = 32

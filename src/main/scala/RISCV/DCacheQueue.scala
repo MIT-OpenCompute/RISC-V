@@ -49,6 +49,7 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
     deq.ready := true.B
     current_req := deq.bits
     io.dcache_start := true.B
+        // printf("DCACHEQUEUE DEQ: rd=%d wen=%d addr=%d data=%d\n", deq.bits.rd, deq.bits.wen, deq.bits.req.address, deq.bits.req.write_data)
     
   }
   io.data:= 0.U
@@ -57,7 +58,7 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
     io.data := io.dcache_data
     io.rd := current_req.rd
     io.wen := current_req.wen
-    
+        // printf("DCACHEQUEUE RETURN: rd=%d wen=%d data=%d\n", current_req.rd, current_req.wen, io.dcache_data)    
   }
 
 

@@ -19,6 +19,10 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
     val dcache_ready = Output(Bool())
     val dcache_valid = Output(Bool())
     val dcache_data = Output(UInt(32.W))
+    val dcache_rd = Input(UInt(5.W))
+    val dcache_wen = Input(Bool())
+    val dcache_rd_out = Output(UInt(5.W))
+    val dcache_wen_out = Output(Bool())
 
 
 
@@ -66,7 +70,7 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
   val latch_out = RegInit(0.U(16.W))
   io.latch_out := latch_out
   when(is_debug_char && io.dcache_start) {
-      printf("%c", io.dcache_req.write_data);
+      printf("%c", (io.dcache_req.write_data)(7,0));
   }
 
   when(is_debug_num && io.dcache_start) {
@@ -84,7 +88,10 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
   io.dcache_ready := mem.io.dcache_ready
   io.dcache_valid := mem.io.dcache_valid || is_excep
   io.dcache_data := mem.io.dcache_data
-
+  mem.io.dcache_rd := io.dcache_rd
+  mem.io.dcache_wen := io.dcache_wen
+  io.dcache_rd_out := mem.io.dcache_rd_out
+  io.dcache_wen_out := mem.io.dcache_wen_out
 
 
   val keytracker_word = (io.dcache_req.address - KEYTRACKER_BASE)(5, 2)

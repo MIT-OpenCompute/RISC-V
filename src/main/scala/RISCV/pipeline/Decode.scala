@@ -17,6 +17,7 @@ class InstructionBundle extends Bundle {
   val func3 = UInt(3.W)
   val func7 = UInt(7.W)
   val pc = UInt(32.W)
+  val hbp = Bool()
 }
 
 class Decode() extends Module {
@@ -73,6 +74,7 @@ class Decode() extends Module {
   io.decoded.bits.func7 := func7
   io.decoded.bits.pc := pc
   io.decoded.valid := valid
+  io.decoded.bits.hbp := false.B
   // printf("DECODE: stall=%b flush=%b f2d_valid=%b f2d_pc=%x | out_valid=%b out_pc=%x out_opcode=%b rd = %d inst = %x\n",
   // io.stall,
   // io.flush,

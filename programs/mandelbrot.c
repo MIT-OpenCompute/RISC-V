@@ -45,6 +45,20 @@ static void trace(char *label, unsigned int value) {
 #define SCALE 1024
 #define MAX_ITER 32
 
+/* Map an escape iteration count to a 24-bit RGB color (0x00RRGGBB). */
+static unsigned int iter_to_color(int iter) {
+    if (iter == MAX_ITER) {
+        return 0x000000;
+    }
+
+    unsigned int t = (unsigned int)iter;
+    unsigned int r = (t * 8) & 0xFF;
+    unsigned int g = (t * 5) & 0xFF;
+    unsigned int b = (t * 13) & 0xFF;
+
+    return (r << 16) | (g << 8) | b;
+}
+
 void draw_mandelbrot(volatile unsigned int* frame, int cx, int cy, int zoom) {
     int x_start = cx - zoom;
     int y_start = cy - (zoom * 240 / 320);
@@ -69,14 +83,6 @@ void draw_mandelbrot(volatile unsigned int* frame, int cx, int cy, int zoom) {
             int zi = 0;
             int iter = 0;
 
-            int trace_this = (px == 0 && py == 0);
-
-            if (trace_this) {
-                debug_log("=== pixel(0,0) trace start ===\n");
-                trace("cr=", (unsigned int)cr);
-                trace("ci=", (unsigned int)ci);
-            }
-
             while (iter < MAX_ITER) {
                 int zr_times_zr = zr * zr;          /* raw mul result, pre-shift */
                 int zi_times_zi = zi * zi;
@@ -85,21 +91,7 @@ void draw_mandelbrot(volatile unsigned int* frame, int cx, int cy, int zoom) {
                 int zr2 = zr_times_zr >> 10;
                 int zi2 = zi_times_zi >> 10;
 
-                if (trace_this) {
-                    debug_log("-- iter=");
-                    debug_hex32((unsigned int)iter);
-                    debug_log("\n");
-                    trace("  zr=", (unsigned int)zr);
-                    trace("  zi=", (unsigned int)zi);
-                    trace("  zr*zr(raw)=", (unsigned int)zr_times_zr);
-                    trace("  zi*zi(raw)=", (unsigned int)zi_times_zi);
-                    trace("  zr*zi(raw)=", (unsigned int)zr_times_zi);
-                    trace("  zr2(>>10)=", (unsigned int)zr2);
-                    trace("  zi2(>>10)=", (unsigned int)zi2);
-                }
-
                 if (zr2 + zi2 > 4 * SCALE) {
-                    if (trace_this) debug_log("  -> escaped\n");
                     break;
                 }
 
@@ -109,50 +101,9 @@ void draw_mandelbrot(volatile unsigned int* frame, int cx, int cy, int zoom) {
                 iter++;
             }
 
-            if (trace_this) {
-                trace("=== pixel(0,0) final iter=", (unsigned int)iter);
-            }
-
-            unsigned int color;
-            if (iter == MAX_ITER) {
-                color = 0x00;
-            } else {
-                color = (unsigned int)(iter * 7);
-            }
-            frame[320 * py + px] = color;
+            frame[320 * py + px] = iter_to_color(iter);
         }
     }
-}
-
-/* ---- multiply self-test, run once at boot before any rendering ----
- * Known-good pairs with results a human/script can verify by eye.
- * If mul is aliasing add (as seen on real hw for zmmul), 5*5 will print
- * as 10, not 25, immediately flagging the problem before anything else
- * runs. */
-static void mul_case(int idx, int a, int b, int expect) {
-    int got = a * b;
-    debug_log("case ");
-    debug_hex32((unsigned int)idx);
-    debug_log(": a=");
-    debug_hex32((unsigned int)a);
-    debug_log(" b=");
-    debug_hex32((unsigned int)b);
-    debug_log(" got=");
-    debug_hex32((unsigned int)got);
-    debug_log(" expect=");
-    debug_hex32((unsigned int)expect);
-    debug_log(got == expect ? " PASS\n" : " FAIL\n");
-}
-
-static void mul_selftest(void) {
-    debug_log("=== mul self-test start ===\n");
-    mul_case(0, 5, 5, 25);
-    mul_case(1, 7, 6, 42);
-    mul_case(2, -3, 4, -12);
-    mul_case(3, 1024, 1024, 1048576);
-    mul_case(4, 100, 1000, 100000);
-    mul_case(5, -1, -1, 1);
-    debug_log("=== mul self-test end ===\n");
 }
 
 int main() {
@@ -160,8 +111,6 @@ int main() {
     volatile unsigned int* timer = (volatile unsigned int*)0x8000004;
 
     debug_log("boot\n");
-
-    mul_selftest();
 
     int cx = -768;
     int cy = 0;
@@ -174,24 +123,16 @@ int main() {
         debug_hex32((unsigned int)step);
         debug_log("\n");
 
-        int a = -120, b = -154224;
-        int r1 = a * a;
-        int r2 = b * b;
-        int r3 = a * b;
-        trace("r1(a*a)=", (unsigned int)r1);
-        trace("r2(b*b)=", (unsigned int)r2);
-        trace("r3(a*b)=", (unsigned int)r3);
-
-        // int zoom = 1536;
-        // for (int i = 0; i < step; i++) {
-        //     zoom = (zoom * 3) / 4;
-        // }
-        // draw_mandelbrot(frame, cx, cy, zoom);
+        int zoom = 1536;
+        for (int i = 0; i < step; i++) {
+            zoom = (zoom * 3) / 4;
+        }
+        draw_mandelbrot(frame, cx, cy, zoom);
 
         step++;
-        // if (step > 8) step = 0;
+        if (step > 8) step = 0;
 
-        while (*timer - ctime < 500000) {
+        while (*timer - ctime < 5) {
             __asm__ volatile("nop");
         }
     }

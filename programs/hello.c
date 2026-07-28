@@ -134,7 +134,6 @@ int main() {
                 frame[320 * (paddY2 + y) + 299 + x] = 0xE0;
             }
         }
-        *uart_tx = 'a';
         while (*timer - ctime < 8000) {
             __asm__ volatile("nop");
         }

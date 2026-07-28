@@ -156,6 +156,16 @@ int main(int argc, char** argv) {
     int pixelIdx = 0;
 
     // --- State variables for tracking memory operations ---
+    // NOTE: this models a memory controller that can only have ONE
+    // request in flight at a time -- io_mem_req_ready is only ever
+    // asserted while both write_in_progress and read_in_progress are
+    // false. This mirrors the real ddr4_line_memory (req_ready only
+    // true in S_IDLE) and the DCache's own single-outstanding-miss
+    // guarantee. Previously ready was asserted unconditionally whenever
+    // valid was high, which let a second request appear "accepted" while
+    // one was already in flight -- silently dropped rather than stalled,
+    // invisible at low request pressure but exactly the kind of bug that
+    // shows up once non-blocking loads start overlapping requests.
     bool read_in_progress = false;
     int  read_latency_counter = 0;
     uint32_t active_read_addr = 0;
@@ -171,22 +181,19 @@ int main(int argc, char** argv) {
             dut->io_vga_clk = 1;
 
             // 1. Process Incoming Handshakes
-            if (dut->io_mem_req_valid) {
-                dut->io_mem_req_ready = 1;
+            // ready is only ever high when nothing is currently in flight.
+            dut->io_mem_req_ready = (!write_in_progress && !read_in_progress) ? 1 : 0;
 
+            if (dut->io_mem_req_valid && dut->io_mem_req_ready) {
                 if (dut->io_mem_req_bits_write) {
-                    if (!write_in_progress) {
-                        handle_mem_write(dut, mock_ddr3);
-                        write_in_progress = true;
-                        write_latency_counter = 1; // 1-cycle latency response for writes
-                    }
-                } else if (!read_in_progress) {
+                    handle_mem_write(dut, mock_ddr3);
+                    write_in_progress = true;
+                    write_latency_counter = 1; // 1-cycle latency response for writes
+                } else {
                     read_in_progress = true;
                     read_latency_counter = 4;
                     active_read_addr = axi_window(dut->io_mem_req_bits_addr);
                 }
-            } else {
-                dut->io_mem_req_ready = 0;
             }
 
             // 2. Return Responses / Manage Timing
@@ -233,22 +240,18 @@ int main(int argc, char** argv) {
             dut->io_vga_clk = 1;
 
             // 1. Process Incoming Handshakes
-            if (dut->io_mem_req_valid) {
-                dut->io_mem_req_ready = 1;
+            dut->io_mem_req_ready = (!write_in_progress && !read_in_progress) ? 1 : 0;
 
+            if (dut->io_mem_req_valid && dut->io_mem_req_ready) {
                 if (dut->io_mem_req_bits_write) {
-                    if (!write_in_progress) {
-                        handle_mem_write(dut, mock_ddr3);
-                        write_in_progress = true;
-                        write_latency_counter = 1;
-                    }
-                } else if (!read_in_progress) {
+                    handle_mem_write(dut, mock_ddr3);
+                    write_in_progress = true;
+                    write_latency_counter = 1;
+                } else {
                     read_in_progress = true;
                     read_latency_counter = 4;
                     active_read_addr = dut->io_mem_req_bits_addr;
                 }
-            } else {
-                dut->io_mem_req_ready = 0;
             }
 
             // 2. Return Responses / Manage Timing

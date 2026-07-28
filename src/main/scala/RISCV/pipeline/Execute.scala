@@ -21,6 +21,8 @@ class Execute() extends Module {
     val dcache_ready = Input(Bool())
     val dcache_valid = Input(Bool())
     val dcache_data = Input(UInt(32.W))
+    val dcache_rd = Output(UInt(5.W))
+    val dcache_wen = Output(Bool())
     val handshake_bypass = Input(Bool())
 
     val memory_stall = Output(Bool())
@@ -47,6 +49,8 @@ class Execute() extends Module {
   io.next_instruction.valid := false.B
   io.next_instruction.bits := bundle
   io.jump_flush := false.B
+  io.dcache_rd := 0.U
+  io.dcache_wen := false.B
 
   alu.io.func7 := io.instruction.bits.func7
   alu.io.func3 := io.instruction.bits.func3
@@ -85,7 +89,7 @@ class Execute() extends Module {
         val pc_plus_4 = inst.pc + 4.U
         val pc_plus_imm = inst.pc + inst.immediate
         val addr = inst.rs1_val + inst.immediate
-
+        // printf("RS1Val %d Imm %d pc %d rs1 %d\n", inst.rs1_val, inst.immediate,inst.pc, inst.rs1)
         
         bundle := inst
         bundle.rd_wen := false.B
@@ -176,7 +180,6 @@ class Execute() extends Module {
             io.dcache_req.address := addr
             io.dcache_req.read := true.B
             io.dcache_req.write := false.B
-                //  printf("LOADING LOADING %x\n",addr)
             io.dcache_req.op := MuxLookup(inst.func3, MemOp.LW)(Seq(
               "b000".U -> MemOp.LB,
               "b001".U -> MemOp.LH,
@@ -184,16 +187,24 @@ class Execute() extends Module {
               "b100".U -> MemOp.LBU,  
               "b101".U -> MemOp.LHU   
             ))
+
             io.dcache_start := true.B
-            io.memory_stall := true.B
-            bundle.rd_wen := true.B
+            io.dcache_rd := inst.rd
+            // printf("LOADLOADLOALDOALDOLAODLOLADO RD: %d addr: %d\n\n", inst.rd,addr)
+            io.dcache_wen := true.B
+            io.memory_stall := !io.dcache_ready
+            
+            
 
             when(!io.handshake_bypass){
-              state := ExecState.MEM_WAIT
+              // state := ExecState.MEM_WAIT
+              bundle.rd_wen := false.B   
             }.otherwise{
               valid := true.B
+              bundle.hbp := true.B
               bundle.rd_val := io.dcache_data
-              io.memory_stall := false.B             
+              io.memory_stall := false.B        
+              bundle.rd_wen := true.B     
             }
         
            
@@ -213,14 +224,17 @@ class Execute() extends Module {
               "b010".U -> MemOp.SW
             ))
             io.dcache_start := true.B
-            io.memory_stall := true.B
+            io.dcache_rd := 0.U
+            io.dcache_wen := false.B
+            io.memory_stall := !io.dcache_ready
             bundle.rd_wen := false.B
             when(!io.handshake_bypass){
-              state := ExecState.MEM_WAIT
+
             }.otherwise{
               // printf("\nHANDSHAKE BYPASSING \n")
               valid := true.B
               io.memory_stall := false.B
+              bundle.hbp := true.B
 
              
             }
@@ -236,18 +250,18 @@ class Execute() extends Module {
       }
     }
 
-    is(ExecState.MEM_WAIT) {
-      io.memory_stall := true.B
-     when(io.dcache_valid || io.handshake_bypass) {
-        state := ExecState.IDLE
+    // is(ExecState.MEM_WAIT) {
+    //   io.memory_stall := true.B
+    //  when(io.dcache_valid || io.handshake_bypass) {
+    //     state := ExecState.IDLE
   
-        io.memory_stall := false.B
-        io.next_instruction.valid := true.B
-        io.next_instruction.bits := bundle
-        io.next_instruction.bits.rd_val := io.dcache_data
-        valid := false.B
-      }
-    }
+    //     io.memory_stall := false.B
+    //     io.next_instruction.valid := true.B
+    //     io.next_instruction.bits := bundle
+    //     io.next_instruction.bits.rd_val := io.dcache_data
+    //     valid := false.B
+    //   }
+    // }
   }
 
   when(state === ExecState.IDLE) {
