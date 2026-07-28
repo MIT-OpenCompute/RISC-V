@@ -30,7 +30,7 @@ class DCacheQueue( lineWidth: Int = 128) extends Module {
     })
 
   val enq = Wire(Decoupled(new MemReqWrapped))
-  val deq = Queue(enq, entries = 64, flow = false)
+  val deq = Queue(enq, entries = 64, flow = true)
 
   enq.bits  := io.req
   enq.valid := io.start

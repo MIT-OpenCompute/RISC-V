@@ -49,8 +49,8 @@ static constexpr long long CYCLE_LIMIT = -1;
 // a fixed number, since real DDR4 latency isn't perfectly constant either
 // (refresh, bank conflicts, etc. all add variable delay).
 // ----------------------------------------------------------------------
-static constexpr int  READ_LATENCY_CYCLES  = 50;
-static constexpr int  WRITE_LATENCY_CYCLES = 50;
+static constexpr int  READ_LATENCY_CYCLES  = 200;
+static constexpr int  WRITE_LATENCY_CYCLES = 200;
 
 static constexpr bool RANDOMIZE_LATENCY = false;
 static constexpr int  READ_LATENCY_MIN  = 4;
