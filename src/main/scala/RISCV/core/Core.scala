@@ -71,9 +71,9 @@ class Core() extends Module {
 
     instruction_dispatch_queue.io.instruction := read_stage.io.next_instruction
     instruction_dispatch_queue.io.valid := read_stage.io.next_valid
-    instruction_dispatch_queue.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
-    instruction_dispatch_queue.io.broadcast_free_value := reorder_buffer.io.write_value
-    instruction_dispatch_queue.io.broadcast_free_register := reorder_buffer.io.write_address
+    instruction_dispatch_queue.io.broadcast_free_valid := alu_pe.io.broadcast_free_valid
+    instruction_dispatch_queue.io.broadcast_free_value := alu_pe.io.broadcast_free_value
+    instruction_dispatch_queue.io.broadcast_free_register := alu_pe.io.broadcast_free_register
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
 
     alu_pe.io.instruction := instruction_dispatch_queue.io.alu_out

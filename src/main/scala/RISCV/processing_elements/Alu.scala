@@ -15,6 +15,10 @@ class Alu(val width: Int = 32) extends Module {
         val out_valid = Output(Bool())
 
         val ready = Output(Bool())
+
+        val broadcast_free_valid = Output(Bool())
+        val broadcast_free_register = Output(UInt(5.W))
+        val broadcast_free_value = Output(UInt(32.W))
     })
 
     val out = RegInit(0.U.asTypeOf(new InstructionBundle))
@@ -24,6 +28,10 @@ class Alu(val width: Int = 32) extends Module {
 
     io.ready := io.next_ready
     // io.ready := false.B
+
+    io.broadcast_free_valid := false.B
+    io.broadcast_free_register := 0.U
+    io.broadcast_free_value := 0.U
 
     when(io.next_ready) {
         out := io.instruction
@@ -35,6 +43,10 @@ class Alu(val width: Int = 32) extends Module {
                     // ADDI
                     is("b000".U) {
                         out.rd_value := io.instruction.rs1_value + io.instruction.immediate
+
+                        io.broadcast_free_valid := true.B
+                        io.broadcast_free_register := io.instruction.rd
+                        io.broadcast_free_value := io.instruction.rs1_value + io.instruction.immediate
                     }
                 }
             }

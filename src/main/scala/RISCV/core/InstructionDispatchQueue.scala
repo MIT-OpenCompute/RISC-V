@@ -138,13 +138,13 @@ class InstructionDispatchQueue() extends Module {
     //   last_free_entry
     // )
 
-    for (n <- 0 to 31) {
-        printf(
-          "Rs %d %d\n",
-          n.U,
-          dependence_size(n.U)
-        )
-    }
+    // for (n <- 0 to 31) {
+    //     printf(
+    //       "Rs %d %d\n",
+    //       n.U,
+    //       dependence_size(n.U)
+    //     )
+    // }
 
     for (n <- 0 to 7) {
         printf(
