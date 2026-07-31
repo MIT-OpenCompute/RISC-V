@@ -22,13 +22,11 @@ class InstructionDispatchQueue() extends Module {
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
 
-        val broadcast_mark_valid = Output(Bool())
-        val broadcast_mark_register = Output(UInt(5.W))
-
         val ready = Output(Bool())
     })
 
     val queue = RegInit(VecInit(Seq.fill(8)(0.U.asTypeOf(new QueueEntry))))
+    val dependence_size = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
 
     val last_free_entry = WireInit(0.U(3.W))
     for (n <- 0 to 7) {
@@ -41,22 +39,28 @@ class InstructionDispatchQueue() extends Module {
     val first_valid_entry = WireInit(0.U(3.W))
     val first_valid_entry_valid = WireInit(false.B)
     for (n <- 0 to 7) {
-        when(queue(7.U - n.U).valid && queue(7.U - n.U).instruction.rs1_valid && queue(7.U - n.U).instruction.rs2_valid && io.alu_ready) {
+        when(
+          queue(7.U - n.U).valid && queue(7.U - n.U).instruction.rs1_dependence_counter === 0.U && queue(
+            7.U - n.U
+          ).instruction.rs2_dependence_counter === 0.U && io.alu_ready
+        ) {
             first_valid_entry := 7.U - n.U
             first_valid_entry_valid := true.B
         }
     }
 
     when(io.broadcast_free_valid) {
+        dependence_size(io.broadcast_free_register) := dependence_size(io.broadcast_free_register) - 1.U
+
         for (n <- 0 to 7) {
             when(queue(n.U).instruction.rs1 === io.broadcast_free_register) {
                 queue(n.U).instruction.rs1_value := io.broadcast_free_value
-                queue(n.U).instruction.rs1_valid := true.B
+                queue(n.U).instruction.rs1_dependence_counter := queue(n.U).instruction.rs1_dependence_counter - 1.U
             }
 
             when(queue(n.U).instruction.rs2 === io.broadcast_free_register) {
                 queue(n.U).instruction.rs2_value := io.broadcast_free_value
-                queue(n.U).instruction.rs2_valid := true.B
+                queue(n.U).instruction.rs2_dependence_counter := queue(n.U).instruction.rs2_dependence_counter - 1.U
             }
         }
     }
@@ -64,25 +68,17 @@ class InstructionDispatchQueue() extends Module {
     io.alu_out := queue(first_valid_entry).instruction
     io.alu_out_valid := first_valid_entry_valid
 
-    val broadcast_mark_valid = WireInit(false.B)
-    io.broadcast_mark_valid := broadcast_mark_valid
-    val broadcast_mark_register = WireInit(0.U)
-    io.broadcast_mark_register := broadcast_mark_register
-
     when(first_valid_entry_valid) {
         for (n <- 1 to 7) {
             when(n.U > first_valid_entry) {
                 queue((n - 1).U) := queue(n.U)
 
-                broadcast_mark_valid := true.B
-                broadcast_mark_register := queue(first_valid_entry).instruction.rd
-
-                when(queue(n.U).instruction.rs1 === queue(first_valid_entry).instruction.rd) {
-                    queue((n - 1).U).instruction.rs1_valid := false.B
+                when(io.broadcast_free_valid && queue(n.U).instruction.rs1 === io.broadcast_free_register) {
+                    queue((n - 1).U).instruction.rs1_dependence_counter := queue(n.U).instruction.rs1_dependence_counter - 1.U
                 }
 
-                when(queue(n.U).instruction.rs2 === queue(first_valid_entry).instruction.rd) {
-                    queue((n - 1).U).instruction.rs2_valid := false.B
+                when(io.broadcast_free_valid && queue(n.U).instruction.rs2 === io.broadcast_free_register) {
+                    queue((n - 1).U).instruction.rs2_dependence_counter := queue(n.U).instruction.rs2_dependence_counter - 1.U
                 }
             }
         }
@@ -93,32 +89,42 @@ class InstructionDispatchQueue() extends Module {
     io.ready := !full
 
     when(io.valid && !full) {
+        when(!io.broadcast_free_valid || io.instruction.rd =/= io.broadcast_free_register) {
+            dependence_size(io.instruction.rd) := dependence_size(io.instruction.rd) + 1.U
+        }
+
         when(first_valid_entry_valid) {
             queue(last_free_entry - 1.U).instruction := io.instruction
             queue(last_free_entry - 1.U).valid := true.B
 
-            when(broadcast_mark_valid && broadcast_mark_register === io.instruction.rs1) {
-                queue(last_free_entry - 1.U).instruction.rs1_valid := false.B
+            queue(last_free_entry - 1.U).instruction.rs1_dependence_counter := dependence_size(io.instruction.rs1)
+            queue(last_free_entry - 1.U).instruction.rs2_dependence_counter := dependence_size(io.instruction.rs2)
+
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs1) {
+                queue(last_free_entry - 1.U).instruction.rs1_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
 
-            when(broadcast_mark_valid && broadcast_mark_register === io.instruction.rs2) {
-                queue(last_free_entry - 1.U).instruction.rs2_valid := false.B
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs2) {
+                queue(last_free_entry - 1.U).instruction.rs2_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
         }.otherwise {
             queue(last_free_entry).instruction := io.instruction
             queue(last_free_entry).valid := true.B
 
-            when(broadcast_mark_valid && broadcast_mark_register === io.instruction.rs1) {
-                queue(last_free_entry).instruction.rs1_valid := false.B
+            queue(last_free_entry).instruction.rs1_dependence_counter := dependence_size(io.instruction.rs1)
+            queue(last_free_entry).instruction.rs2_dependence_counter := dependence_size(io.instruction.rs2)
+
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs1) {
+                queue(last_free_entry).instruction.rs1_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
 
-            when(broadcast_mark_valid && broadcast_mark_register === io.instruction.rs2) {
-                queue(last_free_entry).instruction.rs2_valid := false.B
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs2) {
+                queue(last_free_entry).instruction.rs2_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
         }
     }
 
-    // printf("\n\n")
+    printf("\n\n")
 
     // printf(
     //   "First valid entry: %d First valid entry valid: %b Valid: %b\n",
@@ -132,18 +138,26 @@ class InstructionDispatchQueue() extends Module {
     //   last_free_entry
     // )
 
-    // for (n <- 0 to 7) {
-    //     printf(
-    //       "Queue %d -> valid: %b opcode: %b rs1: %b %b rs2: %b %b \n",
-    //       n.U,
-    //       queue(n.U).valid,
-    //       queue(n.U).instruction.opcode,
-    //       queue(n.U).instruction.rs1,
-    //       queue(n.U).instruction.rs1_valid,
-    //       queue(n.U).instruction.rs2,
-    //       queue(n.U).instruction.rs2_valid
-    //     )
-    // }
+    for (n <- 0 to 31) {
+        printf(
+          "Rs %d %d\n",
+          n.U,
+          dependence_size(n.U)
+        )
+    }
 
-    // printf("\n\n")
+    for (n <- 0 to 7) {
+        printf(
+          "Queue %d -> valid: %b opcode: %b rs1: %b %b rs2: %b %b \n",
+          n.U,
+          queue(n.U).valid,
+          queue(n.U).instruction.opcode,
+          queue(n.U).instruction.rs1,
+          queue(n.U).instruction.rs1_dependence_counter,
+          queue(n.U).instruction.rs2,
+          queue(n.U).instruction.rs2_dependence_counter
+        )
+    }
+
+    printf("\n\n")
 }

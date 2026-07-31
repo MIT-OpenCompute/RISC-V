@@ -23,6 +23,7 @@ class Alu(val width: Int = 32) extends Module {
     io.out_valid := out_valid
 
     io.ready := io.next_ready
+    // io.ready := false.B
 
     when(io.next_ready) {
         out := io.instruction

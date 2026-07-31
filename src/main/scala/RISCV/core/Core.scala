@@ -25,7 +25,7 @@ class Core() extends Module {
     val registers = Module(new Registers())
     val fetch_stage = Module(new FetchStage())
     val decode_stage = Module(new DecodeStage())
-    val register_scoreboard = Module(new RegisterScoreboard())
+    val read_stage = Module(new ReadStage())
     val instruction_dispatch_queue = Module(new InstructionDispatchQueue())
     val alu_pe = Module(new Alu)
     val reorder_buffer = Module(new ReorderBuffer())
@@ -37,8 +37,8 @@ class Core() extends Module {
     registers.io.write_address := reorder_buffer.io.write_address
     registers.io.in := reorder_buffer.io.write_value
 
-    registers.io.read_address_a := register_scoreboard.io.read_register_1
-    registers.io.read_address_b := register_scoreboard.io.read_register_2
+    registers.io.read_address_a := read_stage.io.read_register_1
+    registers.io.read_address_b := read_stage.io.read_register_2
 
     fetch_stage.io.next_ready := decode_stage.io.ready
     fetch_stage.io.execute := io.execute
@@ -52,26 +52,25 @@ class Core() extends Module {
         program_pointer := program_pointer + 4.U
     }
 
-    decode_stage.io.next_ready := register_scoreboard.io.ready
+    decode_stage.io.next_ready := read_stage.io.ready
     decode_stage.io.instruction := fetch_stage.io.next_instruction
     decode_stage.io.instruction_pointer := fetch_stage.io.next_instruction_pointer
     decode_stage.io.valid := fetch_stage.io.next_valid
     decode_stage.io.flush := false.B
 
-    register_scoreboard.io.instruction := decode_stage.io.next_instruction
-    register_scoreboard.io.valid := decode_stage.io.next_valid
-    register_scoreboard.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
-    register_scoreboard.io.broadcast_free_value := reorder_buffer.io.write_value
-    register_scoreboard.io.broadcast_free_register := reorder_buffer.io.write_address
+    read_stage.io.instruction := decode_stage.io.next_instruction
+    read_stage.io.instruction.reorder_pointer := reorder_buffer.io.head
+    read_stage.io.valid := decode_stage.io.next_valid
+    read_stage.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
+    read_stage.io.broadcast_free_value := reorder_buffer.io.write_value
+    read_stage.io.broadcast_free_register := reorder_buffer.io.write_address
 
-    register_scoreboard.io.read_result_1 := registers.io.out_a
-    register_scoreboard.io.read_result_2 := registers.io.out_b
-    register_scoreboard.io.next_ready := instruction_dispatch_queue.io.ready
-    register_scoreboard.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
-    register_scoreboard.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
+    read_stage.io.read_result_1 := registers.io.out_a
+    read_stage.io.read_result_2 := registers.io.out_b
+    read_stage.io.next_ready := instruction_dispatch_queue.io.ready
 
-    instruction_dispatch_queue.io.instruction := register_scoreboard.io.next_instruction
-    instruction_dispatch_queue.io.valid := register_scoreboard.io.next_valid
+    instruction_dispatch_queue.io.instruction := read_stage.io.next_instruction
+    instruction_dispatch_queue.io.valid := read_stage.io.next_valid
     instruction_dispatch_queue.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
     instruction_dispatch_queue.io.broadcast_free_value := reorder_buffer.io.write_value
     instruction_dispatch_queue.io.broadcast_free_register := reorder_buffer.io.write_address
@@ -99,88 +98,84 @@ class Core() extends Module {
     io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
 
     when(io.execute) {
-        // printf("Program Pointer: %d\n\n", program_pointer);
+        printf("Program Pointer: %d\n\n", program_pointer);
 
-        // printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
-        // printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
-        // printf("[Fetch] Program Pointer: %b\n", fetch_stage.io.program_pointer);
-        // printf("[Fetch] Flush: %b\n", fetch_stage.io.flush);
-        // printf("[Fetch] Memory Read Requested: %b\n", fetch_stage.io.memory_read_requested);
-        // printf("[Fetch] Memory Read Ready: %b\n", fetch_stage.io.memory_read_ready);
-        // printf("[Fetch] Memory Read Value: %b\n", fetch_stage.io.memory_read_value);
-        // printf("[Fetch] Memory Read Valid: %b\n", fetch_stage.io.memory_read_valid);
-        // printf("[Fetch] Next Instruction: %b\n", fetch_stage.io.next_instruction);
-        // printf("[Fetch] Next Instruction Pointer: %b\n", fetch_stage.io.next_instruction_pointer);
-        // printf("[Fetch] Next Valid: %b\n", fetch_stage.io.next_valid);
-        // printf("[Fetch] Ready: %b\n\n", fetch_stage.io.ready);
+        printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
+        printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
+        printf("[Fetch] Program Pointer: %b\n", fetch_stage.io.program_pointer);
+        printf("[Fetch] Flush: %b\n", fetch_stage.io.flush);
+        printf("[Fetch] Memory Read Requested: %b\n", fetch_stage.io.memory_read_requested);
+        printf("[Fetch] Memory Read Ready: %b\n", fetch_stage.io.memory_read_ready);
+        printf("[Fetch] Memory Read Value: %b\n", fetch_stage.io.memory_read_value);
+        printf("[Fetch] Memory Read Valid: %b\n", fetch_stage.io.memory_read_valid);
+        printf("[Fetch] Next Instruction: %b\n", fetch_stage.io.next_instruction);
+        printf("[Fetch] Next Instruction Pointer: %b\n", fetch_stage.io.next_instruction_pointer);
+        printf("[Fetch] Next Valid: %b\n", fetch_stage.io.next_valid);
+        printf("[Fetch] Ready: %b\n\n", fetch_stage.io.ready);
 
-        // printf("[Decode] Next Ready: %b\n", decode_stage.io.next_ready);
-        // printf("[Decode] Instruction: %b\n", decode_stage.io.instruction);
-        // printf("[Decode] Instruction Pointer: %b\n", decode_stage.io.instruction_pointer);
-        // printf("[Decode] Valid: %b\n", decode_stage.io.valid);
-        // printf("[Decode] Flush: %b\n", decode_stage.io.flush);
-        // printf("[Decode] Next Instruction Opcode: %b\n", decode_stage.io.next_instruction.opcode);
-        // printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
-        // printf("[Decode] Ready: %b\n\n", decode_stage.io.ready);
+        printf("[Decode] Next Ready: %b\n", decode_stage.io.next_ready);
+        printf("[Decode] Instruction: %b\n", decode_stage.io.instruction);
+        printf("[Decode] Instruction Pointer: %b\n", decode_stage.io.instruction_pointer);
+        printf("[Decode] Valid: %b\n", decode_stage.io.valid);
+        printf("[Decode] Flush: %b\n", decode_stage.io.flush);
+        printf("[Decode] Next Instruction Opcode: %b\n", decode_stage.io.next_instruction.opcode);
+        printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
+        printf("[Decode] Ready: %b\n\n", decode_stage.io.ready);
 
-        // printf("[RSB] Next Ready: %b\n", register_scoreboard.io.next_ready);
-        // printf("[RSB] Instruction Opcode: %b\n", register_scoreboard.io.instruction.opcode);
-        // printf("[RSB] Instruction Rs1: %b\n", register_scoreboard.io.instruction.rs1);
-        // printf("[RSB] Instruction Rs2: %b\n", register_scoreboard.io.instruction.rs2);
-        // printf("[RSB] Valid: %b\n", register_scoreboard.io.valid);
-        // printf("[RSB] Broadcast Free Valid: %b\n", register_scoreboard.io.broadcast_free_valid);
-        // printf("[RSB] Broadcast Free Register: %b\n", register_scoreboard.io.broadcast_free_register);
-        // printf("[RSB] Broadcast Free Value: %b\n", register_scoreboard.io.broadcast_free_value);
-        // printf("[RSB] Broadcast Mark Valid: %b\n", register_scoreboard.io.broadcast_mark_valid);
-        // printf("[RSB] Broadcast Mark Register: %b\n", register_scoreboard.io.broadcast_mark_register);
-        // printf("[RSB] Read Register 1: %b\n", register_scoreboard.io.read_register_1);
-        // printf("[RSB] Read Result 1: %b\n", register_scoreboard.io.read_result_1);
-        // printf("[RSB] Read Register 2: %b\n", register_scoreboard.io.read_register_2);
-        // printf("[RSB] Read Result 2: %b\n", register_scoreboard.io.read_result_2);
-        // printf("[RSB] Next Instruction Opcode: %b\n", register_scoreboard.io.next_instruction.opcode);
-        // printf("[RSB] Next Instruction Rs1: %b\n", register_scoreboard.io.next_instruction.rs1);
-        // printf("[RSB] Next Instruction Rs1 Valid: %b\n", register_scoreboard.io.next_instruction.rs1_valid);
-        // printf("[RSB] Next Instruction Rs1 Value: %b\n", register_scoreboard.io.next_instruction.rs1_value);
-        // printf("[RSB] Next Instruction Rs2: %b\n", register_scoreboard.io.next_instruction.rs2);
-        // printf("[RSB] Next Instruction Rs2 Valid: %b\n", register_scoreboard.io.next_instruction.rs2_valid);
-        // printf("[RSB] Next Instruction Rs2 Value: %b\n", register_scoreboard.io.next_instruction.rs2_value);
-        // printf("[RSB] Next Valid: %b\n", register_scoreboard.io.next_valid);
-        // printf("[RSB] Ready: %b\n\n", register_scoreboard.io.ready);
+        printf("[Read] Next Ready: %b\n", read_stage.io.next_ready);
+        printf("[Read] Instruction Opcode: %b\n", read_stage.io.instruction.opcode);
+        printf("[Read] Instruction Rs1: %b\n", read_stage.io.instruction.rs1);
+        printf("[Read] Instruction Rs2: %b\n", read_stage.io.instruction.rs2);
+        printf("[Read] Valid: %b\n", read_stage.io.valid);
+        printf("[Read] Broadcast Free Valid: %b\n", read_stage.io.broadcast_free_valid);
+        printf("[Read] Broadcast Free Register: %b\n", read_stage.io.broadcast_free_register);
+        printf("[Read] Broadcast Free Value: %b\n", read_stage.io.broadcast_free_value);
+        printf("[Read] Read Register 1: %b\n", read_stage.io.read_register_1);
+        printf("[Read] Read Result 1: %b\n", read_stage.io.read_result_1);
+        printf("[Read] Read Register 2: %b\n", read_stage.io.read_register_2);
+        printf("[Read] Read Result 2: %b\n", read_stage.io.read_result_2);
+        printf("[Read] Next Instruction Opcode: %b\n", read_stage.io.next_instruction.opcode);
+        printf("[Read] Next Instruction Rs1: %b\n", read_stage.io.next_instruction.rs1);
+        printf("[Read] Next Instruction Rs1 Valid: %b\n", read_stage.io.next_instruction.rs1_dependence_counter);
+        printf("[Read] Next Instruction Rs1 Value: %b\n", read_stage.io.next_instruction.rs1_value);
+        printf("[Read] Next Instruction Rs2: %b\n", read_stage.io.next_instruction.rs2);
+        printf("[Read] Next Instruction Rs2 Valid: %b\n", read_stage.io.next_instruction.rs2_dependence_counter);
+        printf("[Read] Next Instruction Rs2 Value: %b\n", read_stage.io.next_instruction.rs2_value);
+        printf("[Read] Next Valid: %b\n", read_stage.io.next_valid);
+        printf("[Read] Ready: %b\n\n", read_stage.io.ready);
 
-        // printf("[IDQ] Instruction: %b\n", instruction_dispatch_queue.io.instruction.opcode);
-        // printf("[IDQ] Valid: %b\n", instruction_dispatch_queue.io.valid);
-        // printf("[IDQ] ALU Out Opcode: %b\n", instruction_dispatch_queue.io.alu_out.opcode);
-        // printf("[IDQ] ALU Out Valid: %b\n", instruction_dispatch_queue.io.alu_out_valid);
-        // printf("[IDQ] ALU Out Ready: %b\n", instruction_dispatch_queue.io.alu_ready);
-        // printf("[IDQ] Broadcast Free Valid: %b\n", instruction_dispatch_queue.io.broadcast_free_valid);
-        // printf("[IDQ] Broadcast Free Register: %b\n", instruction_dispatch_queue.io.broadcast_free_register);
-        // printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);
-        // printf("[IDQ] Broadcast Mark Valid: %b\n", instruction_dispatch_queue.io.broadcast_mark_valid);
-        // printf("[IDQ] Broadcast Mark Register: %b\n", instruction_dispatch_queue.io.broadcast_mark_register);
-        // printf("[IDQ] Ready: %b\n\n", instruction_dispatch_queue.io.ready);
+        printf("[IDQ] Instruction: %b\n", instruction_dispatch_queue.io.instruction.opcode);
+        printf("[IDQ] Valid: %b\n", instruction_dispatch_queue.io.valid);
+        printf("[IDQ] ALU Out Opcode: %b\n", instruction_dispatch_queue.io.alu_out.opcode);
+        printf("[IDQ] ALU Out Valid: %b\n", instruction_dispatch_queue.io.alu_out_valid);
+        printf("[IDQ] ALU Out Ready: %b\n", instruction_dispatch_queue.io.alu_ready);
+        printf("[IDQ] Broadcast Free Valid: %b\n", instruction_dispatch_queue.io.broadcast_free_valid);
+        printf("[IDQ] Broadcast Free Register: %b\n", instruction_dispatch_queue.io.broadcast_free_register);
+        printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);
+        printf("[IDQ] Ready: %b\n\n", instruction_dispatch_queue.io.ready);
 
-        // printf("[ALU] Next Ready: %b\n", alu_pe.io.next_ready);
-        // printf("[ALU] Instruction Opcode: %b\n", alu_pe.io.instruction.opcode);
-        // printf("[ALU] Instruction Rs1: %b\n", alu_pe.io.instruction.rs1);
-        // printf("[ALU] Instruction Rs1 Valid: %b\n", alu_pe.io.instruction.rs1_valid);
-        // printf("[ALU] Instruction Rs1 Value: %b\n", alu_pe.io.instruction.rs1_value);
-        // printf("[ALU] Instruction Rs2: %b\n", alu_pe.io.instruction.rs2);
-        // printf("[ALU] Instruction Rs2 Valid: %b\n", alu_pe.io.instruction.rs2_valid);
-        // printf("[ALU] Instruction Rs2 Value: %b\n", alu_pe.io.instruction.rs2_value);
-        // printf("[ALU] Valid: %b\n", alu_pe.io.valid);
-        // printf("[ALU] Next Instruction Opcode: %b\n", alu_pe.io.out.opcode);
-        // printf("[ALU] Next Instruction Immediate: %b\n", alu_pe.io.out.immediate);
-        // printf("[ALU] Next Instruction Rs1: %b\n", alu_pe.io.out.rs1);
-        // printf("[ALU] Next Instruction Rs1 Valid: %b\n", alu_pe.io.out.rs1_valid);
-        // printf("[ALU] Next Instruction Rs1 Value: %b\n", alu_pe.io.out.rs1_value);
-        // printf("[ALU] Next Instruction Rs2: %b\n", alu_pe.io.out.rs2);
-        // printf("[ALU] Next Instruction Rs2 Valid: %b\n", alu_pe.io.out.rs2_valid);
-        // printf("[ALU] Next Instruction Rs2 Value: %b\n", alu_pe.io.out.rs2_value);
-        // printf("[ALU] Next Instruction Rd: %b\n", alu_pe.io.out.rd);
-        // printf("[ALU] Next Instruction Rd Value: %b\n", alu_pe.io.out.rd_value);
-        // printf("[ALU] Next Instruction Reorder Pointer: %b\n", alu_pe.io.out.reorder_pointer);
-        // printf("[ALU] Next Valid: %b\n", alu_pe.io.out_valid);
-        // printf("[ALU] Ready: %b\n\n", alu_pe.io.ready);
+        printf("[ALU] Next Ready: %b\n", alu_pe.io.next_ready);
+        printf("[ALU] Instruction Opcode: %b\n", alu_pe.io.instruction.opcode);
+        printf("[ALU] Instruction Rs1: %b\n", alu_pe.io.instruction.rs1);
+        printf("[ALU] Instruction Rs1 Valid: %b\n", alu_pe.io.instruction.rs1_dependence_counter);
+        printf("[ALU] Instruction Rs1 Value: %b\n", alu_pe.io.instruction.rs1_value);
+        printf("[ALU] Instruction Rs2: %b\n", alu_pe.io.instruction.rs2);
+        printf("[ALU] Instruction Rs2 Valid: %b\n", alu_pe.io.instruction.rs2_dependence_counter);
+        printf("[ALU] Instruction Rs2 Value: %b\n", alu_pe.io.instruction.rs2_value);
+        printf("[ALU] Valid: %b\n", alu_pe.io.valid);
+        printf("[ALU] Next Instruction Opcode: %b\n", alu_pe.io.out.opcode);
+        printf("[ALU] Next Instruction Immediate: %b\n", alu_pe.io.out.immediate);
+        printf("[ALU] Next Instruction Rs1: %b\n", alu_pe.io.out.rs1);
+        printf("[ALU] Next Instruction Rs1 Valid: %b\n", alu_pe.io.out.rs1_dependence_counter);
+        printf("[ALU] Next Instruction Rs1 Value: %b\n", alu_pe.io.out.rs1_value);
+        printf("[ALU] Next Instruction Rs2: %b\n", alu_pe.io.out.rs2);
+        printf("[ALU] Next Instruction Rs2 Valid: %b\n", alu_pe.io.out.rs2_dependence_counter);
+        printf("[ALU] Next Instruction Rs2 Value: %b\n", alu_pe.io.out.rs2_value);
+        printf("[ALU] Next Instruction Rd: %b\n", alu_pe.io.out.rd);
+        printf("[ALU] Next Instruction Rd Value: %b\n", alu_pe.io.out.rd_value);
+        printf("[ALU] Next Instruction Reorder Pointer: %b\n", alu_pe.io.out.reorder_pointer);
+        printf("[ALU] Next Valid: %b\n", alu_pe.io.out_valid);
+        printf("[ALU] Ready: %b\n\n", alu_pe.io.ready);
 
         printf("[RB] Full: %b\n", reorder_buffer.io.full);
         printf("[RB] Buffer Entry Program Pointer: %b\n", reorder_buffer.io.buffer_entry.program_pointer);

@@ -28,6 +28,8 @@ class ReorderBuffer() extends Module {
         val buffer_entry = Input(new BufferEntry())
         val valid = Input(Bool())
 
+        val head = Output(UInt(8.W))
+
         val complete_pointer = Input(UInt(8.W))
         val complete_valid = Input(Bool())
 
@@ -42,6 +44,7 @@ class ReorderBuffer() extends Module {
 
     val buffer = RegInit(VecInit(Seq.fill(256)(0.U.asTypeOf(new BufferEntry()))))
     val head = RegInit(0.U(8.W))
+    io.head := head
     val tail = RegInit(0.U(8.W))
 
     val full = RegInit(false.B)

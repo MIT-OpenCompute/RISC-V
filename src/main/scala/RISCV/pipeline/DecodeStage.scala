@@ -11,12 +11,10 @@ object WriteMode extends ChiselEnum {
 class InstructionBundle extends Bundle {
     val rs1 = UInt(5.W)
     val rs1_value = UInt(32.W)
-    val rs1_valid = Bool()
-    val rs1_counter = UInt(32.W)
+    val rs1_dependence_counter = UInt(32.W)
     val rs2 = UInt(5.W)
     val rs2_value = UInt(32.W)
-    val rs2_valid = Bool()
-    val rs2_counter = UInt(32.W)
+    val rs2_dependence_counter = UInt(32.W)
     val rd = UInt(5.W)
     val rd_value = UInt(32.W)
     val immediate = UInt(32.W)
@@ -71,12 +69,10 @@ class DecodeStage() extends Module {
     io.ready := io.next_ready
     io.next_instruction.rs1 := rs1
     io.next_instruction.rs1_value := 0.U
-    io.next_instruction.rs1_valid := false.B
-    io.next_instruction.rs1_counter := 0.U
+    io.next_instruction.rs1_dependence_counter := 0.U
     io.next_instruction.rs2 := rs2
     io.next_instruction.rs2_value := 0.U
-    io.next_instruction.rs2_valid := false.B
-    io.next_instruction.rs2_counter := 0.U
+    io.next_instruction.rs2_dependence_counter := 0.U
     io.next_instruction.rd := rd
     io.next_instruction.rd_value := 0.U
     io.next_instruction.immediate := immediate
