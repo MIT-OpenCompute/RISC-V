@@ -1,11 +1,16 @@
 package RISCV
 
 import chisel3._
+import chisel3.util._
 import _root_.circt.stage.ChiselStage
 import scala.math._
 
 object WriteMode extends ChiselEnum {
     val None, Register, Memory = Value
+}
+
+object PeType extends ChiselEnum {
+    val Alu, Lsu = Value
 }
 
 class InstructionBundle extends Bundle {
@@ -24,6 +29,7 @@ class InstructionBundle extends Bundle {
     val reorder_pointer = UInt(8.W)
     val write_mode = WriteMode()
     val instruction_pointer = UInt(32.W)
+    val pe_type = PeType()
 }
 
 class DecodeStage() extends Module {
@@ -52,6 +58,7 @@ class DecodeStage() extends Module {
     val func3 = RegInit(0.U(3.W))
     val func7 = RegInit(0.U(7.W))
     val instruction_pointer = RegInit(0.U(32.W))
+    val pe_type = RegInit(PeType.Alu)
     val valid = RegInit(false.B)
 
     when(io.next_ready) {
@@ -82,5 +89,16 @@ class DecodeStage() extends Module {
     io.next_instruction.reorder_pointer := 0.U
     io.next_instruction.write_mode := WriteMode.Register
     io.next_instruction.instruction_pointer := instruction_pointer
+    io.next_instruction.pe_type := pe_type
     io.next_valid := valid
+
+    switch(decoder.io.opcode) {
+        is("b0010011".U) { // MATH
+            pe_type := PeType.Alu
+        }
+
+        is("b0000011".U) { // :LOAD
+            pe_type := PeType.Lsu
+        }
+    }
 }

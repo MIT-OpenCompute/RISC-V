@@ -18,6 +18,12 @@ class InstructionDispatchQueue() extends Module {
         val alu_out_valid = Output(Bool())
         val alu_ready = Input(Bool())
 
+        val lsu_out = Output(new InstructionBundle())
+        val lsu_out_valid = Output(Bool())
+        val lsu_ready = Input(Bool())
+
+        val reorder_buffer_tail = Input(UInt(8.W))
+
         val broadcast_free_valid = Input(Bool())
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
@@ -42,7 +48,11 @@ class InstructionDispatchQueue() extends Module {
         when(
           queue(7.U - n.U).valid && queue(7.U - n.U).instruction.rs1_dependence_counter === 0.U && queue(
             7.U - n.U
-          ).instruction.rs2_dependence_counter === 0.U && io.alu_ready
+          ).instruction.rs2_dependence_counter === 0.U && ((io.alu_ready && queue(
+            7.U - n.U
+          ).instruction.pe_type === PeType.Alu) || (io.lsu_ready && queue(7.U - n.U).instruction.pe_type === PeType.Lsu && queue(
+            7.U - n.U
+          ).instruction.reorder_pointer === io.reorder_buffer_tail))
         ) {
             first_valid_entry := 7.U - n.U
             first_valid_entry_valid := true.B
@@ -65,8 +75,17 @@ class InstructionDispatchQueue() extends Module {
         }
     }
 
+    io.lsu_out := queue(first_valid_entry).instruction
+    io.lsu_out_valid := false.B
+
     io.alu_out := queue(first_valid_entry).instruction
-    io.alu_out_valid := first_valid_entry_valid
+    io.alu_out_valid := false.B
+
+    when(queue(first_valid_entry).instruction.pe_type === PeType.Lsu) {
+        io.lsu_out_valid := first_valid_entry_valid
+    }.otherwise {
+        io.alu_out_valid := first_valid_entry_valid
+    }
 
     when(first_valid_entry_valid) {
         for (n <- 1 to 7) {

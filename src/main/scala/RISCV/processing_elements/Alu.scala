@@ -16,6 +16,7 @@ class Alu(val width: Int = 32) extends Module {
 
         val ready = Output(Bool())
 
+        val lsu_broadcast_valid = Input(Bool())
         val broadcast_free_valid = Output(Bool())
         val broadcast_free_register = Output(UInt(5.W))
         val broadcast_free_value = Output(UInt(32.W))
@@ -26,16 +27,17 @@ class Alu(val width: Int = 32) extends Module {
     val out_valid = RegInit(false.B)
     io.out_valid := out_valid
 
-    io.ready := io.next_ready
-    // io.ready := false.B
+    val ready = io.next_ready && !io.lsu_broadcast_valid
+
+    io.ready := ready
 
     io.broadcast_free_valid := false.B
     io.broadcast_free_register := 0.U
     io.broadcast_free_value := 0.U
 
-    when(io.next_ready) {
+    when(ready && io.valid) {
         out := io.instruction
-        out_valid := io.valid
+        out_valid := true.B
 
         switch(io.instruction.opcode) {
             is("b0010011".U) {
