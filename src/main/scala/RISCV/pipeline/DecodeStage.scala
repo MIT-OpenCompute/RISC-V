@@ -58,6 +58,7 @@ class DecodeStage() extends Module {
     val func3 = RegInit(0.U(3.W))
     val func7 = RegInit(0.U(7.W))
     val instruction_pointer = RegInit(0.U(32.W))
+    val write_mode = RegInit(WriteMode.None)
     val pe_type = RegInit(PeType.Alu)
     val valid = RegInit(false.B)
 
@@ -87,18 +88,38 @@ class DecodeStage() extends Module {
     io.next_instruction.func3 := func3
     io.next_instruction.func7 := func7
     io.next_instruction.reorder_pointer := 0.U
-    io.next_instruction.write_mode := WriteMode.Register
+    io.next_instruction.write_mode := write_mode
     io.next_instruction.instruction_pointer := instruction_pointer
     io.next_instruction.pe_type := pe_type
     io.next_valid := valid
 
+    write_mode := WriteMode.None
+    pe_type := PeType.Alu
+
     switch(decoder.io.opcode) {
-        is("b0010011".U) { // MATH
+        is("b0010111".U) { // AUIPC
             pe_type := PeType.Alu
+            write_mode := WriteMode.Register
         }
 
-        is("b0000011".U) { // :LOAD
+        is("b0010011".U) { // IMMEDIATE MATH
+            pe_type := PeType.Alu
+            write_mode := WriteMode.Register
+        }
+
+        is("b0110011".U) { // REGISTER MATH
+            pe_type := PeType.Alu
+            write_mode := WriteMode.Register
+        }
+
+        is("b0000011".U) { // LOAD
             pe_type := PeType.Lsu
+            write_mode := WriteMode.Register
+        }
+
+        is("b0100011".U) { // STORE
+            pe_type := PeType.Lsu
+            write_mode := WriteMode.Memory
         }
     }
 }

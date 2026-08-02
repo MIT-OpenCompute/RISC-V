@@ -75,6 +75,4 @@ class Lsu(val width: Int = 32) extends Module {
         io.broadcast_free_register := out.rd
         io.broadcast_free_value := io.memory_read_value
     }
-
-    printf("Out Register!: %b\n", out.rd);
 }
