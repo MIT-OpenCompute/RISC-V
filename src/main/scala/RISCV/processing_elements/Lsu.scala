@@ -52,16 +52,28 @@ class Lsu() extends Module {
 
     when(io.next_ready && io.valid && !waiting_on_read && io.memory_read_ready) {
         out := io.instruction
-        waiting_on_read := true.B
-
-        io.memory_read_requested := true.B
 
         switch(io.instruction.opcode) {
-            is("b0000011".U) { // LOAD
+            is("b0000011".U) {
                 switch(io.instruction.func3) {
                     // LW
                     is("b010".U) {
+                        waiting_on_read := true.B
+
+                        io.memory_read_requested := true.B
+
                         io.memory_read_address := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U
+                    }
+                }
+            }
+
+            is("b0100011".U) {
+                switch(io.instruction.func3) {
+                    // SW
+                    is("b010".U) {
+                        out_valid := true.B
+
+                        out.rd_value := io.instruction.rs2_value
                     }
                 }
             }

@@ -46,49 +46,49 @@ class JumpUnit() extends Module {
 
             is("b1100111".U) { // JALR
                 out.rd_value := io.instruction.instruction_pointer + 4.U
-                io.target_program_pointer := (io.insruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
+                io.target_program_pointer := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
             }
 
             is("b1100011".U) {
                 switch(io.instruction.func3) {
                     // BEQ
                     is("b000".U) {
-                        when(io.rs1 === io.rs2) {
+                        when(io.instruction.rs1_value === io.instruction.rs2_value) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
 
                     // BNEQ
                     is("b001".U) {
-                        when(io.rs1 =/= io.rs2) {
+                        when(io.instruction.rs1_value =/= io.instruction.rs2_value) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
 
                     // BLT
                     is("b100".U) {
-                        when(io.rs1.asSInt < io.rs2.asSInt) {
+                        when(io.instruction.rs1_value.asSInt < io.instruction.rs2_value.asSInt) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
 
                     // BLTU
                     is("b110".U) {
-                        when(io.rs1 < io.rs2) {
+                        when(io.instruction.rs1_value < io.instruction.rs2_value) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
 
                     // BGE
                     is("b101".U) {
-                        when(io.rs1.asSInt >= io.rs2.asSInt) {
+                        when(io.instruction.rs1_value.asSInt >= io.instruction.rs2_value.asSInt) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
 
                     // BGEU
                     is("b111".U) {
-                        when(io.rs1 >= io.rs2) {
+                        when(io.instruction.rs1_value >= io.instruction.rs2_value) {
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
