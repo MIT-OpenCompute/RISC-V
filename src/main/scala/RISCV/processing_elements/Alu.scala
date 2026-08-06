@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
-class Alu(val width: Int = 32) extends Module {
+class Alu() extends Module {
     val io = IO(new Bundle {
         val next_ready = Input(Bool())
 
@@ -13,6 +13,8 @@ class Alu(val width: Int = 32) extends Module {
 
         val out = Output(new InstructionBundle())
         val out_valid = Output(Bool())
+
+        val flush = Input(Bool())
 
         val ready = Output(Bool())
 
@@ -254,5 +256,10 @@ class Alu(val width: Int = 32) extends Module {
                 }
             }
         }
+    }
+
+    when(io.flush) {
+        out := 0.U.asTypeOf(new InstructionBundle)
+        out_valid := false.B
     }
 }

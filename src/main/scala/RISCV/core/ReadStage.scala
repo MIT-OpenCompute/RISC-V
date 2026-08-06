@@ -23,6 +23,8 @@ class ReadStage() extends Module {
         val next_instruction = Output(new InstructionBundle())
         val next_valid = Output(Bool())
 
+        val flush = Input(Bool())
+
         val ready = Output(Bool())
     })
 
@@ -55,4 +57,12 @@ class ReadStage() extends Module {
     }
 
     io.ready := io.next_ready
+
+    when(io.flush) {
+        held_instruction := 0.U.asTypeOf(new InstructionBundle())
+        held_valid := false.B
+        held_result_1 := 0.U(32.W)
+        held_result_2 := 0.U(32.W)
+        held_receiving := false.B
+    }
 }

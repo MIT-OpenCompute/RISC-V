@@ -10,7 +10,7 @@ object WriteMode extends ChiselEnum {
 }
 
 object PeType extends ChiselEnum {
-    val Alu, Lsu = Value
+    val Alu, Lsu, JumpUnit = Value
 }
 
 class InstructionBundle extends Bundle {
@@ -39,10 +39,11 @@ class DecodeStage() extends Module {
         val instruction = Input(UInt(32.W))
         val instruction_pointer = Input(UInt(32.W))
         val valid = Input(Bool())
-        val flush = Input(Bool())
 
         val next_instruction = Output(new InstructionBundle())
         val next_valid = Output(Bool())
+
+        val flush = Input(Bool())
 
         val ready = Output(Bool())
     })
@@ -121,5 +122,34 @@ class DecodeStage() extends Module {
             pe_type := PeType.Lsu
             write_mode := WriteMode.Memory
         }
+
+        is("b1101111".U) { // JAL
+            pe_type := PeType.JumpUnit
+            write_mode := WriteMode.Register
+        }
+
+        is("b1100111".U) { // JALR
+            pe_type := PeType.JumpUnit
+            write_mode := WriteMode.Register
+        }
+
+        is("b1100011".U) { // BRANCH
+            pe_type := PeType.JumpUnit
+            write_mode := WriteMode.None
+        }
+    }
+
+    when(io.flush) {
+        rs1 := 0.U(5.W)
+        rs2 := 0.U(5.W)
+        rd := 0.U(5.W)
+        immediate := 0.U(32.W)
+        opcode := 0.U(7.W)
+        func3 := 0.U(3.W)
+        func7 := 0.U(7.W)
+        instruction_pointer := 0.U(32.W)
+        write_mode := WriteMode.None
+        pe_type := PeType.Alu
+        valid := false.B
     }
 }

@@ -14,6 +14,10 @@ class InstructionDispatchQueue() extends Module {
         val instruction = Input(new InstructionBundle())
         val valid = Input(Bool())
 
+        val jump_unit_out = Output(new InstructionBundle())
+        val jump_unit_out_valid = Output(Bool())
+        val jump_unit_ready = Input(Bool())
+
         val alu_out = Output(new InstructionBundle())
         val alu_out_valid = Output(Bool())
         val alu_ready = Input(Bool())
@@ -27,6 +31,8 @@ class InstructionDispatchQueue() extends Module {
         val broadcast_free_valid = Input(Bool())
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
+
+        val flush = Input(Bool())
 
         val ready = Output(Bool())
     })
@@ -52,6 +58,10 @@ class InstructionDispatchQueue() extends Module {
             7.U - n.U
           ).instruction.pe_type === PeType.Alu) || (io.lsu_ready && queue(7.U - n.U).instruction.pe_type === PeType.Lsu && queue(
             7.U - n.U
+          ).instruction.reorder_pointer === io.reorder_buffer_tail) || (io.lsu_ready && queue(
+            7.U - n.U
+          ).instruction.pe_type === PeType.JumpUnit && queue(
+            7.U - n.U
           ).instruction.reorder_pointer === io.reorder_buffer_tail))
         ) {
             first_valid_entry := 7.U - n.U
@@ -75,17 +85,14 @@ class InstructionDispatchQueue() extends Module {
         }
     }
 
+    io.jump_unit_out := queue(first_valid_entry).instruction
+    io.jump_unit_out_valid := first_valid_entry_valid && queue(first_valid_entry).instruction.pe_type === PeType.JumpUnit
+
     io.lsu_out := queue(first_valid_entry).instruction
-    io.lsu_out_valid := false.B
+    io.lsu_out_valid := first_valid_entry_valid && queue(first_valid_entry).instruction.pe_type === PeType.Lsu
 
     io.alu_out := queue(first_valid_entry).instruction
-    io.alu_out_valid := false.B
-
-    when(queue(first_valid_entry).instruction.pe_type === PeType.Lsu) {
-        io.lsu_out_valid := first_valid_entry_valid
-    }.otherwise {
-        io.alu_out_valid := first_valid_entry_valid
-    }
+    io.alu_out_valid := first_valid_entry_valid && queue(first_valid_entry).instruction.pe_type === PeType.Alu
 
     when(first_valid_entry_valid) {
         for (n <- 1 to 7) {
@@ -140,6 +147,16 @@ class InstructionDispatchQueue() extends Module {
             when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs2) {
                 queue(last_free_entry).instruction.rs2_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
+        }
+    }
+
+    when(io.flush) {
+        for (n <- 0 to 31) {
+            dependence_size(n.U) := 0.U
+        }
+
+        for (n <- 0 to 7) {
+            queue(n.U) := 0.U.asTypeOf(new QueueEntry)
         }
     }
 

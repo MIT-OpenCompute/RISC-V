@@ -35,6 +35,7 @@ class Core() extends Module {
     val instruction_dispatch_queue = Module(new InstructionDispatchQueue())
     val alu_pe = Module(new Alu)
     val lsu_pe = Module(new Lsu)
+    val jump_unit = Module(new JumpUnit)
     val reorder_buffer = Module(new ReorderBuffer())
 
     io.program_memory_address := program_pointer
@@ -50,7 +51,7 @@ class Core() extends Module {
     fetch_stage.io.next_ready := decode_stage.io.ready
     fetch_stage.io.execute := io.execute
     fetch_stage.io.program_pointer := program_pointer
-    fetch_stage.io.flush := false.B
+    fetch_stage.io.flush := jump_unit.io.flush
     fetch_stage.io.memory_read_ready := io.program_memory_ready
     fetch_stage.io.memory_read_value := io.program_memory_value
     fetch_stage.io.memory_read_valid := io.program_memory_valid
@@ -63,7 +64,7 @@ class Core() extends Module {
     decode_stage.io.instruction := fetch_stage.io.next_instruction
     decode_stage.io.instruction_pointer := fetch_stage.io.next_instruction_pointer
     decode_stage.io.valid := fetch_stage.io.next_valid
-    decode_stage.io.flush := false.B
+    decode_stage.io.flush := jump_unit.io.flush
 
     read_stage.io.instruction := decode_stage.io.next_instruction
     read_stage.io.instruction.reorder_pointer := reorder_buffer.io.head
@@ -71,6 +72,7 @@ class Core() extends Module {
     read_stage.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
     read_stage.io.broadcast_free_value := reorder_buffer.io.write_value
     read_stage.io.broadcast_free_register := reorder_buffer.io.write_address
+    read_stage.io.flush := jump_unit.io.flush
 
     read_stage.io.read_result_1 := registers.io.out_a
     read_stage.io.read_result_2 := registers.io.out_b
@@ -89,9 +91,19 @@ class Core() extends Module {
       lsu_pe.io.broadcast_free_register,
       alu_pe.io.broadcast_free_register
     )
+    instruction_dispatch_queue.io.jump_unit_ready := jump_unit.io.ready
     instruction_dispatch_queue.io.lsu_ready := lsu_pe.io.ready
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
     instruction_dispatch_queue.io.reorder_buffer_tail := reorder_buffer.io.tail
+    instruction_dispatch_queue.io.flush := jump_unit.io.flush
+
+    jump_unit.io.instruction := instruction_dispatch_queue.io.jump_unit_out
+    jump_unit.io.valid := instruction_dispatch_queue.io.jump_unit_out_valid
+    jump_unit.io.next_ready := !reorder_buffer.io.full
+
+    when(jump_unit.io.flush) {
+        program_pointer := jump_unit.io.target_program_pointer
+    }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
     lsu_pe.io.valid := instruction_dispatch_queue.io.lsu_out_valid
@@ -99,6 +111,7 @@ class Core() extends Module {
     lsu_pe.io.memory_read_value := io.data_memory_read_value
     lsu_pe.io.memory_read_ready := io.data_memory_read_ready
     lsu_pe.io.memory_read_valid := io.data_memory_read_valid
+    lsu_pe.io.flush := jump_unit.io.flush
 
     io.data_memory_read_requested := lsu_pe.io.memory_read_requested
     io.data_memory_read_address := lsu_pe.io.memory_read_address
@@ -107,6 +120,7 @@ class Core() extends Module {
     alu_pe.io.valid := instruction_dispatch_queue.io.alu_out_valid
     alu_pe.io.next_ready := !reorder_buffer.io.full
     alu_pe.io.lsu_broadcast_valid := lsu_pe.io.broadcast_free_valid
+    alu_pe.io.flush := jump_unit.io.flush
 
     reorder_buffer.io.buffer_entry.value := decode_stage.io.next_instruction.rd_value
     reorder_buffer.io.buffer_entry.rd := decode_stage.io.next_instruction.rd
@@ -126,7 +140,9 @@ class Core() extends Module {
     io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
 
     when(io.execute) {
-        // printf("Program Pointer: %d\n\n", program_pointer);
+        printf("\n\n");
+
+        printf("Program Pointer: %d\n\n", program_pointer);
 
         // printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
         // printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
@@ -216,8 +232,6 @@ class Core() extends Module {
         // printf("[RB] Write Complete: %b\n\n", reorder_buffer.io.write_complete);
 
         // printf("\n\n\n\n\n\n");
-
-        printf("\n\n");
 
         printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
         printf("[Decode] Next Pe Type: %b\n", decode_stage.io.next_instruction.pe_type.asUInt);

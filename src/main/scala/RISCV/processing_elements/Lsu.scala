@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
-class Lsu(val width: Int = 32) extends Module {
+class Lsu() extends Module {
     val io = IO(new Bundle {
         val next_ready = Input(Bool())
 
@@ -13,6 +13,8 @@ class Lsu(val width: Int = 32) extends Module {
 
         val out = Output(new InstructionBundle())
         val out_valid = Output(Bool())
+
+        val flush = Input(Bool())
 
         val ready = Output(Bool())
 
@@ -37,6 +39,7 @@ class Lsu(val width: Int = 32) extends Module {
     }
 
     val waiting_on_read = RegInit(false.B)
+    val ignore_next_response = RegInit(false.B)
 
     io.ready := io.next_ready && !waiting_on_read && io.memory_read_ready
 
@@ -65,7 +68,7 @@ class Lsu(val width: Int = 32) extends Module {
         }
     }
 
-    when(waiting_on_read && io.memory_read_valid) {
+    when(waiting_on_read && io.memory_read_valid && !ignore_next_response) {
         waiting_on_read := false.B
         out_valid := true.B
 
@@ -74,5 +77,17 @@ class Lsu(val width: Int = 32) extends Module {
         io.broadcast_free_valid := true.B
         io.broadcast_free_register := out.rd
         io.broadcast_free_value := io.memory_read_value
+    }
+
+    when(io.memory_read_valid) {
+        ignore_next_response := false.B
+    }
+
+    when(io.flush) {
+        out := 0.U.asTypeOf(new InstructionBundle)
+        out_valid := false.B
+        waiting_on_read := false.B
+
+        ignore_next_response := true.B
     }
 }
