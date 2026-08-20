@@ -82,11 +82,13 @@ int main(int argc, char** argv) {
 
     dut->io_execute = 1;
 
-    // for (int i = 0; i < 2 * 64; i++) {
-    //     dut->clock ^= 1;
-    //     dut->io_vga_clk = dut->clock;
-    //     dut->eval();
-    // }
+    for (int i = 0; i < 2 * 32; i++) {
+        dut->clock ^= 1;
+        dut->io_vga_clk = dut->clock;
+        dut->eval();
+    }
+
+	return 0;
 
     bool prev_vsync = 1;
     int pixelIdx = 0;

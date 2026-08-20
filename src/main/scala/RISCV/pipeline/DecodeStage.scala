@@ -98,6 +98,11 @@ class DecodeStage() extends Module {
     pe_type := PeType.Alu
 
     switch(decoder.io.opcode) {
+        is("b0110111".U) { // LUI
+            pe_type := PeType.Alu
+            write_mode := WriteMode.Register
+        }
+
         is("b0010111".U) { // AUIPC
             pe_type := PeType.Alu
             write_mode := WriteMode.Register

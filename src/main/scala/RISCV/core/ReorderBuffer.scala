@@ -31,7 +31,7 @@ class ReorderBuffer() extends Module {
         val head = Output(UInt(8.W))
         val tail = Output(UInt(8.W))
 
-        val complete_pointer = Input(UInt(8.W))
+        val complete_instruction = Input(new InstructionBundle())
         val complete_valid = Input(Bool())
 
         val write_ready = Input(Bool())
@@ -61,7 +61,7 @@ class ReorderBuffer() extends Module {
     io.write_mode := WriteMode.None
 
     when(io.write_complete) {
-        // printf("[RB] Write Complete!\n");
+        printf("[RB] Write Complete!\n");
 
         waiting_on_write := false.B
     }
@@ -81,7 +81,7 @@ class ReorderBuffer() extends Module {
         tail
       ).mode =/= WriteMode.Memory)
     ) {
-        // printf("[RB] Retiring!\n");
+        printf("[RB] Retiring! %b %b %b\n", buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
 
         io.write_value := buffer(tail).value
         io.write_address := buffer(tail).rd
@@ -100,9 +100,10 @@ class ReorderBuffer() extends Module {
     }
 
     when(io.complete_valid) {
-        // printf("[RB] Marking as complete!\n");
+        printf("[RB] Marking as complete! %d %d\n", io.complete_instruction.reorder_pointer, io.complete_instruction.rd_value);
 
-        buffer(io.complete_pointer).complete := true.B
+        buffer(io.complete_instruction.reorder_pointer).complete := true.B
+        buffer(io.complete_instruction.reorder_pointer).value := io.complete_instruction.rd_value
     }
 
     when(!io.full && io.valid) {
@@ -117,5 +118,5 @@ class ReorderBuffer() extends Module {
         }
     }
 
-    // printf("Head: %d Tail %d\n\n\n", head, tail)
+    printf("Head: %d Tail %d\n\n\n", head, tail)
 }

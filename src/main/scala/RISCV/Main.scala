@@ -54,7 +54,11 @@ class Main() extends Module {
         memory_write_requested_2 := false.B
     }
 
-    memory.io.address_2 := Mux(core.io.data_memory_read_requested, core.io.data_memory_read_address, core.io.data_memory_write_address)
+    memory.io.address_2 := Mux(
+      core.io.data_memory_read_requested,
+      core.io.data_memory_read_address / 4.U,
+      core.io.data_memory_write_address / 4.U
+    )
     memory.io.read_2 := core.io.data_memory_read_requested
     memory.io.write_2 := core.io.data_memory_write_requested
     memory.io.write_value_2 := core.io.data_memory_write_value

@@ -164,40 +164,40 @@ class InstructionDispatchQueue() extends Module {
         }
     }
 
-    printf("\n\n")
+    // printf("\n\n")
 
-    // printf(
-    //   "First valid entry: %d First valid entry valid: %b Valid: %b\n",
-    //   first_valid_entry,
-    //   first_valid_entry_valid,
-    //   io.valid
-    // )
+    // // printf(
+    // //   "First valid entry: %d First valid entry valid: %b Valid: %b\n",
+    // //   first_valid_entry,
+    // //   first_valid_entry_valid,
+    // //   io.valid
+    // // )
 
-    // printf(
-    //   "Last free entry: %d\n",
-    //   last_free_entry
-    // )
+    // // printf(
+    // //   "Last free entry: %d\n",
+    // //   last_free_entry
+    // // )
 
-    // for (n <- 0 to 31) {
+    // // for (n <- 0 to 31) {
+    // //     printf(
+    // //       "Rs %d %d\n",
+    // //       n.U,
+    // //       dependence_size(n.U)
+    // //     )
+    // // }
+
+    // for (n <- 0 to 7) {
     //     printf(
-    //       "Rs %d %d\n",
+    //       "Queue %d -> valid: %b opcode: %b rs1: %b %b rs2: %b %b \n",
     //       n.U,
-    //       dependence_size(n.U)
+    //       queue(n.U).valid,
+    //       queue(n.U).instruction.opcode,
+    //       queue(n.U).instruction.rs1,
+    //       queue(n.U).instruction.rs1_dependence_counter,
+    //       queue(n.U).instruction.rs2,
+    //       queue(n.U).instruction.rs2_dependence_counter
     //     )
     // }
 
-    for (n <- 0 to 7) {
-        printf(
-          "Queue %d -> valid: %b opcode: %b rs1: %b %b rs2: %b %b \n",
-          n.U,
-          queue(n.U).valid,
-          queue(n.U).instruction.opcode,
-          queue(n.U).instruction.rs1,
-          queue(n.U).instruction.rs1_dependence_counter,
-          queue(n.U).instruction.rs2,
-          queue(n.U).instruction.rs2_dependence_counter
-        )
-    }
-
-    printf("\n\n")
+    // printf("\n\n")
 }

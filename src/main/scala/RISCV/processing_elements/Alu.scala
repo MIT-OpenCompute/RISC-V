@@ -42,9 +42,14 @@ class Alu() extends Module {
         out_valid := true.B
 
         switch(io.instruction.opcode) {
+            // LUI
+            is("b0110111".U) {
+                out.rd_value := io.instruction.immediate;
+            }
+
             // AUIPC
             is("b0010111".U) {
-                out.rd_value := io.instruction.instruction_pointer + io.instruction.immediate;
+                out.rd_value := io.instruction.instruction_pointer + io.instruction.immediate; // TODO CHECK MULTIPLE ON IP!
             }
 
             is("b0010011".U) {
