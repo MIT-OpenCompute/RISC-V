@@ -11,20 +11,20 @@ class MainTest extends AnyFreeSpec with Matchers with ChiselSim {
             dut.io.execute.poke(false.B)
             dut.io.flash.poke(true.B)
             dut.io.flash_address.poke(0.U)
-            dut.io.flash_value.poke(0x00608093L.U)
+            dut.io.flash_value.poke(0x00608093L.U) // addi x1, x1, 6
 
             dut.clock.step(1)
 
             dut.io.flash.poke(true.B)
             dut.io.flash_address.poke(1.U)
-            dut.io.flash_value.poke(0xffdff06fL.U)
+            dut.io.flash_value.poke(0xffdff06fL.U) // jal x0, -4
 
             dut.clock.step(1)
 
             dut.io.flash.poke(false.B)
             dut.io.execute.poke(true.B)
 
-            dut.clock.step(20)
+            dut.clock.step(16)
         }
     }
 }

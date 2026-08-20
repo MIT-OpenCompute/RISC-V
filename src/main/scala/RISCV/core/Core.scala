@@ -233,7 +233,11 @@ class Core() extends Module {
 
         // printf("\n\n\n\n\n\n");
 
+        printf("[IMemory] Read Valid: %b\n", io.program_memory_valid);
+        printf("[IMemory] Read Value: %b\n", io.program_memory_value);
+
         printf("[Decode] Next Valid: %b\n", decode_stage.io.next_valid);
+        printf("[Decode] Next Opcode: %b\n", decode_stage.io.next_instruction.opcode);
         printf("[Decode] Next Pe Type: %b\n", decode_stage.io.next_instruction.pe_type.asUInt);
 
         printf("[Memory] Data Memory Read Requested: %b\n", io.data_memory_read_requested);
@@ -247,6 +251,7 @@ class Core() extends Module {
 
         printf("[IDQ] ALU Out Valid: %b\n", instruction_dispatch_queue.io.alu_out_valid);
         printf("[IDQ] LSU Out Valid: %b\n", instruction_dispatch_queue.io.lsu_out_valid);
+        printf("[IDQ] JU Out Valid: %b\n", instruction_dispatch_queue.io.jump_unit_out_valid);
         printf("[IDQ] Broadcast Free Valid: %b\n", instruction_dispatch_queue.io.broadcast_free_valid);
         printf("[IDQ] Broadcast Free Register: %b\n", instruction_dispatch_queue.io.broadcast_free_register);
         printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);

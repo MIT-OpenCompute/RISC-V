@@ -37,7 +37,7 @@ class Main() extends Module {
     memory.io.write_1 := false.B
     memory.io.write_value_1 := 0.U
     core.io.program_memory_ready := true.B
-    core.io.program_memory_valid := io.execute
+    core.io.program_memory_valid := memory_requested_1
     core.io.program_memory_value := memory.io.read_value_1
 
     when(core.io.program_memory_requested) {
