@@ -33,29 +33,15 @@ class ReadStage() extends Module {
 
     val held_instruction = RegInit(0.U.asTypeOf(new InstructionBundle()))
     val held_valid = RegInit(false.B)
-    val held_result_1 = RegInit(0.U(32.W))
-    val held_result_2 = RegInit(0.U(32.W))
-    val held_receiving = RegInit(false.B)
 
     io.next_instruction := held_instruction
-    io.next_instruction.rs1_value := held_result_1
-    io.next_instruction.rs2_value := held_result_2
     io.next_valid := held_valid
-
-    when(held_receiving) {
-        held_result_1 := io.read_result_1
-        io.next_instruction.rs1_value := io.read_result_1
-
-        held_result_2 := io.read_result_2
-        io.next_instruction.rs2_value := io.read_result_2
-
-        held_receiving := false.B
-    }
 
     when(io.next_ready) {
         held_instruction := io.instruction
+        held_instruction.rs1_value := io.read_result_1
+        held_instruction.rs2_value := io.read_result_2
         held_valid := io.valid
-        held_receiving := true.B
     }
 
     io.ready := io.next_ready
@@ -63,9 +49,6 @@ class ReadStage() extends Module {
     when(io.flush) {
         held_instruction := 0.U.asTypeOf(new InstructionBundle())
         held_valid := false.B
-        held_result_1 := 0.U(32.W)
-        held_result_2 := 0.U(32.W)
-        held_receiving := false.B
     }
 
     printf("[Read Stage]: rs1 %d, %d\n", io.instruction.rs1, io.read_result_1)
