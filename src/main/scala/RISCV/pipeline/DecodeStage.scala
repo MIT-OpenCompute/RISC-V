@@ -22,6 +22,7 @@ class InstructionBundle extends Bundle {
     val rs2_dependence_counter = UInt(32.W)
     val rd = UInt(32.W)
     val rd_value = UInt(32.W)
+    val rd_dependence_counter = UInt(32.W)
     val immediate = UInt(32.W)
     val opcode = UInt(7.W)
     val func3 = UInt(3.W)
@@ -88,6 +89,7 @@ class DecodeStage() extends Module {
     io.next_instruction.rs2_dependence_counter := 0.U
     io.next_instruction.rd := rd
     io.next_instruction.rd_value := 0.U
+    io.next_instruction.rd_dependence_counter := 0.U
     io.next_instruction.immediate := immediate
     io.next_instruction.opcode := opcode
     io.next_instruction.func3 := func3

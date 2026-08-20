@@ -97,6 +97,9 @@ class Main() extends Module {
             memory.io.write_value_1 := io.flash_value
         }
     }
+
+    printf("[Main] dmemory read requested: %b\n", core.io.data_memory_read_requested)
+    printf("[Main] dmemory read valid: %b\n", memory_read_requested_2)
 }
 
 object Main extends App {

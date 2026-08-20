@@ -58,7 +58,9 @@ class InstructionDispatchQueue() extends Module {
         when(
           queue(7.U - n.U).valid && queue(7.U - n.U).instruction.rs1_dependence_counter === 0.U && queue(
             7.U - n.U
-          ).instruction.rs2_dependence_counter === 0.U && ((io.alu_ready && queue(
+          ).instruction.rs2_dependence_counter === 0.U && queue(
+            7.U - n.U
+          ).instruction.rd_dependence_counter === 0.U && ((io.alu_ready && queue(
             7.U - n.U
           ).instruction.pe_type === PeType.Alu) || (io.lsu_ready && queue(7.U - n.U).instruction.pe_type === PeType.Lsu && queue(
             7.U - n.U
@@ -86,6 +88,10 @@ class InstructionDispatchQueue() extends Module {
                 queue(n.U).instruction.rs2_value := io.broadcast_free_value
                 queue(n.U).instruction.rs2_dependence_counter := queue(n.U).instruction.rs2_dependence_counter - 1.U
             }
+
+            when(queue(n.U).instruction.rd === io.broadcast_free_register && queue(n.U).instruction.rd_dependence_counter > 0.U) {
+                queue(n.U).instruction.rd_dependence_counter := queue(n.U).instruction.rd_dependence_counter - 1.U
+            }
         }
     }
 
@@ -112,6 +118,7 @@ class InstructionDispatchQueue() extends Module {
                     n.U
                   ).instruction.rs1_dependence_counter > 0.U
                 ) {
+                    queue((n - 1).U).instruction.rs1_value := io.broadcast_free_value
                     queue((n - 1).U).instruction.rs1_dependence_counter := queue(n.U).instruction.rs1_dependence_counter - 1.U
                 }
 
@@ -120,7 +127,16 @@ class InstructionDispatchQueue() extends Module {
                     n.U
                   ).instruction.rs2_dependence_counter > 0.U
                 ) {
+                    queue((n - 1).U).instruction.rs2_value := io.broadcast_free_value
                     queue((n - 1).U).instruction.rs2_dependence_counter := queue(n.U).instruction.rs2_dependence_counter - 1.U
+                }
+
+                when(
+                  io.broadcast_free_valid && queue(n.U).instruction.rd === io.broadcast_free_register && queue(
+                    n.U
+                  ).instruction.rd_dependence_counter > 0.U
+                ) {
+                    queue((n - 1).U).instruction.rd_dependence_counter := queue(n.U).instruction.rd_dependence_counter - 1.U
                 }
             }
         }
@@ -151,6 +167,7 @@ class InstructionDispatchQueue() extends Module {
 
             queue(last_free_entry - 1.U).instruction.rs1_dependence_counter := dependence_size(io.instruction.rs1)
             queue(last_free_entry - 1.U).instruction.rs2_dependence_counter := dependence_size(io.instruction.rs2)
+            queue(last_free_entry - 1.U).instruction.rd_dependence_counter := dependence_size(io.instruction.rd(4, 0))
 
             when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs1) {
                 queue(last_free_entry - 1.U).instruction.rs1_value := io.broadcast_free_value
@@ -161,12 +178,17 @@ class InstructionDispatchQueue() extends Module {
                 queue(last_free_entry - 1.U).instruction.rs2_value := io.broadcast_free_value
                 queue(last_free_entry - 1.U).instruction.rs2_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
+
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rd(4, 0)) {
+                queue(last_free_entry - 1.U).instruction.rd_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
+            }
         }.otherwise {
             queue(last_free_entry).instruction := io.instruction
             queue(last_free_entry).valid := true.B
 
             queue(last_free_entry).instruction.rs1_dependence_counter := dependence_size(io.instruction.rs1)
             queue(last_free_entry).instruction.rs2_dependence_counter := dependence_size(io.instruction.rs2)
+            queue(last_free_entry).instruction.rd_dependence_counter := dependence_size(io.instruction.rd(4, 0))
 
             when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs1) {
                 queue(last_free_entry).instruction.rs1_value := io.broadcast_free_value
@@ -176,6 +198,10 @@ class InstructionDispatchQueue() extends Module {
             when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rs2) {
                 queue(last_free_entry).instruction.rs2_value := io.broadcast_free_value
                 queue(last_free_entry).instruction.rs2_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
+            }
+
+            when(io.broadcast_free_valid && io.broadcast_free_register === io.instruction.rd(4, 0)) {
+                queue(last_free_entry).instruction.rd_dependence_counter := dependence_size(io.broadcast_free_register) - 1.U
             }
         }
     }
@@ -212,62 +238,64 @@ class InstructionDispatchQueue() extends Module {
     // //     )
     // // }
 
-    // for (n <- 0 to 7) {
-    //     when(queue(n.U).valid) {
-    //         printf(
-    //           "%d -> opcode: %b rp: %d ip: %d rs1: %d %d %d rs2: %d %d %d \n",
-    //           n.U,
-    //           queue(n.U).instruction.opcode,
-    //           queue(n.U).instruction.reorder_pointer,
-    //           queue(n.U).instruction.instruction_pointer,
-    //           queue(n.U).instruction.rs1,
-    //           queue(n.U).instruction.rs1_value,
-    //           queue(n.U).instruction.rs1_dependence_counter,
-    //           queue(n.U).instruction.rs2,
-    //           queue(n.U).instruction.rs2_value,
-    //           queue(n.U).instruction.rs2_dependence_counter
-    //         )
-    //     }.otherwise {
-    //         printf("%d -> \n", n.U)
-    //     }
-    // }
+    for (n <- 0 to 7) {
+        when(queue(n.U).valid) {
+            printf(
+              "%d -> opcode: %b rp: %d ip: %d rd: %d %d rs1: %d %d %d rs2: %d %d %d \n",
+              n.U,
+              queue(n.U).instruction.opcode,
+              queue(n.U).instruction.reorder_pointer,
+              queue(n.U).instruction.instruction_pointer,
+              queue(n.U).instruction.rd,
+              queue(n.U).instruction.rd_dependence_counter,
+              queue(n.U).instruction.rs1,
+              queue(n.U).instruction.rs1_value,
+              queue(n.U).instruction.rs1_dependence_counter,
+              queue(n.U).instruction.rs2,
+              queue(n.U).instruction.rs2_value,
+              queue(n.U).instruction.rs2_dependence_counter
+            )
+        }.otherwise {
+            printf("%d -> \n", n.U)
+        }
+    }
 
-    // // // printf("\n\n")
+    // // printf("\n\n")
 
-    // when(io.jump_unit_out_valid) {
-    //     printf(
-    //       "Dispatching to jump unit! op: %b rp: %d ip: %d\n",
-    //       io.jump_unit_out.opcode,
-    //       io.jump_unit_out.reorder_pointer,
-    //       io.jump_unit_out.instruction_pointer
-    //     )
-    // }
+    when(io.jump_unit_out_valid) {
+        printf(
+          "Dispatching to jump unit! op: %b rp: %d ip: %d\n",
+          io.jump_unit_out.opcode,
+          io.jump_unit_out.reorder_pointer,
+          io.jump_unit_out.instruction_pointer
+        )
+    }
 
-    // when(io.lsu_out_valid) {
-    //     printf(
-    //       "Dispatching to lsu! op: %b rp: %d ip: %d\n",
-    //       io.lsu_out.opcode,
-    //       io.lsu_out.reorder_pointer,
-    //       io.lsu_out.instruction_pointer
-    //     )
-    // }
+    when(io.lsu_out_valid) {
+        printf(
+          "Dispatching to lsu! op: %b rp: %d ip: %d\n",
+          io.lsu_out.opcode,
+          io.lsu_out.reorder_pointer,
+          io.lsu_out.instruction_pointer
+        )
+    }
 
-    // when(io.alu_out_valid) {
-    //     printf(
-    //       "Dispatching to alu! op: %b rp: %d ip: %d\n",
-    //       io.alu_out.opcode,
-    //       io.alu_out.reorder_pointer,
-    //       io.alu_out.instruction_pointer
-    //     )
-    // }
+    when(io.alu_out_valid) {
+        printf(
+          "Dispatching to alu! op: %b rp: %d ip: %d\n",
+          io.alu_out.opcode,
+          io.alu_out.reorder_pointer,
+          io.alu_out.instruction_pointer
+        )
+    }
 
-    // when(io.broadcast_free_valid) {
-    //     printf(
-    //       "Register freed! %d %d\n",
-    //       io.broadcast_free_register,
-    //       io.broadcast_free_value
-    //     )
-    // }
+    when(io.broadcast_free_valid) {
+        printf(
+          "Register freed! %d %d\n",
+          io.broadcast_free_register,
+          io.broadcast_free_value
+        )
+    }
 
     // when(io.broadcast_mark_valid) {
     //     printf(
@@ -276,4 +304,7 @@ class InstructionDispatchQueue() extends Module {
     //       io.broadcast_mark_reorder_pointer
     //     )
     // }
+
+    printf("Dependence tracker 8: %d\n", dependence_size(8.U))
+    printf("Dependence tracker 15: %d\n", dependence_size(15.U))
 }

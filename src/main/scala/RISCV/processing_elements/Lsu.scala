@@ -62,7 +62,7 @@ class Lsu() extends Module {
 
                         io.memory_read_requested := true.B
 
-                        io.memory_read_address := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U
+                        io.memory_read_address := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
                     }
                 }
             }
@@ -73,10 +73,8 @@ class Lsu() extends Module {
                     is("b010".U) {
                         out_valid := true.B
 
-                        out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U
+                        out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
                         out.rd_value := io.instruction.rs2_value
-
-                        // printf("__SW rd: %d\n", (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U)
                     }
                 }
             }
@@ -103,6 +101,10 @@ class Lsu() extends Module {
         out_valid := false.B
         waiting_on_read := false.B
 
-        ignore_next_response := true.B
+        ignore_next_response := waiting_on_read
     }
+
+    printf("[LSU] waiting on read: %b\n", waiting_on_read)
+    printf("[LSU] memory read valid: %b\n", io.memory_read_valid)
+    printf("[LSU] ignore next response: %b\n", ignore_next_response)
 }
