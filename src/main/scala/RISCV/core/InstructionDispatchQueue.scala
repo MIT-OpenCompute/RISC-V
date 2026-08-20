@@ -124,10 +124,10 @@ class InstructionDispatchQueue() extends Module {
 
     when(io.valid && !full) {
         when(io.instruction.write_mode === WriteMode.Register) {
-            dependence_size(io.instruction.rd) := dependence_size(io.instruction.rd) + 1.U
+            dependence_size(io.instruction.rd(4, 0)) := dependence_size(io.instruction.rd(4, 0)) + 1.U
 
             when(io.broadcast_free_valid && io.instruction.rd === io.broadcast_free_register) {
-                dependence_size(io.instruction.rd) := dependence_size(io.instruction.rd)
+                dependence_size(io.instruction.rd(4, 0)) := dependence_size(io.instruction.rd(4, 0))
             }
         }
 

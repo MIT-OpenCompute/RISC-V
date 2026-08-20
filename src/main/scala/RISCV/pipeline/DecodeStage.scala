@@ -20,7 +20,7 @@ class InstructionBundle extends Bundle {
     val rs2 = UInt(5.W)
     val rs2_value = UInt(32.W)
     val rs2_dependence_counter = UInt(32.W)
-    val rd = UInt(5.W)
+    val rd = UInt(32.W)
     val rd_value = UInt(32.W)
     val immediate = UInt(32.W)
     val opcode = UInt(7.W)

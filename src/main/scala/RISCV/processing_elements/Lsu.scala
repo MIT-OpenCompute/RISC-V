@@ -75,6 +75,8 @@ class Lsu() extends Module {
 
                         out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U
                         out.rd_value := io.instruction.rs2_value
+
+                        printf("__SW rd: %d\n", (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U)
                     }
                 }
             }
@@ -103,4 +105,7 @@ class Lsu() extends Module {
 
         ignore_next_response := true.B
     }
+
+    printf("[LSU] out valid: %b\n", io.out_valid)
+    printf("[LSU] out rd: %d\n", io.out.rd)
 }
