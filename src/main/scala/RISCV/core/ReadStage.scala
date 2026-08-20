@@ -38,6 +38,8 @@ class ReadStage() extends Module {
     val held_receiving = RegInit(false.B)
 
     io.next_instruction := held_instruction
+    io.next_instruction.rs1_value := held_result_1
+    io.next_instruction.rs2_value := held_result_2
     io.next_valid := held_valid
 
     when(held_receiving) {
@@ -65,4 +67,7 @@ class ReadStage() extends Module {
         held_result_2 := 0.U(32.W)
         held_receiving := false.B
     }
+
+    printf("[Read Stage]: rs1 %d, %d\n", io.instruction.rs1, io.read_result_1)
+    printf("[Read Stage]: rs2 %d, %d\n", io.instruction.rs2, io.read_result_2)
 }

@@ -86,6 +86,8 @@ int main(int argc, char** argv) {
         dut->clock ^= 1;
         dut->io_vga_clk = dut->clock;
         dut->eval();
+
+		printf("\n");
     }
 
 	return 0;

@@ -73,8 +73,8 @@ class Registers() extends Module {
         regs(io.write_address) := io.in
     }
 
-    // printf("[REGISTER 1]: %d\n", regs(1))
-    // printf("[REGISTER 2]: %d\n", regs(2))
-    // printf("[REGISTER 3]: %d\n", regs(3))
-    // printf("[REGISTER 4]: %d\n", regs(4))
+    printf("[REGISTER 1]: %d\n", regs(1))
+    printf("[REGISTER 2]: %d\n", regs(2))
+    printf("[REGISTER 3]: %d\n", regs(3))
+    printf("[REGISTER 4]: %d\n", regs(4))
 }

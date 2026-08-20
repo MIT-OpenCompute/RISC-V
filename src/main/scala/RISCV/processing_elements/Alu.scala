@@ -37,6 +37,10 @@ class Alu() extends Module {
     io.broadcast_free_register := 0.U
     io.broadcast_free_value := 0.U
 
+    when(ready) {
+        out_valid := false.B
+    }
+
     when(ready && io.valid) {
         out := io.instruction
         out_valid := true.B
@@ -44,12 +48,20 @@ class Alu() extends Module {
         switch(io.instruction.opcode) {
             // LUI
             is("b0110111".U) {
-                out.rd_value := io.instruction.immediate;
+                out.rd_value := io.instruction.immediate
+
+                io.broadcast_free_valid := true.B
+                io.broadcast_free_register := io.instruction.rd
+                io.broadcast_free_value := io.instruction.immediate
             }
 
             // AUIPC
             is("b0010111".U) {
-                out.rd_value := io.instruction.instruction_pointer + io.instruction.immediate; // TODO CHECK MULTIPLE ON IP!
+                out.rd_value := io.instruction.instruction_pointer + io.instruction.immediate
+
+                io.broadcast_free_valid := true.B
+                io.broadcast_free_register := io.instruction.rd
+                io.broadcast_free_value := io.instruction.instruction_pointer + io.instruction.immediate
             }
 
             is("b0010011".U) {

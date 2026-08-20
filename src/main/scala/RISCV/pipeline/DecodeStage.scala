@@ -40,6 +40,8 @@ class DecodeStage() extends Module {
         val instruction_pointer = Input(UInt(32.W))
         val valid = Input(Bool())
 
+        val reorder_buffer_head = Input(UInt(8.W))
+
         val next_instruction = Output(new InstructionBundle())
         val next_valid = Output(Bool())
 
@@ -59,6 +61,7 @@ class DecodeStage() extends Module {
     val func3 = RegInit(0.U(3.W))
     val func7 = RegInit(0.U(7.W))
     val instruction_pointer = RegInit(0.U(32.W))
+    // val reorder_pointer = RegInit(0.U(8.W))
     val write_mode = RegInit(WriteMode.None)
     val pe_type = RegInit(PeType.Alu)
     val valid = RegInit(false.B)
@@ -72,6 +75,7 @@ class DecodeStage() extends Module {
         func3 := decoder.io.func3
         func7 := decoder.io.func7
         instruction_pointer := io.instruction_pointer
+        // reorder_pointer := io.reorder_buffer_head
         valid := io.valid && !io.flush
     }
 
@@ -88,7 +92,8 @@ class DecodeStage() extends Module {
     io.next_instruction.opcode := opcode
     io.next_instruction.func3 := func3
     io.next_instruction.func7 := func7
-    io.next_instruction.reorder_pointer := 0.U
+    // io.next_instruction.reorder_pointer := reorder_pointer
+    io.next_instruction.reorder_pointer := io.reorder_buffer_head
     io.next_instruction.write_mode := write_mode
     io.next_instruction.instruction_pointer := instruction_pointer
     io.next_instruction.pe_type := pe_type

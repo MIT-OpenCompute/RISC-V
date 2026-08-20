@@ -63,11 +63,11 @@ class Core() extends Module {
     decode_stage.io.next_ready := read_stage.io.ready
     decode_stage.io.instruction := fetch_stage.io.next_instruction
     decode_stage.io.instruction_pointer := fetch_stage.io.next_instruction_pointer
+    decode_stage.io.reorder_buffer_head := reorder_buffer.io.head
     decode_stage.io.valid := fetch_stage.io.next_valid
     decode_stage.io.flush := jump_unit.io.flush
 
     read_stage.io.instruction := decode_stage.io.next_instruction
-    read_stage.io.instruction.reorder_pointer := reorder_buffer.io.head
     read_stage.io.valid := decode_stage.io.next_valid
     read_stage.io.broadcast_free_valid := reorder_buffer.io.write_mode === WriteMode.Register
     read_stage.io.broadcast_free_value := reorder_buffer.io.write_value
@@ -135,6 +135,7 @@ class Core() extends Module {
       Mux(lsu_pe.io.out_valid, lsu_pe.io.out, alu_pe.io.out)
     )
     reorder_buffer.io.complete_valid := jump_unit.io.out_valid || lsu_pe.io.out_valid || alu_pe.io.out_valid
+    reorder_buffer.io.flush := jump_unit.io.flush
 
     reorder_buffer.io.write_ready := io.data_memory_write_ready
     reorder_buffer.io.write_complete := io.data_memory_write_complete
