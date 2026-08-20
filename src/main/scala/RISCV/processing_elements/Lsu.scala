@@ -73,6 +73,7 @@ class Lsu() extends Module {
                     is("b010".U) {
                         out_valid := true.B
 
+                        out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt / 4.U
                         out.rd_value := io.instruction.rs2_value
                     }
                 }

@@ -51,6 +51,6 @@ class ReadStage() extends Module {
         held_valid := false.B
     }
 
-    printf("[Read Stage]: rs1 %d, %d\n", io.instruction.rs1, io.read_result_1)
-    printf("[Read Stage]: rs2 %d, %d\n", io.instruction.rs2, io.read_result_2)
+    // printf("[Read Stage]: rs1 %d, %d\n", io.instruction.rs1, io.read_result_1)
+    // printf("[Read Stage]: rs2 %d, %d\n", io.instruction.rs2, io.read_result_2)
 }

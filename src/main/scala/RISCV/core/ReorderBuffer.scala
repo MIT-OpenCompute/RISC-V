@@ -63,7 +63,7 @@ class ReorderBuffer() extends Module {
     io.write_mode := WriteMode.None
 
     when(io.write_complete) {
-        printf("[RB] Write Complete!\n");
+        // printf("[RB] Write Complete!\n");
 
         waiting_on_write := false.B
     }
@@ -83,7 +83,7 @@ class ReorderBuffer() extends Module {
         tail
       ).mode =/= WriteMode.Memory)
     ) {
-        printf("[RB] Retiring! %d %d %d\n", buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
+        // printf("[RB] Retiring! %d %d %d\n", buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
 
         io.write_value := buffer(tail).value
         io.write_address := buffer(tail).rd
@@ -102,19 +102,20 @@ class ReorderBuffer() extends Module {
     }
 
     when(io.complete_valid) {
-        printf(
-          "[RB] Marking as complete! %d %d %d\n",
-          io.complete_instruction.reorder_pointer,
-          io.complete_instruction.rd_value,
-          io.complete_instruction.instruction_pointer
-        );
+        // printf(
+        //   "[RB] Marking as complete! %d %d %d\n",
+        //   io.complete_instruction.reorder_pointer,
+        //   io.complete_instruction.rd_value,
+        //   io.complete_instruction.instruction_pointer
+        // );
 
         buffer(io.complete_instruction.reorder_pointer).complete := true.B
+        buffer(io.complete_instruction.reorder_pointer).rd := io.complete_instruction.rd
         buffer(io.complete_instruction.reorder_pointer).value := io.complete_instruction.rd_value
     }
 
     when(!io.full && io.valid) {
-        printf("[RB] Entering! %d\n", head);
+        // printf("[RB] Entering! %d\n", head);
 
         buffer(head) := io.buffer_entry
 
@@ -130,5 +131,5 @@ class ReorderBuffer() extends Module {
         full := false.B
     }
 
-    printf("Head: %d Tail %d\n", head, tail)
+    // printf("Head: %d Tail %d\n", head, tail)
 }
