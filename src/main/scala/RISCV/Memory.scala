@@ -53,15 +53,15 @@ class Memory() extends Module {
         io.read_value_2 := io.btns
     }
 
-    when(io.read_1) {
-        printf("IMEMORY READ: %d\n", io.address_1)
-    }
+    // when(io.read_1) {
+    //     printf("IMEMORY READ: %d\n", io.address_1)
+    // }
 
-    when(io.read_2) {
-        printf("DMEMORY READ: %d\n", io.address_2)
-    }
+    // when(io.read_2) {
+    //     printf("DMEMORY READ: %d\n", io.address_2)
+    // }
 
-    when(io.write_2) {
-        printf("DMEMORY WRITE: %d %d\n", io.address_2, io.write_value_2)
-    }
+    // when(io.write_2) {
+    //     printf("DMEMORY WRITE: %d %d\n", io.address_2, io.write_value_2)
+    // }
 }
