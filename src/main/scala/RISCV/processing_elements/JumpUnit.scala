@@ -36,6 +36,7 @@ class JumpUnit() extends Module {
 
     when(io.next_ready && io.valid) {
         out := io.instruction
+        out_valid := true.B
         io.flush := true.B
 
         switch(io.instruction.opcode) {

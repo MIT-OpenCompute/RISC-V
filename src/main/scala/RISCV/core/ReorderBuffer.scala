@@ -126,7 +126,7 @@ class ReorderBuffer() extends Module {
     }
 
     when(io.flush) {
-        head := head + 1.U
+        head := tail + 1.U
         full := false.B
     }
 
