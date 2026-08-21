@@ -54,7 +54,7 @@ class JumpUnit() extends Module {
             }
 
             is("b1100011".U) {
-                printf("[JU] branching! func3: %b\n", io.instruction.func3)
+                // printf("[JU] branching! func3: %b\n", io.instruction.func3)
 
                 switch(io.instruction.func3) {
                     // BEQ

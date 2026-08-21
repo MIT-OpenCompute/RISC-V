@@ -78,5 +78,5 @@ class FetchStage() extends Module {
         ignore_next_response := request_memory
     }
 
-    printf("[FETCH]: pointer: %d ignoring? %b valid? %b\n", io.program_pointer, ignore_next_response, io.memory_read_valid)
+    // printf("[FETCH]: pointer: %d ignoring? %b valid? %b\n", io.program_pointer, ignore_next_response, io.memory_read_valid)
 }

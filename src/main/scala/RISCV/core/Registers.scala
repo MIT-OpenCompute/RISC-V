@@ -78,6 +78,6 @@ class Registers() extends Module {
     // printf("[REGISTER 3]: %d\n", regs(3))
     // printf("[REGISTER 4]: %d\n", regs(4))
 
-    printf("[REGISTER ra]: %d\n", regs(1))
-    printf("[REGISTER sp]: %d\n", regs(2))
+    // printf("[REGISTER ra]: %d\n", regs(1))
+    // printf("[REGISTER sp]: %d\n", regs(2))
 }

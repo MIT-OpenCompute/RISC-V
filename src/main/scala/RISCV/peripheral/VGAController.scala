@@ -46,7 +46,6 @@ class VGAController extends Module {
         val hCount = RegInit(0.U(10.W))
         val vCount = RegInit(0.U(10.W))
 
-
         when(hCount === (H_TOTAL - 1).U) {
             hCount := 0.U
 
@@ -74,10 +73,10 @@ class VGAController extends Module {
         io.blanking := !active
 
         val read_address = WireInit(0.U(32.W))
-        val vCountShifted = Mux(active, vCount,vCount + 1.U) / 2.U
+        val vCountShifted = Mux(active, vCount, vCount + 1.U) / 2.U
         val vCountMult = (vCountShifted << 8) + (vCountShifted << 6);
         when(active) {
-            
+
             read_address := vCountMult + hCount / 2.U + 1.U
         }.otherwise {
             read_address := vCountMult
@@ -87,5 +86,5 @@ class VGAController extends Module {
         val pixel = color(7, 5) ## color(5) ## color(4, 2) ## color(2) ## color(1, 0) ## color(0) ## color(0)
 
         io.rgb := Mux(active, pixel, 0.U)
-    }  
+    }
 }
