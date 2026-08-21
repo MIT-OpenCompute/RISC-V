@@ -22,21 +22,27 @@ loop: j loop
 	.globl	main
 	.type	main, @function
 main:
-	addi	sp,sp,-32 // 16
-	sw	ra,28(sp) // 20
-	sw	s0,24(sp) // 24
-	addi	s0,sp,32 // 28
-	li	a5,16384 // 32
-	sw	a5,-20(s0) // 36
-	lw	a5,-20(s0) // 40
-	li	a4,255 // 44
-	sw	a4,0(a5) // 48
-	li	a5,0 // 52
-	mv	a0,a5 // 56
-	lw	ra,28(sp) // 60
-	lw	s0,24(sp) // 64
-	addi	sp,sp,32 // 68
-	jr	ra // 72
+	addi	sp,sp,-32
+	sw	ra,28(sp)
+	sw	s0,24(sp)
+	addi	s0,sp,32
+	li	a5,16384
+	sw	a5,-20(s0)
+	lw	a5,-20(s0)
+	li	a4,255
+	sw	a4,0(a5)
+	lw	a4,-20(s0)
+	li	a5,307200
+	addi	a5,a5,-1280
+	add	a5,a4,a5
+	li	a4,255
+	sw	a4,0(a5)
+	li	a5,0
+	mv	a0,a5
+	lw	ra,28(sp)
+	lw	s0,24(sp)
+	addi	sp,sp,32
+	jr	ra
 	.size	main, .-main
 	.ident	"GCC: (xPack GNU RISC-V Embedded GCC x86_64) 15.2.0"
 	.section	.note.GNU-stack,"",@progbits

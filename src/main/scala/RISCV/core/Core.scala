@@ -109,6 +109,8 @@ class Core() extends Module {
 
     when(jump_unit.io.flush) {
         program_pointer := jump_unit.io.target_program_pointer
+
+        printf("Jumping to %d\n", jump_unit.io.target_program_pointer)
     }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
@@ -133,7 +135,13 @@ class Core() extends Module {
     reorder_buffer.io.buffer_entry.program_pointer := decode_stage.io.next_instruction.instruction_pointer
     reorder_buffer.io.buffer_entry.mode := decode_stage.io.next_instruction.write_mode
     reorder_buffer.io.buffer_entry.complete := false.B
-    reorder_buffer.io.valid := decode_stage.io.next_valid
+    reorder_buffer.io.valid := decode_stage.io.next_valid && read_stage.io.ready
+
+    // printf("Read stage ready: %b\n", read_stage.io.ready)
+
+    // printf("JU out: %b\n", jump_unit.io.out_valid)
+    // printf("LSU out: %b\n", lsu_pe.io.out_valid)
+    // printf("ALU out: %b\n", alu_pe.io.out_valid)
 
     reorder_buffer.io.complete_instruction := Mux(
       jump_unit.io.out_valid,

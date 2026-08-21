@@ -91,7 +91,7 @@ class ReorderBuffer() extends Module {
         tail
       ).mode =/= WriteMode.Memory)
     ) {
-        // printf("[RB] Retiring! %d %d %d\n", buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
+        // printf("[RB] Retiring! %d %d %d %d\n", tail, buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
 
         io.write_value := buffer(tail).value
         io.write_address := buffer(tail).rd

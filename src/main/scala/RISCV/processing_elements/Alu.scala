@@ -81,7 +81,7 @@ class Alu() extends Module {
 
                         io.broadcast_free_valid := true.B
                         io.broadcast_free_register := io.instruction.rd
-                        io.broadcast_free_value := io.instruction.rs1_value + io.instruction.immediate
+                        io.broadcast_free_value := io.instruction.rs1_value << io.instruction.immediate(5, 0)
                     }
 
                     // SRLI and SRAI

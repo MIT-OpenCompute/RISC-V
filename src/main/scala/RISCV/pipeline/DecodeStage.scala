@@ -101,53 +101,55 @@ class DecodeStage() extends Module {
     io.next_instruction.pe_type := pe_type
     io.next_valid := valid
 
-    write_mode := WriteMode.None
-    pe_type := PeType.Alu
+    when(io.next_ready) {
+        write_mode := WriteMode.None
+        pe_type := PeType.Alu
 
-    switch(decoder.io.opcode) {
-        is("b0110111".U) { // LUI
-            pe_type := PeType.Alu
-            write_mode := WriteMode.Register
-        }
+        switch(decoder.io.opcode) {
+            is("b0110111".U) { // LUI
+                pe_type := PeType.Alu
+                write_mode := WriteMode.Register
+            }
 
-        is("b0010111".U) { // AUIPC
-            pe_type := PeType.Alu
-            write_mode := WriteMode.Register
-        }
+            is("b0010111".U) { // AUIPC
+                pe_type := PeType.Alu
+                write_mode := WriteMode.Register
+            }
 
-        is("b0010011".U) { // IMMEDIATE MATH
-            pe_type := PeType.Alu
-            write_mode := WriteMode.Register
-        }
+            is("b0010011".U) { // IMMEDIATE MATH
+                pe_type := PeType.Alu
+                write_mode := WriteMode.Register
+            }
 
-        is("b0110011".U) { // REGISTER MATH
-            pe_type := PeType.Alu
-            write_mode := WriteMode.Register
-        }
+            is("b0110011".U) { // REGISTER MATH
+                pe_type := PeType.Alu
+                write_mode := WriteMode.Register
+            }
 
-        is("b0000011".U) { // LOAD
-            pe_type := PeType.Lsu
-            write_mode := WriteMode.Register
-        }
+            is("b0000011".U) { // LOAD
+                pe_type := PeType.Lsu
+                write_mode := WriteMode.Register
+            }
 
-        is("b0100011".U) { // STORE
-            pe_type := PeType.Lsu
-            write_mode := WriteMode.Memory
-        }
+            is("b0100011".U) { // STORE
+                pe_type := PeType.Lsu
+                write_mode := WriteMode.Memory
+            }
 
-        is("b1101111".U) { // JAL
-            pe_type := PeType.JumpUnit
-            write_mode := WriteMode.Register
-        }
+            is("b1101111".U) { // JAL
+                pe_type := PeType.JumpUnit
+                write_mode := WriteMode.Register
+            }
 
-        is("b1100111".U) { // JALR
-            pe_type := PeType.JumpUnit
-            write_mode := WriteMode.Register
-        }
+            is("b1100111".U) { // JALR
+                pe_type := PeType.JumpUnit
+                write_mode := WriteMode.Register
+            }
 
-        is("b1100011".U) { // BRANCH
-            pe_type := PeType.JumpUnit
-            write_mode := WriteMode.None
+            is("b1100011".U) { // BRANCH
+                pe_type := PeType.JumpUnit
+                write_mode := WriteMode.None
+            }
         }
     }
 
