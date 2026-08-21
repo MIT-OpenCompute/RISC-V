@@ -112,7 +112,7 @@ class Lsu() extends Module {
 
         switch(waiting_on_instruction.opcode) {
             is("b0000011".U) {
-                io.broadcast_free_valid := true.B
+                io.broadcast_free_valid := waiting_on_instruction.rd =/= 0.U
                 io.broadcast_free_register := out.rd
 
                 switch(waiting_on_instruction.func3) {
