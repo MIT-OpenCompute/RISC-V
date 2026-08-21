@@ -84,7 +84,7 @@ sbt "testOnly RISCV.ALUSpec"
 Use the following template as a guide for creating new testbenches:
 
 ```
-package RISCV
+
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
