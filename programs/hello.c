@@ -10,4 +10,11 @@ int main() {
     volatile unsigned int* frame = (volatile unsigned int*)0x4000;
 
     frame[0] = 0xFF;
+	// frame[239 * 320] = 0xFF;
+	// frame[1] = 0xFF;
+	// frame[319] = 0xFF;
+
+	// for (int i = 0; i < 320; i++) {
+    //     frame[i] = 0xFF;
+    // }
 }

@@ -289,13 +289,13 @@ class InstructionDispatchQueue() extends Module {
         )
     }
 
-    when(io.broadcast_free_valid) {
-        printf(
-          "Register freed! %d %d\n",
-          io.broadcast_free_register,
-          io.broadcast_free_value
-        )
-    }
+    // when(io.broadcast_free_valid) {
+    //     printf(
+    //       "Register freed! %d %d\n",
+    //       io.broadcast_free_register,
+    //       io.broadcast_free_value
+    //     )
+    // }
 
     // when(io.broadcast_mark_valid) {
     //     printf(
@@ -304,7 +304,4 @@ class InstructionDispatchQueue() extends Module {
     //       io.broadcast_mark_reorder_pointer
     //     )
     // }
-
-    printf("Dependence tracker 8: %d\n", dependence_size(8.U))
-    printf("Dependence tracker 15: %d\n", dependence_size(15.U))
 }

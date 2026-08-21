@@ -144,5 +144,5 @@ class ReorderBuffer() extends Module {
         full := false.B
     }
 
-    printf("Head: %d Tail %d\n", head, tail)
+    // printf("Head: %d Tail %d\n", head, tail)
 }

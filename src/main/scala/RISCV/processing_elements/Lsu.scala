@@ -104,7 +104,7 @@ class Lsu() extends Module {
         ignore_next_response := waiting_on_read
     }
 
-    printf("[LSU] waiting on read: %b\n", waiting_on_read)
-    printf("[LSU] memory read valid: %b\n", io.memory_read_valid)
-    printf("[LSU] ignore next response: %b\n", ignore_next_response)
+    // printf("[LSU] waiting on read: %b\n", waiting_on_read)
+    // printf("[LSU] memory read valid: %b\n", io.memory_read_valid)
+    // printf("[LSU] ignore next response: %b\n", ignore_next_response)
 }
