@@ -44,31 +44,36 @@ int main(int argc, char** argv) {
     int hCount = 0;
     int vCount = 0;
 
-    std::ifstream file("/home/liamh/RISC-V/programs/hello.hex");
+    if (argc < 2) {
+    	fprintf(stderr, "Usage: %s <path-to-bin-file>\n", argv[0]);
+		return 1;
+	}
 
-    std::string line;
-    int address = 0;
+	std::ifstream file(argv[1], std::ios::binary);
+	if (!file) {
+		fprintf(stderr, "Failed to open file: %s\n", argv[1]);
+		return 1;
+	}
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
+	int address = 0;
+	uint32_t value;
 
-        uint32_t value = std::stoul(line, nullptr, 16);
+	while (file.read(reinterpret_cast<char*>(&value), sizeof(value))) {
+		dut->io_flash = 1;
+		dut->io_flash_address = address;
+		dut->io_flash_value = value;
 
-        dut->io_flash = 1;
-        dut->io_flash_address = address;
-        dut->io_flash_value = value;
+		printf("Writing %x at %d\n", value, address);
 
-        printf("Writing %x at %d\n", value, address);
+		dut->clock = 1;
+		dut->io_vga_clk = 1;
+		dut->eval();
+		dut->clock = 0;
+		dut->io_vga_clk = 0;
+		dut->eval();
 
-        dut->clock = 1;
-        dut->io_vga_clk = 1;
-        dut->eval();
-        dut->clock = 0;
-        dut->io_vga_clk = 0;
-        dut->eval();
-
-        address++;
-    }
+		address++;
+	}
 
     dut->io_flash = 0;
     dut->io_flash_address = 0;
@@ -81,16 +86,6 @@ int main(int argc, char** argv) {
     }
 
     dut->io_execute = 1;
-
-    // for (int i = 0; i < 2 * 164; i++) {
-    //     dut->clock ^= 1;
-    //     dut->io_vga_clk = dut->clock;
-    //     dut->eval();
-
-	// 	printf("\n");
-    // }
-
-	// return 0;
 
     bool prev_vsync = 1;
     int pixelIdx = 0;
@@ -132,22 +127,13 @@ int main(int argc, char** argv) {
 
         printf("Captured %d pixels (expected %d)\n", pixelIdx, H_VISIBLE * V_VISIBLE);
 
-        FILE* f = fopen("frame.ppm", "wb");
+        FILE* f = fopen("./generated/frame.ppm", "wb");
         if (!f) { perror("fopen"); return 1; }
         fprintf(f, "P6\n%d %d\n255\n", H_VISIBLE, V_VISIBLE);
         fwrite(pixels.data(), 1, pixels.size(), f);
         fclose(f);
-        system("ffmpeg -i frame.ppm frame.png -y");
+        system("ffmpeg -i ./generated/frame.ppm ./generated/frame.png -y");
     }
-
-    dut->final();
-    
-    FILE* f = fopen("frame.ppm", "wb");
-    if (!f) { perror("fopen"); return 1; }
-    fprintf(f, "P6\n%d %d\n255\n", H_VISIBLE, V_VISIBLE);
-    fwrite(pixels.data(), 1, pixels.size(), f);
-    fclose(f);
-    system("ffmpeg -i frame.ppm frame.png -y");
 
     return 0;
 }
