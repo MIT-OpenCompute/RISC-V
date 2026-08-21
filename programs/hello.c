@@ -14,7 +14,7 @@ int main() {
 	// frame[1] = 0xFF;
 	// frame[319] = 0xFF;
 
-	for (int i = 0; i < 320; i++) {
+	for (int i = 0; i < 1; i++) {
         frame[i] = 0xFF;
         frame[239 * 320 + i] = 0xFF;
         frame[320 * i + 1] = 0xFF;

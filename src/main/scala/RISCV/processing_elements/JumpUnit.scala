@@ -37,24 +37,31 @@ class JumpUnit() extends Module {
     when(io.next_ready && io.valid) {
         out := io.instruction
         out_valid := true.B
-        io.flush := true.B
 
         switch(io.instruction.opcode) {
             is("b1101111".U) { // JAL
+                io.flush := true.B
+
                 out.rd_value := io.instruction.instruction_pointer + 4.U
                 io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
             }
 
             is("b1100111".U) { // JALR
+                io.flush := true.B
+
                 out.rd_value := io.instruction.instruction_pointer + 4.U
                 io.target_program_pointer := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
             }
 
             is("b1100011".U) {
+                printf("[JU] branching! func3: %b\n", io.instruction.func3)
+
                 switch(io.instruction.func3) {
                     // BEQ
                     is("b000".U) {
                         when(io.instruction.rs1_value === io.instruction.rs2_value) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
@@ -62,6 +69,8 @@ class JumpUnit() extends Module {
                     // BNEQ
                     is("b001".U) {
                         when(io.instruction.rs1_value =/= io.instruction.rs2_value) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
@@ -69,6 +78,8 @@ class JumpUnit() extends Module {
                     // BLT
                     is("b100".U) {
                         when(io.instruction.rs1_value.asSInt < io.instruction.rs2_value.asSInt) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
@@ -76,6 +87,8 @@ class JumpUnit() extends Module {
                     // BLTU
                     is("b110".U) {
                         when(io.instruction.rs1_value < io.instruction.rs2_value) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
@@ -83,6 +96,8 @@ class JumpUnit() extends Module {
                     // BGE
                     is("b101".U) {
                         when(io.instruction.rs1_value.asSInt >= io.instruction.rs2_value.asSInt) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }
@@ -90,6 +105,8 @@ class JumpUnit() extends Module {
                     // BGEU
                     is("b111".U) {
                         when(io.instruction.rs1_value >= io.instruction.rs2_value) {
+                            io.flush := true.B
+
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
                         }
                     }

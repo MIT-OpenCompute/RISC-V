@@ -27,16 +27,51 @@ main:
 	sw	s0,24(sp)
 	addi	s0,sp,32
 	li	a5,16384
-	sw	a5,-20(s0)
+	sw	a5,-24(s0)
+	sw	zero,-20(s0)
+	j	.L3
+.L4:
 	lw	a5,-20(s0)
-	li	a4,255
-	sw	a4,0(a5)
-	lw	a4,-20(s0)
-	li	a5,307200
-	addi	a5,a5,-1280
+	slli	a5,a5,2
+	lw	a4,-24(s0)
 	add	a5,a4,a5
 	li	a4,255
 	sw	a4,0(a5)
+	lw	a4,-20(s0)
+	li	a5,77824
+	addi	a5,a5,-1344
+	add	a5,a4,a5
+	slli	a5,a5,2
+	lw	a4,-24(s0)
+	add	a5,a4,a5
+	li	a4,255
+	sw	a4,0(a5)
+	lw	a4,-20(s0)
+	mv	a5,a4
+	slli	a5,a5,2
+	add	a5,a5,a4
+	slli	a5,a5,8
+	addi	a5,a5,4
+	lw	a4,-24(s0)
+	add	a5,a4,a5
+	li	a4,255
+	sw	a4,0(a5)
+	lw	a4,-20(s0)
+	mv	a5,a4
+	slli	a5,a5,2
+	add	a5,a5,a4
+	slli	a5,a5,8
+	addi	a5,a5,1276
+	lw	a4,-24(s0)
+	add	a5,a4,a5
+	li	a4,255
+	sw	a4,0(a5)
+	lw	a5,-20(s0)
+	addi	a5,a5,1
+	sw	a5,-20(s0)
+.L3:
+	lw	a5,-20(s0)
+	ble	a5,zero,.L4
 	li	a5,0
 	mv	a0,a5
 	lw	ra,28(sp)
