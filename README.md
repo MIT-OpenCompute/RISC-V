@@ -1,147 +1,30 @@
-# MIT OpenCompute RISC-V Project
+# The Dawn RISC-V Processor Project
 
-This is the MIT OpenCompute Laboratory’s RISC-V Project.  
-We are designing a 32-bit CPU that implements the RV32I RISC-V ISA.
+We aim to develop a synthesizable high performance open source RISC-V core. We have currently implemented an out of order unprivileged RV32I core with peripherals for interacting with UART and emitting VGA.
 
----
+## Blogs
+1. [Designing a CPU from Scratch](https://www.outercloud.dev/blogs/riscv-1/) - March 9, 2026
+2. [Reaching Towards Out Of Order in Our CPU](https://www.outercloud.dev/blogs/riscv-2/) - June 14, 2026
+3. [Running DOOM on our Custom CPU and Going Viral](https://armaangomes.com/blogs/doom/) - July 20, 2026
+4. [Out of Order, on Technicality - RISCV](https://armaangomes.com/blogs/techooo/) - July 26, 2026
 
-## Project Structure
+## Getting Started
+You'll need [xpack-riscv-none-elf-gcc-15.2.0-1](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/tag/v15.2.0-1) install locally in this git repository so that scripts can access it at the path `./xpack-riscv-none-elf-gcc-15.2.0-1/...`
 
-CPU HDL files are stored in: ```main\scala\RISCV```
+The Nix flake is WIP and only supplies scala and verilator which is enough to build and run the core and simulation scripts manually.
+
+Once your have your environment set up, you'll want to run `./scripts/generate-verilog.sh` to generate verilog for verilator to run. Then run `./scripts/simulate.sh` and pass in the path to the c program you wish to simulate. For example, `./scripts/simulate.sh ./programs/pong.c ./generated/pong.bin`.
+
+The simulation will emit `frame.png` under the `./generated/` folder. The image is a recording of the VGA signal and an approximation of what you might see when connected to a real VGA cable. It won't be completely accurate because the VGA clock is triggered at the same speed as the processor clock in simulation, which may not be the case in reality.
 
 
-### ALU.scala
+## Contributing
+If you'd link to contribute, [join the MIT OpenCompute discord](https://discord.gg/jwgPXeFN7C) and reach out to us there!
 
-Defines the Arithmetic Logic Unit (ALU) hardware.
+## License
 
-The ALU takes two operands, `a` and `b`, and sends the result of the operation to `output`.  
-It also accepts two control inputs:
-- A 4-bit operation code.
-- A sign-flag boolean, used only for comparisons.
-
-#### Operation Codes
-
-| Code  | Operation               |
-|-------|--------------------------|
-| 0000  | Addition                |
-| 0001  | Multiplication          |
-| 0010  | Comparison (gt, eq, lt) |
-| 0011  | Bitwise AND             |
-| 0100  | Bitwise OR              |
-| 0101  | Bitwise XOR             |
-| 0110  | Bitwise NOT (outputs NOT a) |
-| 0111  | Logical shift left      |
-| 1000  | Logical shift right     |
-| 1001  | Arithmetic shift right  |
-
-The sign flag determines whether operands are treated as signed or unsigned values for comparison.
+[MIT](https://raw.githubusercontent.com/MIT-OpenCompute/dawn-cpu/refs/heads/main/LICENSE)
 
 ---
 
-### Decoder.scala
-
-Implements the RISC-V instruction decoder that extracts key fields from a 32-bit instruction and formats them for downstream units such as the ALU, register file, or control logic.
-
-The decoder:
-- Identifies the instruction format (R, I, S, B, U, or J) based on the opcode (bits 6–0).
-- Outputs:
-  - `rs1`, `rs2`, and `rd` register indices
-  - The operation code (`operation`)
-  - The immediate value (`immediate`)
-
-For each format, the corresponding immediate field is assembled and sign-extended (or zero-filled) to 32 bits by left-shifting the extracted bits and padding with zeros as needed.  
-This ensures that all immediates output by the decoder are consistently 32 bits wide, ready for arithmetic or address calculations without additional shifting logic later in the datapath.
-
----
-
-### Registers.scala
-
-Defines the register file hardware.
-
-The CPU register file supports:
-- Dual independent combinational reads.
-- A single independent synchronous write.
-
-This allows two registers to be read in one clock cycle while a third register is written simultaneously.
-
-The module also includes a third, debugging-only read port called the **C port**.  
-This port is used exclusively for reading register values from testbenches.  
-It is not part of the actual hardware and should not be used in the CPU datapath.
-
----
-
-## Running Testbenches
-
-This project uses `sbt`.
-
-To run a specific testbench, such as `ALUSpec.scala`, execute:
-```bash
-sbt "testOnly RISCV.ALUSpec"
-```
-
-## Writing a Testbench
-
-Use the following template as a guide for creating new testbenches:
-
-```
-package RISCV
-
-import chisel3._
-import chisel3.simulator.scalatest.ChiselSim
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-
-class MainTemplateSpec extends AnyFreeSpec with Matchers with ChiselSim {
-
-  "Main should execute an instruction correctly (template)" in {
-    simulate(new Main()) { dut =>
-      // 1. Initialize registers (example: write value to x1)
-      dut.io.write_enable.poke(true.B)
-      dut.io.write_address.poke(1.U)
-      dut.io.in.poke(42.U)
-      dut.clock.step(1)
-      dut.io.write_enable.poke(false.B)
-
-      // 2. Load an instruction (replace with your own encoding)
-      val instr = "b000000000000_00000_000_00000_0000000".U(32.W)
-      dut.io.instruction.poke(instr)
-
-      // 3. Step one clock to execute
-      dut.clock.step(1)
-
-      // 4. Read back a register value to verify the result
-      //    Always use the C port of the register file for reading.
-      dut.io.read_address_c.poke(1.U)   // Which register to read
-      dut.io.out_c.expect(42.U)      // Expected result (example)
-    }
-  }
-}
-```
-
-## Compile Verilator
-cd simulation
-verilator --cc --sv --exe --build -j 0 -CFLAGS "-I./obj_dir" -Wall vga-image.cpp VGAController.sv
-./obj_dir/VVGAController
-nix-shell -p imagemagick --run "convert frame.ppm frame.png"
-
-.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -S -O0 -march=rv32i -mabi=ilp32 ./programs/hello.c -o ./programs/hello.s
-
-## Compiling a C program
-
-.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -c -O0 -march=rv32i -mabi=ilp32 ./programs/hello.c -o ./programs/hello.o
-
-.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-gcc.exe -march=rv32i -mabi=ilp32 -nostdlib "-Wl,--section-start=.text=0x0,--entry=_start" -o ./programs/hello.elf ./programs/hello.o
-
-.\xpack-riscv-none-elf-gcc-15.2.0-1\bin\riscv-none-elf-objcopy.exe -O binary ./programs/hello.elf ./programs/hello.bin
-
-python convert.py
-
-python.exe .\load_program.py .\programs\test.hex --port COM6
-
-## New VGA Testing
-```
-cd generated
-verilator --cc --exe --build -j 0 ../simulation/vga-image.cpp -f filelist.f --top VGAController
-./obj_dir/VVGAController
-ffmpeg -i frame.ppm frame.png -y
-```
+Made with love from [Liam Hanrahan](https://outercloud.dev), [Armaan Gomes](https://armaangomes.com/), and contributors!

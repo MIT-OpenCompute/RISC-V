@@ -1,0 +1,146 @@
+import chisel3._
+import chisel3.util._
+import _root_.circt.stage.ChiselStage
+
+/*
+The reorder buffer is meant to track the true ordering of instructions so we can make sure that our modifcations to the persistent sate of the processor anr memory
+are in order. Otherwise, exceptions would leave the processor in a non deterministic state.
+
+The buffer is a cyclic buffer that tracks a head and tail pointer. We have the size of the buffer hardcoded at 256 for now. Each entry in the buffer corresponds
+to an instruction and contains information about how to write to memory or registers. The entry also tracks wether the instruction is complete. The reorder buffer
+"retires" completed instructions at the tail in order. When an instruciton is retired it requests a write to the registers or memory.
+
+The reorder buffer can fill up, hence the "full" signal. This would cause the reorder buffer to stall. The reorder buffer also must pause retiring when waiting for the
+active memory write to finish.
+ */
+class BufferEntry extends Bundle {
+    val value = UInt(32.W)
+    val rd = UInt(32.W)
+    val program_pointer = UInt(32.W)
+    val mode = WriteMode()
+    val complete = Bool()
+}
+
+class ReorderBuffer() extends Module {
+    val io = IO(new Bundle {
+        val buffer_entry = Input(new BufferEntry())
+        val valid = Input(Bool())
+
+        val head = Output(UInt(8.W))
+        val tail = Output(UInt(8.W))
+
+        val complete_instruction = Input(new InstructionBundle())
+        val complete_valid = Input(Bool())
+
+        val write_ready = Input(Bool())
+        val write_complete = Input(Bool())
+        val write_value = Output(UInt(32.W))
+        val write_address = Output(UInt(32.W))
+        val write_mode = Output(WriteMode())
+
+        val broadcast_retire_valid = Output(Bool())
+        val broadcast_retire_register = Output(UInt(5.W))
+        val broadcast_retire_reorder_pointer = Output(UInt(8.W))
+
+        val flush = Input(Bool())
+
+        val full = Output(Bool())
+    })
+
+    val buffer = RegInit(VecInit(Seq.fill(256)(0.U.asTypeOf(new BufferEntry()))))
+    val head = RegInit(0.U(8.W))
+    io.head := head
+    val tail = RegInit(0.U(8.W))
+    io.tail := tail
+
+    val full = RegInit(false.B)
+    io.full := full
+
+    val empty = tail === head
+
+    val waiting_on_write = RegInit(false.B)
+
+    io.write_value := 0.U
+    io.write_address := 0.U
+    io.write_mode := WriteMode.None
+
+    when(io.write_complete) {
+        // printf("[RB] Write Complete!\n");
+
+        waiting_on_write := false.B
+    }
+
+    // printf(
+    //   "[RB] Conditions %b %b %b %b\n",
+    //   !empty,
+    //   !waiting_on_write || io.write_complete,
+    //   buffer(tail).complete,
+    //   (io.write_ready || buffer(
+    //     tail
+    //   ).mode =/= WriteMode.Memory)
+    // );
+
+    io.broadcast_retire_valid := false.B
+    io.broadcast_retire_register := 0.U
+    io.broadcast_retire_reorder_pointer := 0.U
+
+    when(
+      !empty && (!waiting_on_write || io.write_complete) && buffer(tail).complete && (io.write_ready || buffer(
+        tail
+      ).mode =/= WriteMode.Memory)
+    ) {
+        // printf("[RB] Retiring! %d %d %d %d\n", tail, buffer(tail).rd, buffer(tail).value, buffer(tail).mode.asUInt);
+
+        io.write_value := buffer(tail).value
+        io.write_address := buffer(tail).rd
+        val entry_write_mode = buffer(tail).mode
+        io.write_mode := entry_write_mode
+
+        when(entry_write_mode === WriteMode.Memory) {
+            waiting_on_write := true.B
+        }
+
+        when(!io.valid) {
+            full := false.B
+        }
+
+        tail := (tail + 1.U) % 256.U
+
+        io.broadcast_retire_valid := true.B
+        io.broadcast_retire_register := buffer(tail).rd(4, 0)
+        io.broadcast_retire_reorder_pointer := tail
+    }
+
+    when(io.complete_valid) {
+        // printf(
+        //   "[RB] Marking as complete! rd: %d val: %d rp: %d ip: %d\n",
+        //   io.complete_instruction.rd,
+        //   io.complete_instruction.rd_value,
+        //   io.complete_instruction.reorder_pointer,
+        //   io.complete_instruction.instruction_pointer
+        // );
+
+        buffer(io.complete_instruction.reorder_pointer).complete := true.B
+        buffer(io.complete_instruction.reorder_pointer).rd := io.complete_instruction.rd
+        buffer(io.complete_instruction.reorder_pointer).value := io.complete_instruction.rd_value
+    }
+
+    when(!io.full && io.valid) {
+        // printf("[RB] Entering! %d\n", head);
+
+        buffer(head) := io.buffer_entry
+
+        head := (head + 1.U) % 256.U
+
+        when((head + 1.U) % 256.U === tail) {
+            full := true.B
+        }
+    }
+
+    when(io.flush) {
+        head := tail + 1.U
+        full := false.B
+    }
+
+    // printf("Head: %d Tail %d\n", head, tail)
+}
