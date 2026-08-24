@@ -30,10 +30,6 @@ class InstructionDispatchQueue() extends Module {
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
 
-        val broadcast_mark_valid = Output(Bool())
-        val broadcast_mark_register = Output(UInt(5.W))
-        val broadcast_mark_reorder_pointer = Output(UInt(8.W))
-
         val flush = Input(Bool())
 
         val ready = Output(Bool())
@@ -102,10 +98,6 @@ class InstructionDispatchQueue() extends Module {
     io.alu_out := queue(first_valid_entry).instruction
     io.alu_out_valid := first_valid_entry_valid && queue(first_valid_entry).instruction.pe_type === PeType.Alu
 
-    io.broadcast_mark_valid := false.B
-    io.broadcast_mark_register := 0.U
-    io.broadcast_mark_reorder_pointer := 0.U
-
     when(first_valid_entry_valid) {
         for (n <- 1 to 7) {
             when(n.U > first_valid_entry) {
@@ -140,12 +132,6 @@ class InstructionDispatchQueue() extends Module {
         }
 
         queue(7.U).valid := false.B
-
-        when(queue(first_valid_entry).instruction.pe_type === PeType.Alu) {
-            io.broadcast_mark_valid := true.B
-            io.broadcast_mark_register := queue(first_valid_entry).instruction.rd
-            io.broadcast_mark_reorder_pointer := queue(first_valid_entry).instruction.reorder_pointer
-        }
     }
 
     io.ready := !full

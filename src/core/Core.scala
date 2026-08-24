@@ -72,12 +72,6 @@ class Core() extends Module {
     read_stage.io.broadcast_free_valid := instruction_dispatch_queue.io.broadcast_free_valid
     read_stage.io.broadcast_free_value := instruction_dispatch_queue.io.broadcast_free_value
     read_stage.io.broadcast_free_register := instruction_dispatch_queue.io.broadcast_free_register
-    read_stage.io.broadcast_mark_valid := instruction_dispatch_queue.io.broadcast_mark_valid
-    read_stage.io.broadcast_mark_register := instruction_dispatch_queue.io.broadcast_mark_register
-    read_stage.io.broadcast_mark_reorder_pointer := instruction_dispatch_queue.io.broadcast_mark_reorder_pointer
-    read_stage.io.broadcast_retire_valid := reorder_buffer.io.broadcast_retire_valid
-    read_stage.io.broadcast_retire_register := reorder_buffer.io.broadcast_retire_register
-    read_stage.io.broadcast_retire_reorder_pointer := reorder_buffer.io.broadcast_retire_reorder_pointer
     read_stage.io.flush := jump_unit.io.flush
 
     read_stage.io.read_result_1 := registers.io.out_a

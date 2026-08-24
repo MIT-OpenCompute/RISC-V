@@ -38,10 +38,6 @@ class ReorderBuffer() extends Module {
         val write_address = Output(UInt(32.W))
         val write_mode = Output(WriteMode())
 
-        val broadcast_retire_valid = Output(Bool())
-        val broadcast_retire_register = Output(UInt(5.W))
-        val broadcast_retire_reorder_pointer = Output(UInt(8.W))
-
         val flush = Input(Bool())
 
         val full = Output(Bool())
@@ -80,10 +76,6 @@ class ReorderBuffer() extends Module {
     //   ).mode =/= WriteMode.Memory)
     // );
 
-    io.broadcast_retire_valid := false.B
-    io.broadcast_retire_register := 0.U
-    io.broadcast_retire_reorder_pointer := 0.U
-
     when(
       !empty && (!waiting_on_write || io.write_complete) && buffer(tail).complete && (io.write_ready || buffer(
         tail
@@ -105,10 +97,6 @@ class ReorderBuffer() extends Module {
         }
 
         tail := (tail + 1.U) % 256.U
-
-        io.broadcast_retire_valid := true.B
-        io.broadcast_retire_register := buffer(tail).rd(4, 0)
-        io.broadcast_retire_reorder_pointer := tail
     }
 
     when(io.complete_valid) {

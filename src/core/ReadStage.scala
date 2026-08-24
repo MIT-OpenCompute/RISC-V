@@ -13,14 +13,6 @@ class ReadStage() extends Module {
         val broadcast_free_register = Input(UInt(5.W))
         val broadcast_free_value = Input(UInt(32.W))
 
-        val broadcast_mark_valid = Input(Bool())
-        val broadcast_mark_register = Input(UInt(5.W))
-        val broadcast_mark_reorder_pointer = Input(UInt(8.W))
-
-        val broadcast_retire_valid = Input(Bool())
-        val broadcast_retire_register = Input(UInt(5.W))
-        val broadcast_retire_reorder_pointer = Input(UInt(8.W))
-
         val read_register_1 = Output(UInt(5.W))
         val read_result_1 = Input(UInt(32.W))
         val read_register_2 = Output(UInt(5.W))
