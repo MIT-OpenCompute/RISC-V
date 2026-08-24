@@ -16,6 +16,8 @@ class Main() extends Module {
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
 
+        val program_pointer = Output(UInt(32.W))
+
         val btns = Input(UInt(4.W))
     })
 
@@ -95,6 +97,8 @@ class Main() extends Module {
             memory.io.write_value_1 := io.flash_value
         }
     }
+
+    io.program_pointer := core.io.program_pointer
 
     // printf("[Main] dmemory read requested: %b\n", core.io.data_memory_read_requested)
     // printf("[Main] dmemory read valid: %b\n", memory_read_requested_2)

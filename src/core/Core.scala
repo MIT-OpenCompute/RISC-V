@@ -6,6 +6,8 @@ class Core() extends Module {
     val io = IO(new Bundle {
         val execute = Input(Bool())
 
+        val program_pointer = Output(UInt(32.W))
+
         val program_memory_requested = Output(Bool())
         val program_memory_address = Output(UInt(32.W))
         val program_memory_value = Input(UInt(32.W))
@@ -155,6 +157,8 @@ class Core() extends Module {
     io.data_memory_write_value := reorder_buffer.io.write_value
     io.data_memory_write_address := reorder_buffer.io.write_address
     io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
+
+    io.program_pointer := program_pointer
 
     // when(io.execute) {
     //     printf("\n\n");

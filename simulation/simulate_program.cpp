@@ -87,6 +87,16 @@ int main(int argc, char** argv) {
 
     dut->io_execute = 1;
 
+	// for (int i = 0; i < 32; i++) {
+    //     dut->clock ^= 1;
+    //     dut->io_vga_clk = dut->clock;
+    //     dut->eval();
+
+	// 	printf("\n\n");
+    // }
+
+	// return 0;
+
     bool prev_vsync = 1;
     int pixelIdx = 0;
 
@@ -97,6 +107,9 @@ int main(int argc, char** argv) {
             dut->clock = 1; dut->io_vga_clk = 1; dut->eval();
             bool vsync = dut->io_vsync;
             dut->clock = 0; dut->io_vga_clk = 0; dut->eval();
+
+			// if(dut->io_program_pointer >= 184) return 0;
+			// printf("\n\n");
 
             if (prev_vsync && !vsync) break;
             prev_vsync = vsync;
@@ -112,6 +125,9 @@ int main(int argc, char** argv) {
 
             dut->clock = 0; dut->io_vga_clk = 0; dut->eval();
 
+			// if(dut->io_program_pointer >= 184) return 0;
+			// printf("\n\n");
+
             if (prev_vsync && !vsync) {
                 printf("vsync mid-frame at cycle %d — counter mismatch!\n", cycle);
             }
@@ -125,14 +141,12 @@ int main(int argc, char** argv) {
             }
         }
 
-        printf("Captured %d pixels (expected %d)\n", pixelIdx, H_VISIBLE * V_VISIBLE);
-
         FILE* f = fopen("./generated/frame.ppm", "wb");
         if (!f) { perror("fopen"); return 1; }
         fprintf(f, "P6\n%d %d\n255\n", H_VISIBLE, V_VISIBLE);
         fwrite(pixels.data(), 1, pixels.size(), f);
         fclose(f);
-        system("ffmpeg -i ./generated/frame.ppm ./generated/frame.png -y");
+        system("ffmpeg -i ./generated/frame.ppm ./generated/frame.png -y > /dev/null 2>&1");
     }
 
     return 0;

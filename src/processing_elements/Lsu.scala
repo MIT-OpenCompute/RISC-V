@@ -49,18 +49,8 @@ class Lsu() extends Module {
     io.memory_read_requested := false.B
     io.memory_read_address := 0.U
 
-    // printf(
-    //   "[LSU] next ready: %b valid: %b waiting on read: %b memory read ready: %b \n",
-    //   io.next_ready,
-    //   io.valid,
-    //   waiting_on_read,
-    //   io.memory_read_ready
-    // )
-
     when(io.next_ready && io.valid && !waiting_on_read && io.memory_read_ready) {
         out := io.instruction
-
-        // printf("[LSU] opcode: %b func3: %b\n", io.instruction.opcode, io.instruction.func3)
 
         switch(io.instruction.opcode) {
             is("b0000011".U) {
@@ -243,8 +233,4 @@ class Lsu() extends Module {
 
         ignore_next_response := waiting_on_read
     }
-
-    // printf("[LSU] waiting on read: %b\n", waiting_on_read)
-    // printf("[LSU] memory read valid: %b\n", io.memory_read_valid)
-    // printf("[LSU] ignore next response: %b\n", ignore_next_response)
 }

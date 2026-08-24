@@ -214,28 +214,6 @@ class InstructionDispatchQueue() extends Module {
         }
     }
 
-    // printf("\n\n")
-
-    // // printf(
-    // //   "First valid entry: %d First valid entry valid: %b Valid: %b\n",
-    // //   first_valid_entry,
-    // //   first_valid_entry_valid,
-    // //   io.valid
-    // // )
-
-    // // printf(
-    // //   "Last free entry: %d\n",
-    // //   last_free_entry
-    // // )
-
-    // // for (n <- 0 to 31) {
-    // //     printf(
-    // //       "Rs %d %d\n",
-    // //       n.U,
-    // //       dependence_size(n.U)
-    // //     )
-    // // }
-
     // for (n <- 0 to 7) {
     //     when(queue(n.U).valid) {
     //         printf(
@@ -257,8 +235,6 @@ class InstructionDispatchQueue() extends Module {
     //         printf("%d -> \n", n.U)
     //     }
     // }
-
-    // // // printf("\n\n")
 
     // when(io.jump_unit_out_valid) {
     //     printf(
@@ -292,14 +268,6 @@ class InstructionDispatchQueue() extends Module {
     //       "Register freed! %d %d\n",
     //       io.broadcast_free_register,
     //       io.broadcast_free_value
-    //     )
-    // }
-
-    // when(io.broadcast_mark_valid) {
-    //     printf(
-    //       "Register marked! %d %d\n",
-    //       io.broadcast_mark_register,
-    //       io.broadcast_mark_reorder_pointer
     //     )
     // }
 }

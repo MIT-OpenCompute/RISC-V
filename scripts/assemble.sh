@@ -1,0 +1,1 @@
+./xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-gcc -S -O3 -march=rv32i -mabi=ilp32 $1 -o ./generated/program.asm
