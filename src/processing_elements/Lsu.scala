@@ -19,6 +19,10 @@ class Lsu() extends Module {
 
         val ready = Output(Bool())
 
+        val broadcast_free_valid = Output(Bool())
+        val broadcast_free_register = Output(UInt(5.W))
+        val broadcast_free_value = Output(UInt(32.W))
+
         val dcache_req = Output(new MemReq)
         val dcache_start = Output(Bool())
         val dcache_ready = Input(Bool())
@@ -46,9 +50,9 @@ class Lsu() extends Module {
 
     io.ready := io.next_ready && !waiting_on_read && io.dcache_ready
 
-    io.broadcast_free_valid := false.B
-    io.broadcast_free_register := 0.U
-    io.broadcast_free_value := 0.U
+    io.broadcast_free_valid := io.dcache_rd_out =/=0.U
+    io.broadcast_free_register := io.dcache_rd_out
+    io.broadcast_free_value := io.dcache_data
 
     io.dcache_start := false.B
     io.dcache_req.address := 0.U
@@ -78,23 +82,16 @@ class Lsu() extends Module {
                 io.dcache_start := io.dcache_ready
                 io.dcache_rd := inst.rd
                 io.dcache_wen := true.B
-                io.out_valid := true.B
+                out_valid := true.B
             
             }
 
             is("b0100011".U) {
-                io.dcache_req.address := addr
-                io.dcache_req.write_data := inst.rs2_value
-                io.dcache_req.read := false.B
-                io.dcache_req.write := true.B
-                io.dcache_req.op := MuxLookup(inst.func3, MemOp.SW)(Seq(
-                "b000".U -> MemOp.SB,
-                "b001".U -> MemOp.SH,
-                "b010".U -> MemOp.SW
-                ))
-                io.dcache_start := io.dcache_ready
-                io.dcache_rd := 0.U
-                io.dcache_wen := false.B
+
+                out_valid := true.B
+
+                out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
+                out.rd_value := io.instruction.rs2_value
             }
         }
     }

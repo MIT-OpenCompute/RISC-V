@@ -70,9 +70,7 @@ class DCacheQueue(lineWidth: Int = 128) extends Module {
     }
   }
 
-  when(io.flush) {
-    when(waiting_on_dcache) {
-      ignore_next_response := true.B
-    }
+  when(io.flush && waiting_on_dcache && !io.dcache_valid) {
+    ignore_next_response := true.B
   }
 }
