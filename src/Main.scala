@@ -1,8 +1,12 @@
+package RISCV
+
 import chisel3._
 import _root_.circt.stage.ChiselStage
 import scala.math._
+import chisel3.util._
 
-class Main() extends Module {
+
+class Main(lineWidth: Int = 512)  extends Module {
     val io = IO(new Bundle {
         val execute = Input(Bool())
 
@@ -20,25 +24,28 @@ class Main() extends Module {
 
         val btns = Input(UInt(4.W))
     })
+    val memory = Module(new MemoryWrapper(lineWidth))
 
-    val memory = Module(new Memory())
+    val memory2 = Module(new Memory())
     val vga_controller = Module(new VGAController())
     val core = Module(new Core())
 
-    memory.io.btns := io.btns
+    memory2.io.btns := io.btns
 
     val memory_requested_1 = RegInit(false.B)
     when(memory_requested_1) {
         memory_requested_1 := false.B
     }
 
-    memory.io.address_1 := core.io.program_memory_address / 4.U
-    memory.io.read_1 := core.io.program_memory_requested
-    memory.io.write_1 := false.B
-    memory.io.write_value_1 := 0.U
-    core.io.program_memory_ready := true.B
-    core.io.program_memory_valid := memory_requested_1
-    core.io.program_memory_value := memory.io.read_value_1
+    memory.io.icache_req.address := core.io.program_memory_address
+    memory.io.icache_req.write_data := 0.U
+    memory.io.icache_req.op := MemOp.LW
+    memory.io.icache_req.read := true.B
+    memory.io.icache_req.write := false.B
+    memory.io.icache_start := core.io.program_memory_requested
+    core.io.program_memory_ready := memory.io.icache_ready
+    core.io.program_memory_valid := memory.io.icache_valid
+    core.io.program_memory_value := memory.io.icache_data
 
     when(core.io.program_memory_requested) {
         memory_requested_1 := true.B
@@ -54,15 +61,15 @@ class Main() extends Module {
         memory_write_requested_2 := false.B
     }
 
-    memory.io.address_2 := Mux(
+    memory2.io.address_2 := Mux(
       core.io.data_memory_read_requested,
       core.io.data_memory_read_address / 4.U,
       core.io.data_memory_write_address / 4.U
     )
-    memory.io.read_2 := core.io.data_memory_read_requested
-    memory.io.write_2 := core.io.data_memory_write_requested
-    memory.io.write_value_2 := core.io.data_memory_write_value
-    core.io.data_memory_read_value := memory.io.read_value_2
+    memory2.io.read_2 := core.io.data_memory_read_requested
+    memory2.io.write_2 := core.io.data_memory_write_requested
+    memory2.io.write_value_2 := core.io.data_memory_write_value
+    core.io.data_memory_read_value := memory2.io.read_value_2
     core.io.data_memory_read_ready := true.B
     core.io.data_memory_read_valid := memory_read_requested_2
     core.io.data_memory_write_ready := true.B
@@ -76,9 +83,9 @@ class Main() extends Module {
         memory_write_requested_2 := true.B
     }
 
-    vga_controller.io.address := memory.io.address_vga
-    vga_controller.io.write := memory.io.write_vga
-    vga_controller.io.write_value := memory.io.write_value_vga
+    vga_controller.io.address := memory2.io.address_vga
+    vga_controller.io.write := memory2.io.write_vga
+    vga_controller.io.write_value := memory2.io.write_value_vga
     vga_controller.io.read_clk := io.vga_clk
     io.hsync := vga_controller.io.hsync
     io.vsync := vga_controller.io.vsync
@@ -91,10 +98,10 @@ class Main() extends Module {
         printf("Loading...\n");
 
         when(io.flash) {
-            memory.io.read_1 := false.B
-            memory.io.write_1 := true.B
-            memory.io.address_1 := io.flash_address
-            memory.io.write_value_1 := io.flash_value
+            memory2.io.read_1 := false.B
+            memory2.io.write_1 := true.B
+            memory2.io.address_1 := io.flash_address
+            memory2.io.write_value_1 := io.flash_value
         }
     }
 

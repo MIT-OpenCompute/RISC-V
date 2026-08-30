@@ -1,3 +1,6 @@
+package RISCV
+
+
 import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -16,15 +19,16 @@ class Lsu() extends Module {
 
         val ready = Output(Bool())
 
-        val broadcast_free_valid = Output(Bool())
-        val broadcast_free_register = Output(UInt(5.W))
-        val broadcast_free_value = Output(UInt(32.W))
+        val dcache_req = Output(new MemReq)
+        val dcache_start = Output(Bool())
+        val dcache_ready = Input(Bool())
+        val dcache_valid = Input(Bool())
+        val dcache_data = Input(UInt(32.W))
+        val dcache_rd = Output(UInt(5.W))
+        val dcache_wen = Output(Bool())
 
-        val memory_read_requested = Output(Bool())
-        val memory_read_address = Output(UInt(32.W))
-        val memory_read_value = Input(UInt(32.W))
-        val memory_read_ready = Input(Bool())
-        val memory_read_valid = Input(Bool())
+        val dcache_rd_out = Input(UInt(5.W))
+        val dcache_wen_out = Input(Bool())
     })
 
     val out = RegInit(0.U.asTypeOf(new InstructionBundle))
@@ -40,187 +44,61 @@ class Lsu() extends Module {
     val waiting_on_instruction = RegInit(0.U.asTypeOf(new InstructionBundle))
     val ignore_next_response = RegInit(false.B)
 
-    io.ready := io.next_ready && !waiting_on_read && io.memory_read_ready
+    io.ready := io.next_ready && !waiting_on_read && io.dcache_ready
 
     io.broadcast_free_valid := false.B
     io.broadcast_free_register := 0.U
     io.broadcast_free_value := 0.U
 
-    io.memory_read_requested := false.B
-    io.memory_read_address := 0.U
+    io.dcache_start := false.B
+    io.dcache_req.address := 0.U
 
-    when(io.next_ready && io.valid && !waiting_on_read && io.memory_read_ready) {
+
+
+    when(io.next_ready && io.valid && io.dcache_ready) {
         out := io.instruction
+        val addr = inst.rs1_value + inst.immediate
+        
 
         switch(io.instruction.opcode) {
             is("b0000011".U) {
-                waiting_on_read := true.B
-                waiting_on_instruction := io.instruction
 
-                io.memory_read_requested := true.B
 
-                io.memory_read_address := ((io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt >> 2) << 2
+                io.dcache_req.address := addr
+                io.dcache_req.read := true.B
+                io.dcache_req.write := false.B
+                io.dcache_req.op := MuxLookup(inst.func3, MemOp.LW)(Seq(
+                "b000".U -> MemOp.LB,
+                "b001".U -> MemOp.LH,
+                "b010".U -> MemOp.LW,
+                "b100".U -> MemOp.LBU,  
+                "b101".U -> MemOp.LHU   
+                ))
+
+                io.dcache_start := io.dcache_ready
+                io.dcache_rd := inst.rd
+                io.dcache_wen := true.B
+                io.out_valid := true.B
+            
             }
 
             is("b0100011".U) {
-                switch(io.instruction.func3) {
-                    // SB
-                    is("b000".U) {
-                        waiting_on_read := true.B
-                        waiting_on_instruction := io.instruction
-
-                        io.memory_read_requested := true.B
-
-                        io.memory_read_address := ((io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt >> 2) << 2
-                    }
-                    // SH
-                    is("b001".U) {
-                        waiting_on_read := true.B
-                        waiting_on_instruction := io.instruction
-
-                        io.memory_read_requested := true.B
-
-                        io.memory_read_address := ((io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt >> 2) << 2
-                    }
-                    // SW
-                    is("b010".U) {
-                        out_valid := true.B
-
-                        out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
-                        out.rd_value := io.instruction.rs2_value
-                    }
-                }
+                io.dcache_req.address := addr
+                io.dcache_req.write_data := inst.rs2_value
+                io.dcache_req.read := false.B
+                io.dcache_req.write := true.B
+                io.dcache_req.op := MuxLookup(inst.func3, MemOp.SW)(Seq(
+                "b000".U -> MemOp.SB,
+                "b001".U -> MemOp.SH,
+                "b010".U -> MemOp.SW
+                ))
+                io.dcache_start := io.dcache_ready
+                io.dcache_rd := 0.U
+                io.dcache_wen := false.B
             }
         }
     }
 
-    when(waiting_on_read && io.memory_read_valid && !ignore_next_response) {
-        waiting_on_read := false.B
-        out_valid := true.B
-
-        switch(waiting_on_instruction.opcode) {
-            is("b0000011".U) {
-                io.broadcast_free_valid := waiting_on_instruction.rd =/= 0.U
-                io.broadcast_free_register := out.rd
-
-                switch(waiting_on_instruction.func3) {
-                    // LBU
-                    is("b100".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := io.memory_read_value & 0xff.U
-                                io.broadcast_free_value := io.memory_read_value & 0xff.U
-                            }
-                            is(1.U) {
-                                out.rd_value := (io.memory_read_value >> 8) & 0xff.U
-                                io.broadcast_free_value := (io.memory_read_value >> 8) & 0xff.U
-                            }
-                            is(2.U) {
-                                out.rd_value := (io.memory_read_value >> 16) & 0xff.U
-                                io.broadcast_free_value := (io.memory_read_value >> 16) & 0xff.U
-                            }
-                            is(3.U) {
-                                out.rd_value := io.memory_read_value >> 24
-                                io.broadcast_free_value := io.memory_read_value >> 24
-                            }
-                        }
-                    }
-
-                    // LHU
-                    is("b101".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := io.memory_read_value & 0xffff.U
-                                io.broadcast_free_value := io.memory_read_value & 0xffff.U
-                            }
-                            is(2.U) {
-                                out.rd_value := io.memory_read_value >> 16
-                                io.broadcast_free_value := io.memory_read_value >> 16
-                            }
-                        }
-                    }
-
-                    // LB
-                    is("b000".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := io.memory_read_value(7, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := io.memory_read_value(7, 0).asSInt.pad(32).asUInt
-                            }
-                            is(1.U) {
-                                out.rd_value := (io.memory_read_value >> 8)(7, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := (io.memory_read_value >> 8)(7, 0).asSInt.pad(32).asUInt
-                            }
-                            is(2.U) {
-                                out.rd_value := (io.memory_read_value >> 16)(7, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := (io.memory_read_value >> 16)(7, 0).asSInt.pad(32).asUInt
-                            }
-                            is(3.U) {
-                                out.rd_value := (io.memory_read_value >> 24)(7, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := (io.memory_read_value >> 24)(7, 0).asSInt.pad(32).asUInt
-                            }
-                        }
-                    }
-
-                    // LH
-                    is("b001".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := io.memory_read_value(15, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := io.memory_read_value(15, 0).asSInt.pad(32).asUInt
-                            }
-                            is(2.U) {
-                                out.rd_value := (io.memory_read_value >> 16)(15, 0).asSInt.pad(32).asUInt
-                                io.broadcast_free_value := (io.memory_read_value >> 16)(15, 0).asSInt.pad(32).asUInt
-                            }
-                        }
-                    }
-
-                    // LW
-                    is("b010".U) {
-                        out.rd_value := io.memory_read_value
-                        io.broadcast_free_value := io.memory_read_value
-                    }
-                }
-            }
-
-            is("b0100011".U) {
-                out.rd := ((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt >> 2) << 2
-
-                switch(waiting_on_instruction.func3) {
-                    // LB
-                    is("b000".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := (io.memory_read_value & 0xffffff00L.U) | (waiting_on_instruction.rs2_value & 0xff.U)
-                            }
-                            is(1.U) {
-                                out.rd_value := (io.memory_read_value & 0xffff00ffL.U) | ((waiting_on_instruction.rs2_value & 0xff.U) << 8)
-                            }
-                            is(2.U) {
-                                out.rd_value := (io.memory_read_value & 0xff00ffffL.U) | ((waiting_on_instruction.rs2_value & 0xff.U) << 16)
-                            }
-                            is(3.U) {
-                                out.rd_value := (io.memory_read_value & 0x00ffffffL.U) | ((waiting_on_instruction.rs2_value & 0xff.U) << 24)
-                            }
-                        }
-                    }
-
-                    // LH
-                    is("b001".U) {
-                        switch((waiting_on_instruction.rs1_value.zext + waiting_on_instruction.immediate.asSInt).asUInt % 4.U) {
-                            is(0.U) {
-                                out.rd_value := (io.memory_read_value & 0xffff0000L.U) | (waiting_on_instruction.rs2_value & 0xffff.U)
-                            }
-                            is(2.U) {
-                                out.rd_value := (io.memory_read_value & 0x0000ffffL.U) | ((waiting_on_instruction.rs2_value & 0xffff.U) << 16)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     when(io.memory_read_valid) {
         ignore_next_response := false.B

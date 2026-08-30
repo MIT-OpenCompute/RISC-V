@@ -88,8 +88,8 @@ int main() {
             }
         }
 
-        for (int i = 0; i < 8000; i++) {
-            __asm__ volatile("nop");
-        }
+        // for (int i = 0; i < 8000; i++) {
+        //     __asm__ volatile("nop");
+        // }
     }
 }
