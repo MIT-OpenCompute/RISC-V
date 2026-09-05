@@ -37,6 +37,7 @@ class Core() extends Module {
     val lsu_pe = Module(new Lsu)
     val jump_unit = Module(new JumpUnit)
     val reorder_buffer = Module(new ReorderBuffer())
+    val branch_predictor = Module(new BranchPredictor())
 
     io.program_memory_address := program_pointer
     io.program_memory_requested := fetch_stage.io.memory_read_requested
@@ -56,8 +57,13 @@ class Core() extends Module {
     fetch_stage.io.memory_read_value := io.program_memory_value
     fetch_stage.io.memory_read_valid := io.program_memory_valid
 
+    branch_predictor.io.program_pointer := program_pointer
+    branch_predictor.io.jump_valid := false.B
+    branch_predictor.io.jump_instruction_pointer := 0.U
+    branch_predictor.io.jump_target := 0.U
+
     when(fetch_stage.io.ready) {
-        program_pointer := program_pointer + 4.U
+        program_pointer := branch_predictor.io.predicted_program_pointer
     }
 
     decode_stage.io.next_ready := read_stage.io.ready
