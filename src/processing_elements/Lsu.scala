@@ -50,57 +50,64 @@ class Lsu() extends Module {
 
     io.ready := io.next_ready && !waiting_on_read && io.dcache_ready
 
-    io.broadcast_free_valid := io.dcache_rd_out =/=0.U
+    io.broadcast_free_valid := io.dcache_rd_out =/=0.U && io.dcache_valid
     io.broadcast_free_register := io.dcache_rd_out
     io.broadcast_free_value := io.dcache_data
 
     io.dcache_start := false.B
-    io.dcache_req.address := 0.U
+    io.dcache_wen := false.B
+    io.dcache_rd := 0.U
 
+    val addr = io.instruction.rs1_value + io.instruction.immediate
 
+    io.dcache_req.address := addr
+    io.dcache_req.read := true.B
+    io.dcache_req.write := false.B
+    io.dcache_req.write_data := 0.U
+    io.dcache_req.op := MuxLookup(io.instruction.func3, MemOp.LW)(Seq(
+    "b000".U -> MemOp.LB,
+    "b001".U -> MemOp.LH,
+    "b010".U -> MemOp.LW,
+    "b100".U -> MemOp.LBU,  
+    "b101".U -> MemOp.LHU   
+                ))
+    // printf("Dcache D  %d waiting read %b io.dcacheready %b\n",  io.dcache_data, waiting_on_read,io.dcache_ready)
 
     when(io.next_ready && io.valid && io.dcache_ready) {
         out := io.instruction
-        val addr = inst.rs1_value + inst.immediate
         
+            switch(io.instruction.opcode) {
+                is("b0000011".U) {
+                    io.dcache_start := io.dcache_ready
+                    io.dcache_rd := io.instruction.rd
+                    io.dcache_wen := true.B
+                    out_valid :=  false.B
+                    waiting_on_read := true.B
+                
+                }
 
-        switch(io.instruction.opcode) {
-            is("b0000011".U) {
+                is("b0100011".U) {
 
-
-                io.dcache_req.address := addr
-                io.dcache_req.read := true.B
-                io.dcache_req.write := false.B
-                io.dcache_req.op := MuxLookup(inst.func3, MemOp.LW)(Seq(
-                "b000".U -> MemOp.LB,
-                "b001".U -> MemOp.LH,
-                "b010".U -> MemOp.LW,
-                "b100".U -> MemOp.LBU,  
-                "b101".U -> MemOp.LHU   
-                ))
-
-                io.dcache_start := io.dcache_ready
-                io.dcache_rd := inst.rd
-                io.dcache_wen := true.B
-                out_valid := true.B
-            
+                    out_valid := true.B
+                    out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
+                    out.rd_value := io.instruction.rs2_value
+                }
             }
 
-            is("b0100011".U) {
 
-                out_valid := true.B
+        
+     
+    
 
-                out.rd := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt
-                out.rd_value := io.instruction.rs2_value
-            }
-        }
+
     }
 
-
-    when(io.memory_read_valid) {
-        ignore_next_response := false.B
+    when(waiting_on_read && io.dcache_valid){
+        out.rd_value := io.dcache_data 
+        out_valid :=  true.B
+        waiting_on_read := false.B
+        // printf("herehereherehere\n")
     }
-
     when(io.flush) {
         out := 0.U.asTypeOf(new InstructionBundle)
         out_valid := false.B

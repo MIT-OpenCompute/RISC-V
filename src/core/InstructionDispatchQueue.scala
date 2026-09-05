@@ -60,7 +60,7 @@ class InstructionDispatchQueue() extends Module {
             7.U - n.U
           ).instruction.pe_type === PeType.Alu) || (io.lsu_ready && queue(7.U - n.U).instruction.pe_type === PeType.Lsu && queue(
             7.U - n.U
-          ).instruction.reorder_pointer === io.reorder_buffer_tail) || (io.lsu_ready && queue(
+          ).instruction.reorder_pointer === io.reorder_buffer_tail) || (io.jump_unit_ready && queue(
             7.U - n.U
           ).instruction.pe_type === PeType.JumpUnit && queue(
             7.U - n.U
@@ -70,9 +70,16 @@ class InstructionDispatchQueue() extends Module {
             first_valid_entry_valid := true.B
         }
     }
-
+// when(io.broadcast_free_valid) {
+//     assert(dependence_size(io.broadcast_free_register) > 0.U,
+//            "IDQ: broadcast underflow on x%d", io.broadcast_free_register)
+  
+// }
     when(io.broadcast_free_valid) {
+          when(dependence_size(io.broadcast_free_register) > 0.U) {
+    
         dependence_size(io.broadcast_free_register) := dependence_size(io.broadcast_free_register) - 1.U
+
 
         for (n <- 0 to 7) {
             when(queue(n.U).instruction.rs1 === io.broadcast_free_register && queue(n.U).instruction.rs1_dependence_counter > 0.U) {
@@ -89,6 +96,7 @@ class InstructionDispatchQueue() extends Module {
                 queue(n.U).instruction.rd_dependence_counter := queue(n.U).instruction.rd_dependence_counter - 1.U
             }
         }
+          }
     }
 
     io.jump_unit_out := queue(first_valid_entry).instruction
@@ -139,7 +147,7 @@ class InstructionDispatchQueue() extends Module {
     io.ready := !full
 
     when(io.valid && !full) {
-        when(io.instruction.write_mode === WriteMode.Register) {
+        when(io.instruction.write_mode === WriteMode.Register  && io.instruction.rd(4,0) =/= 0.U) {
             dependence_size(io.instruction.rd(4, 0)) := dependence_size(io.instruction.rd(4, 0)) + 1.U
 
             when(io.broadcast_free_valid && io.instruction.rd === io.broadcast_free_register) {

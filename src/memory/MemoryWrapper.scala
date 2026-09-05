@@ -71,7 +71,9 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
   val is_switch = io.dcache_req.address === 0x9000000.U
   val is_excep = is_vga || is_htimer || is_keytracker || is_uarttx || is_debug_char || is_debug_num || is_switch
   last_bypass := is_excep
-
+  when(is_vga &&  io.dcache_start){
+    // printf("is vga bypassing\n\n\n\n")
+  }
 
   val latch_out = RegInit(0.U(16.W))
   io.latch_out := latch_out
@@ -92,16 +94,19 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
   mem.io.dcache_req := io.dcache_req
   mem.io.dcache_start := io.dcache_start && !is_excep
   io.dcache_ready := mem.io.dcache_ready
-  io.dcache_valid := mem.io.dcache_valid || is_excep
+  // io.dcache_valid := mem.io.dcache_valid || last_bypass
   io.dcache_data := mem.io.dcache_data
   mem.io.dcache_rd := io.dcache_rd
   mem.io.dcache_wen := io.dcache_wen
   io.dcache_rd_out := mem.io.dcache_rd_out
   io.dcache_wen_out := mem.io.dcache_wen_out
 
-  when(last_bypass){
+  val dcache_bypass = io.dcache_start && is_excep
+  val bypass_valid  = RegNext(dcache_bypass, false.B)
+
+  io.dcache_valid := mem.io.dcache_valid || bypass_valid
+  when(bypass_valid) {
     io.dcache_data := bypass_val
-    io.dcache_ready := true.B
   }
 
   val keytracker_word = (io.dcache_req.address - KEYTRACKER_BASE)(5, 2)
@@ -124,7 +129,7 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
 
 
   io.address_vga := io.dcache_req.address - 0x10000000.U
-  io.write_vga := is_vga && io.dcache_req.write && io.dcache_start
+  io.write_vga := is_vga &&  io.dcache_start
   io.write_value_vga := io.dcache_req.write_data(23,20) ## io.dcache_req.write_data(15,12) ## io.dcache_req.write_data(7,4)
   io.handshake_bypass := is_excep
 

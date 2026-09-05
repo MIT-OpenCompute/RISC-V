@@ -36,7 +36,7 @@ class DCacheQueue(lineWidth: Int = 128) extends Module {
   enq.bits := io.req
   enq.valid := io.start
 
-  io.ready := enq.ready
+  io.ready := io.dcache_ready//enq.ready
   io.dcache_start := false.B
   io.valid := false.B
   io.rd := 0.U

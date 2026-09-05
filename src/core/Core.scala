@@ -16,17 +16,16 @@ class Core() extends Module {
         val program_memory_ready = Input(Bool())
         val program_memory_valid = Input(Bool())
 
-        val data_memory_read_requested = Output(Bool())
-        val data_memory_read_address = Output(UInt(32.W))
-        val data_memory_read_value = Input(UInt(32.W))
-        val data_memory_read_ready = Input(Bool())
-        val data_memory_read_valid = Input(Bool())
+        val dcache_req = Output(new MemReq)
+        val dcache_start = Output(Bool())
+        val dcache_ready = Input(Bool())
+        val dcache_valid = Input(Bool())
+        val dcache_data = Input(UInt(32.W))
+        val dcache_rd = Output(UInt(5.W))
+        val dcache_wen = Output(Bool())
 
-        val data_memory_write_requested = Output(Bool())
-        val data_memory_write_address = Output(UInt(32.W))
-        val data_memory_write_value = Output(UInt(32.W))
-        val data_memory_write_ready = Input(Bool())
-        val data_memory_write_complete = Input(Bool())
+        val mem_rd = Input(UInt(5.W))
+        val mem_wen = Input(Bool())
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -41,6 +40,25 @@ class Core() extends Module {
     val reorder_buffer = Module(new ReorderBuffer())
 
     io.program_memory_address := program_pointer
+    when(jump_unit.io.flush && jump_unit.io.target_program_pointer === 0.U) {
+    printf("FLUSH from ip %d to %d (op %b)\n",
+      jump_unit.io.instruction.instruction_pointer,
+      jump_unit.io.target_program_pointer,
+      jump_unit.io.instruction.opcode)
+}
+    when(io.execute){
+// printf("PP: %d Data: %x Stall %b MV %b MR %b | dec_rdy %b  rob_full %b idq_rdy %b\n",
+//   program_pointer, io.program_memory_value, fetch_stage.io.ready,
+//   io.program_memory_valid, io.program_memory_requested,
+//   decode_stage.io.ready,
+//   reorder_buffer.io.full, instruction_dispatch_queue.io.ready)    
+//   when(io.execute) {
+//   printf("  LSU: start %b dc_valid %b dc_rdy %b | lsu_rdy %b lsu_out_v %b |  idq_lsu_v %b\n",
+//     lsu_pe.io.dcache_start,io.dcache_valid, io.dcache_ready,
+//     lsu_pe.io.ready, lsu_pe.io.out_valid,
+//      instruction_dispatch_queue.io.lsu_out_valid)
+// }  // printf("R1: %x , R2 %x, R3 %x, R4 %x\n", registers.io.debug_1,registers.io.debug_2,registers.io.debug_3,registers.io.debug_4)
+    }
     io.program_memory_requested := fetch_stage.io.memory_read_requested
 
     registers.io.write_enable := reorder_buffer.io.write_mode === WriteMode.Register
@@ -112,13 +130,33 @@ class Core() extends Module {
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
     lsu_pe.io.valid := instruction_dispatch_queue.io.lsu_out_valid
     lsu_pe.io.next_ready := !reorder_buffer.io.full
-    lsu_pe.io.memory_read_value := io.data_memory_read_value
-    lsu_pe.io.memory_read_ready := io.data_memory_read_ready
-    lsu_pe.io.memory_read_valid := io.data_memory_read_valid
     lsu_pe.io.flush := jump_unit.io.flush
 
-    io.data_memory_read_requested := lsu_pe.io.memory_read_requested
-    io.data_memory_read_address := lsu_pe.io.memory_read_address
+    io.dcache_req := lsu_pe.io.dcache_req
+    io.dcache_start := lsu_pe.io.dcache_start || (reorder_buffer.io.write_mode === WriteMode.Memory)
+    io.dcache_rd :=lsu_pe.io.dcache_rd 
+    io.dcache_wen := true.B
+    lsu_pe.io.dcache_data := io.dcache_data
+    lsu_pe.io.dcache_ready := io.dcache_ready && !(reorder_buffer.io.write_mode === WriteMode.Memory)
+    lsu_pe.io.dcache_valid := io.dcache_valid && !(reorder_buffer.io.write_mode === WriteMode.Memory) 
+    lsu_pe.io.dcache_rd_out := io.mem_rd
+    lsu_pe.io.dcache_wen_out := io.mem_wen
+
+
+    when(reorder_buffer.io.write_mode === WriteMode.Memory) {
+      io.dcache_req.op := reorder_buffer.io.dcache_op
+      io.dcache_req.address :=  reorder_buffer.io.write_address
+      io.dcache_req.write_data := reorder_buffer.io.write_value
+      io.dcache_req.read := false.B
+      io.dcache_req.write := true.B
+      io.dcache_rd := 0.U
+      io.dcache_wen := false.B
+
+    }
+    reorder_buffer.io.write_ready := io.dcache_ready
+    reorder_buffer.io.write_complete := false.B
+    
+
 
     alu_pe.io.instruction := instruction_dispatch_queue.io.alu_out
     alu_pe.io.valid := instruction_dispatch_queue.io.alu_out_valid
@@ -131,6 +169,7 @@ class Core() extends Module {
     reorder_buffer.io.buffer_entry.program_pointer := decode_stage.io.next_instruction.instruction_pointer
     reorder_buffer.io.buffer_entry.mode := decode_stage.io.next_instruction.write_mode
     reorder_buffer.io.buffer_entry.complete := false.B
+    reorder_buffer.io.buffer_entry.func3 := decode_stage.io.next_instruction.func3
     reorder_buffer.io.valid := decode_stage.io.next_valid && read_stage.io.ready
 
     // printf("Read stage ready: %b\n", read_stage.io.ready)
@@ -146,13 +185,6 @@ class Core() extends Module {
     )
     reorder_buffer.io.complete_valid := jump_unit.io.out_valid || lsu_pe.io.out_valid || alu_pe.io.out_valid
     reorder_buffer.io.flush := jump_unit.io.flush
-
-    reorder_buffer.io.write_ready := io.data_memory_write_ready
-    reorder_buffer.io.write_complete := io.data_memory_write_complete
-
-    io.data_memory_write_value := reorder_buffer.io.write_value
-    io.data_memory_write_address := reorder_buffer.io.write_address
-    io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
 
     io.program_pointer := program_pointer
 

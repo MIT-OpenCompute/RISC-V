@@ -4,6 +4,9 @@
 #include <vector>
 #include <fstream>
 #include <cstdlib>
+#include <string>
+#include <memory>
+#include <map>
 
 static constexpr int H_VISIBLE = 640;
 static constexpr int H_FRONT   = 16;
@@ -17,119 +20,313 @@ static constexpr int V_SYNC    = 2;
 static constexpr int V_BACK    = 33;
 static constexpr int V_TOTAL   = V_VISIBLE + V_FRONT + V_SYNC + V_BACK;
 
+static constexpr uint32_t AXI_ADDR_MASK = 0x07FFFFFF;
+
+// ----------------------------------------------------------------------
+// NUM_BEATS: must match the NUM_BEATS used to build the Verilog design
+// (ddr4_line_memory / the top module). Everything below is derived from
+// it -- io_mem_req_bits_wdata/io_mem_resp are (NUM_BEATS*128)-bit ports,
+// which Verilator represents as arrays of NUM_BEATS*4 uint32_t words
+// (any port over 64 bits becomes a uint32_t[] with ceil(width/32) words).
+// Bump this one constant when NUM_BEATS changes in the RTL.
+// ----------------------------------------------------------------------
+static constexpr int NUM_BEATS       = 4;
+static constexpr int LINE_BYTES      = NUM_BEATS * 16;
+static constexpr int WORDS_PER_LINE  = NUM_BEATS * 4;   // 32-bit words per line
+
+
+static constexpr long long CYCLE_LIMIT = -1;
+
+// ----------------------------------------------------------------------
+// Mock memory latency. Bump these to stress-test timing-sensitive paths
+// (non-blocking load overlap, CDC handshaking, etc.) that low, fixed
+// latency may never exercise. READ_LATENCY_CYCLES/WRITE_LATENCY_CYCLES
+// are the cycle counts the mock waits after accepting a request before
+// asserting io_mem_valid -- same units as the old hardcoded 4 / 1.
+//
+// Set RANDOMIZE_LATENCY to true to jitter each request's latency within
+// [*_LATENCY_MIN, *_LATENCY_MAX] instead of using a fixed value -- this
+// is often more effective at surfacing race conditions than just raising
+// a fixed number, since real DDR4 latency isn't perfectly constant either
+// (refresh, bank conflicts, etc. all add variable delay).
+// ----------------------------------------------------------------------
+static constexpr int  READ_LATENCY_CYCLES  = 4;
+static constexpr int  WRITE_LATENCY_CYCLES = 4;
+
+static constexpr bool RANDOMIZE_LATENCY = false;
+static constexpr int  READ_LATENCY_MIN  = 4;
+static constexpr int  READ_LATENCY_MAX  = 40;
+static constexpr int  WRITE_LATENCY_MIN = 1;
+static constexpr int  WRITE_LATENCY_MAX = 20;
+
+static inline int get_read_latency() {
+    if (!RANDOMIZE_LATENCY) return READ_LATENCY_CYCLES;
+    return READ_LATENCY_MIN + (std::rand() % (READ_LATENCY_MAX - READ_LATENCY_MIN + 1));
+}
+
+static inline int get_write_latency() {
+    if (!RANDOMIZE_LATENCY) return WRITE_LATENCY_CYCLES;
+    return WRITE_LATENCY_MIN + (std::rand() % (WRITE_LATENCY_MAX - WRITE_LATENCY_MIN + 1));
+}
+
+static inline uint32_t axi_window(uint32_t addr) {
+    return addr & AXI_ADDR_MASK;
+}
+
+// Commits a write request's line-width wdata into the mock DDR row at the
+// aligned address. Loop bound and row size both scale with NUM_BEATS.
+static void handle_mem_write(std::unique_ptr<VMain>& dut,
+                              std::map<uint32_t, std::vector<uint8_t>>& mock_ddr3) {
+    uint32_t addr = axi_window(dut->io_mem_req_bits_addr);
+    uint32_t line_base_addr = (addr / LINE_BYTES) * LINE_BYTES;
+
+    if (mock_ddr3.find(line_base_addr) == mock_ddr3.end()) {
+        mock_ddr3[line_base_addr] = std::vector<uint8_t>(LINE_BYTES, 0);
+    }
+    auto& data_row = mock_ddr3[line_base_addr];
+
+    for (int w = 0; w < WORDS_PER_LINE; w++) {
+        *(uint32_t*)&data_row[w * 4] = dut->io_mem_req_bits_wdata[w];
+    }
+
+    uint32_t raw = dut->io_mem_req_bits_addr;
+    if (raw > AXI_ADDR_MASK) {
+        static bool warned = false;
+        if (!warned) {
+            printf("WARNING: access above 27-bit AXI window: addr=0x%08X (%s) -> aliases to 0x%08X\n",
+                   raw, dut->io_mem_req_bits_write ? "write" : "read", axi_window(raw));
+            warned = true;
+        }
+    }
+}
+
+// Copies a mock DDR row's contents out into io_mem_resp (or zeros if the
+// line was never written). Loop bound scales with NUM_BEATS.
+static void handle_mem_read_resp(std::unique_ptr<VMain>& dut,
+                                  std::map<uint32_t, std::vector<uint8_t>>& mock_ddr3,
+                                  uint32_t active_read_addr) {
+    uint32_t target_aligned_addr = (active_read_addr / LINE_BYTES) * LINE_BYTES;
+
+    auto it = mock_ddr3.find(target_aligned_addr);
+    if (it != mock_ddr3.end()) {
+        auto& data_row = it->second;
+        for (int w = 0; w < WORDS_PER_LINE; w++) {
+            dut->io_mem_resp[w] = *(uint32_t*)&data_row[w * 4];
+        }
+    } else {
+        for (int w = 0; w < WORDS_PER_LINE; w++) {
+            dut->io_mem_resp[w] = 0;
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     auto dut = std::make_unique<VMain>();
 
+    if (RANDOMIZE_LATENCY) {
+        std::srand(12345); // fixed seed -- reproducible runs; change or use time(nullptr) for varied runs
+    }
+
+    long long total_cycles = 0;
+    bool limited = CYCLE_LIMIT >= 0;
+
+    auto limit_reached = [&]() {
+        return limited && total_cycles >= CYCLE_LIMIT;
+    };
+
     dut->io_execute = 0;
-    dut->io_flash = 0;
-    dut->io_flash_address = 0;
-    dut->io_flash_value = 0;
-    dut->io_btns = 0;
-
-    dut->reset = 1;
-    dut->clock = 0;
+    // dut->io_flash   = 0;
+    // dut->io_flash_address = 0;
+    // dut->io_flash_value   = 0;
+    dut->reset      = 1;
+    dut->clock      = 0;
     dut->io_vga_clk = 0;
+    dut->io_rxd = 1;
 
-    for (int i = 0; i < 4; i++) {
+    std::map<uint32_t, std::vector<uint8_t>> mock_ddr3;
+
+    std::ifstream file("/home/arya/Documents/Github/hopper-cpu/programs/doom.hex");
+    if (!file.is_open()) {
+        printf("Error: Could not open hello.hex file!\n");
+        return -1;
+    }
+
+    std::string line;
+    uint32_t current_byte_addr = 0;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        uint32_t instruction = std::stoul(line, nullptr, 16);
+
+        uint32_t line_base_addr = (axi_window(current_byte_addr) / LINE_BYTES) * LINE_BYTES;
+        uint32_t byte_offset    = current_byte_addr % LINE_BYTES;
+
+        if (mock_ddr3.find(line_base_addr) == mock_ddr3.end()) {
+            mock_ddr3[line_base_addr] = std::vector<uint8_t>(LINE_BYTES, 0);
+        }
+
+        mock_ddr3[line_base_addr][byte_offset + 0] = (instruction >> 0)  & 0xFF;
+        mock_ddr3[line_base_addr][byte_offset + 1] = (instruction >> 8)  & 0xFF;
+        mock_ddr3[line_base_addr][byte_offset + 2] = (instruction >> 16) & 0xFF;
+        mock_ddr3[line_base_addr][byte_offset + 3] = (instruction >> 24) & 0xFF;
+
+        current_byte_addr += 4;
+    }
+    printf("Preloaded %d instructions into mock DDR3 space (NUM_BEATS=%d, LINE_BYTES=%d).\n",
+           current_byte_addr / 4, NUM_BEATS, LINE_BYTES);
+    if (limited) {
+        printf("Cycle limit set: will stop after %lld cycles.\n", CYCLE_LIMIT);
+    } else {
+        printf("No cycle limit set: running forever.\n");
+    }
+
+    for (int i = 0; i < 10; i++) {
         dut->clock ^= 1;
         dut->io_vga_clk = dut->clock;
         dut->eval();
     }
-
     dut->reset = 0;
-
-    std::vector<uint8_t> pixels(H_VISIBLE * V_VISIBLE * 3, 0);
-
-    int hCount = 0;
-    int vCount = 0;
-
-    if (argc < 2) {
-    	fprintf(stderr, "Usage: %s <path-to-bin-file>\n", argv[0]);
-		return 1;
-	}
-
-	std::ifstream file(argv[1], std::ios::binary);
-	if (!file) {
-		fprintf(stderr, "Failed to open file: %s\n", argv[1]);
-		return 1;
-	}
-
-	int address = 0;
-	uint32_t value;
-
-	while (file.read(reinterpret_cast<char*>(&value), sizeof(value))) {
-		dut->io_flash = 1;
-		dut->io_flash_address = address;
-		dut->io_flash_value = value;
-
-		printf("Writing %x at %d\n", value, address);
-
-		dut->clock = 1;
-		dut->io_vga_clk = 1;
-		dut->eval();
-		dut->clock = 0;
-		dut->io_vga_clk = 0;
-		dut->eval();
-
-		address++;
-	}
-
-    dut->io_flash = 0;
-    dut->io_flash_address = 0;
-    dut->io_flash_value = 0;
-
-    for (int i = 0; i < 4; i++) {
-        dut->clock ^= 1;
-        dut->io_vga_clk = dut->clock;
-        dut->eval();
-    }
-
     dut->io_execute = 1;
-
-	// for (int i = 0; i < 32; i++) {
-    //     dut->clock ^= 1;
-    //     dut->io_vga_clk = dut->clock;
-    //     dut->eval();
-
-	// 	printf("\n\n");
-    // }
-
-	// return 0;
-
+    std::vector<uint8_t> pixels(H_VISIBLE * V_VISIBLE * 3, 0);
     bool prev_vsync = 1;
     int pixelIdx = 0;
 
-    while (1) {
+    // --- State variables for tracking memory operations ---
+    // NOTE: this models a memory controller that can only have ONE
+    // request in flight at a time -- io_mem_req_ready is only ever
+    // asserted while both write_in_progress and read_in_progress are
+    // false. This mirrors the real ddr4_line_memory (req_ready only
+    // true in S_IDLE) and the DCache's own single-outstanding-miss
+    // guarantee. Previously ready was asserted unconditionally whenever
+    // valid was high, which let a second request appear "accepted" while
+    // one was already in flight -- silently dropped rather than stalled,
+    // invisible at low request pressure but exactly the kind of bug that
+    // shows up once non-blocking loads start overlapping requests.
+    bool read_in_progress = false;
+    int  read_latency_counter = 0;
+    uint32_t active_read_addr = 0;
+
+    bool write_in_progress = false;
+    int  write_latency_counter = 0;
+
+    while (!limit_reached()) {
         pixelIdx = 0;
 
         while (true) {
-            dut->clock = 1; dut->io_vga_clk = 1; dut->eval();
-            bool vsync = dut->io_vsync;
-            dut->clock = 0; dut->io_vga_clk = 0; dut->eval();
+            dut->clock = 1;
+            dut->io_vga_clk = 1;
 
-			// if(dut->io_program_pointer >= 184) return 0;
-			// printf("\n\n");
+            // 1. Process Incoming Handshakes
+            // ready is only ever high when nothing is currently in flight.
+            dut->io_mem_req_ready = (!write_in_progress && !read_in_progress) ? 1 : 0;
+
+            if (dut->io_mem_req_valid && dut->io_mem_req_ready) {
+                if (dut->io_mem_req_bits_write) {
+                    handle_mem_write(dut, mock_ddr3);
+                    write_in_progress = true;
+                    write_latency_counter = get_write_latency();
+                } else {
+                    read_in_progress = true;
+                    read_latency_counter = get_read_latency();
+                    active_read_addr = axi_window(dut->io_mem_req_bits_addr);
+                }
+            }
+
+            // 2. Return Responses / Manage Timing
+            if (write_in_progress) {
+                if (write_latency_counter > 0) {
+                    write_latency_counter--;
+                    dut->io_mem_valid = 0;
+                } else {
+                    dut->io_mem_valid = 1; // Pulse valid high for write acknowledgement
+                    write_in_progress = false;
+                }
+            } else if (read_in_progress) {
+                if (read_latency_counter > 0) {
+                    read_latency_counter--;
+                    dut->io_mem_valid = 0;
+                } else {
+                    dut->io_mem_valid = 1;
+                    handle_mem_read_resp(dut, mock_ddr3, active_read_addr);
+                    read_in_progress = false;
+                }
+            } else {
+                dut->io_mem_valid = 0;
+            }
+
+            dut->eval();
+
+            bool vsync = dut->io_vsync;
+
+            dut->clock = 0;
+            dut->io_vga_clk = 0;
+            dut->eval();
+
+            total_cycles++;
+            if (limit_reached()) break;
 
             if (prev_vsync && !vsync) break;
             prev_vsync = vsync;
         }
         prev_vsync = 0;
+        if (limit_reached()) break;
 
         for (int cycle = 0; cycle < H_TOTAL * V_TOTAL; cycle++) {
-            dut->clock = 1; dut->io_vga_clk = 1; dut->eval();
+            dut->clock = 1;
+            dut->io_vga_clk = 1;
+
+            // 1. Process Incoming Handshakes
+            dut->io_mem_req_ready = (!write_in_progress && !read_in_progress) ? 1 : 0;
+
+            if (dut->io_mem_req_valid && dut->io_mem_req_ready) {
+                if (dut->io_mem_req_bits_write) {
+                    handle_mem_write(dut, mock_ddr3);
+                    write_in_progress = true;
+                    write_latency_counter = get_write_latency();
+                } else {
+                    read_in_progress = true;
+                    read_latency_counter = get_read_latency();
+                    active_read_addr = dut->io_mem_req_bits_addr;
+                }
+            }
+
+            // 2. Return Responses / Manage Timing
+            if (write_in_progress) {
+                if (write_latency_counter > 0) {
+                    write_latency_counter--;
+                    dut->io_mem_valid = 0;
+                } else {
+                    dut->io_mem_valid = 1;
+                    write_in_progress = false;
+                }
+            } else if (read_in_progress) {
+                if (read_latency_counter > 0) {
+                    read_latency_counter--;
+                    dut->io_mem_valid = 0;
+                } else {
+                    dut->io_mem_valid = 1;
+                    handle_mem_read_resp(dut, mock_ddr3, active_read_addr);
+                    read_in_progress = false;
+                }
+            } else {
+                dut->io_mem_valid = 0;
+            }
+
+            dut->eval();
 
             bool vsync    = dut->io_vsync;
             bool blanking = dut->io_blanking;
             uint16_t rgb12 = dut->io_rgb;
 
-            dut->clock = 0; dut->io_vga_clk = 0; dut->eval();
+            dut->clock = 0;
+            dut->io_vga_clk = 0;
+            dut->eval();
 
-			// if(dut->io_program_pointer >= 184) return 0;
-			// printf("\n\n");
+            total_cycles++;
 
             if (prev_vsync && !vsync) {
-                printf("vsync mid-frame at cycle %d — counter mismatch!\n", cycle);
+                // printf("vsync mid-frame at cycle %d — counter mismatch!\n", cycle);
             }
             prev_vsync = vsync;
 
@@ -139,15 +336,26 @@ int main(int argc, char** argv) {
                 pixels[pixelIdx * 3 + 2] = ((rgb12 >> 0) & 0xF) * 17;
                 pixelIdx++;
             }
+
+            if (limit_reached()) break;
         }
 
-        FILE* f = fopen("./generated/frame.ppm", "wb");
+        // printf("Captured %d pixels (expected %d)\n", pixelIdx, H_VISIBLE * V_VISIBLE);
+
+        FILE* f = fopen("frame.ppm", "wb");
         if (!f) { perror("fopen"); return 1; }
         fprintf(f, "P6\n%d %d\n255\n", H_VISIBLE, V_VISIBLE);
         fwrite(pixels.data(), 1, pixels.size(), f);
         fclose(f);
-        system("ffmpeg -i ./generated/frame.ppm ./generated/frame.png -y > /dev/null 2>&1");
+        if (system("ffmpeg -i frame.ppm frame.png -y > /dev/null 2>&1") != 0) {
+             printf("Frame dumped out to local disk as frame.ppm safely.\n");
+        }
     }
 
+    if (limited) {
+        printf("Stopped after %lld cycles (limit=%lld).\n", total_cycles, CYCLE_LIMIT);
+    }
+
+    dut->final();
     return 0;
 }

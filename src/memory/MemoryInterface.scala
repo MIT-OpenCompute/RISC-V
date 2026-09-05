@@ -28,6 +28,7 @@ class MemoryInterface(lineWidth: Int = 128) extends Module {
     val dcache_data = Output(UInt(32.W))
     val dcache_rd = Input(UInt(5.W))
     val dcache_wen = Input(Bool())
+
     val dcache_rd_out = Output(UInt(5.W))
     val dcache_wen_out = Output(Bool())
 
@@ -69,6 +70,7 @@ class MemoryInterface(lineWidth: Int = 128) extends Module {
   dcache_queue.io.dcache_data := dcache.io.data
 
   io.dcache_ready := dcache_queue.io.ready 
+  dcache_queue.io.flush := false.B
   // when(!io.dcache_ready){
   //   printf("NOTNOTNNOTNONTONOTNONTOTNOTNREADYEREADY READYD READY REDAY READY READY\n\n\n\n\n\n\n")
   // }
