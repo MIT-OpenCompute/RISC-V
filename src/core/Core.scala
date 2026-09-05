@@ -58,9 +58,9 @@ class Core() extends Module {
     fetch_stage.io.memory_read_valid := io.program_memory_valid
 
     branch_predictor.io.program_pointer := program_pointer
-    branch_predictor.io.jump_valid := false.B
-    branch_predictor.io.jump_instruction_pointer := 0.U
-    branch_predictor.io.jump_target := 0.U
+    branch_predictor.io.jump_valid := jump_unit.io.flush
+    branch_predictor.io.jump_instruction_pointer := jump_unit.io.source_program_pointer
+    branch_predictor.io.jump_target := jump_unit.io.target_program_pointer
 
     when(fetch_stage.io.ready) {
         program_pointer := branch_predictor.io.predicted_program_pointer

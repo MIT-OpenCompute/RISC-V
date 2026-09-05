@@ -13,6 +13,7 @@ class JumpUnit() extends Module {
         val out_valid = Output(Bool())
 
         val flush = Output(Bool())
+        val source_program_pointer = Output(UInt(32.W))
         val target_program_pointer = Output(UInt(32.W))
 
         val ready = Output(Bool())
@@ -31,6 +32,7 @@ class JumpUnit() extends Module {
 
     io.flush := false.B
     io.target_program_pointer := 0.U
+    io.source_program_pointer := 0.U
 
     when(io.next_ready && io.valid) {
         out := io.instruction
@@ -42,6 +44,7 @@ class JumpUnit() extends Module {
 
                 out.rd_value := io.instruction.instruction_pointer + 4.U
                 io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                io.source_program_pointer := io.instruction.instruction_pointer
             }
 
             is("b1100111".U) { // JALR
@@ -49,6 +52,7 @@ class JumpUnit() extends Module {
 
                 out.rd_value := io.instruction.instruction_pointer + 4.U
                 io.target_program_pointer := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
+                io.source_program_pointer := io.instruction.instruction_pointer
             }
 
             is("b1100011".U) {
@@ -61,6 +65,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
@@ -70,6 +75,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
@@ -79,6 +85,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
@@ -88,6 +95,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
@@ -97,6 +105,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
@@ -106,6 +115,7 @@ class JumpUnit() extends Module {
                             io.flush := true.B
 
                             io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
                 }
