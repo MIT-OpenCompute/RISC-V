@@ -52,6 +52,7 @@ class Core() extends Module {
     fetch_stage.io.next_ready := decode_stage.io.ready
     fetch_stage.io.execute := io.execute
     fetch_stage.io.program_pointer := program_pointer
+    fetch_stage.io.predicted_program_pointer := branch_predictor.io.predicted_program_pointer
     fetch_stage.io.flush := jump_unit.io.flush
     fetch_stage.io.memory_read_ready := io.program_memory_ready
     fetch_stage.io.memory_read_value := io.program_memory_value
@@ -69,6 +70,7 @@ class Core() extends Module {
     decode_stage.io.next_ready := read_stage.io.ready
     decode_stage.io.instruction := fetch_stage.io.next_instruction
     decode_stage.io.instruction_pointer := fetch_stage.io.next_instruction_pointer
+    decode_stage.io.predicted_instruction_pointer := fetch_stage.io.next_predicted_instruction_pointer
     decode_stage.io.reorder_buffer_head := reorder_buffer.io.head
     decode_stage.io.valid := fetch_stage.io.next_valid
     decode_stage.io.flush := jump_unit.io.flush
@@ -86,16 +88,24 @@ class Core() extends Module {
 
     instruction_dispatch_queue.io.instruction := read_stage.io.next_instruction
     instruction_dispatch_queue.io.valid := read_stage.io.next_valid
-    instruction_dispatch_queue.io.broadcast_free_valid := lsu_pe.io.broadcast_free_valid || alu_pe.io.broadcast_free_valid
-    instruction_dispatch_queue.io.broadcast_free_value := Mux(
-      lsu_pe.io.broadcast_free_valid,
-      lsu_pe.io.broadcast_free_value,
-      alu_pe.io.broadcast_free_value
+    instruction_dispatch_queue.io.broadcast_free_valid := lsu_pe.io.broadcast_free_valid || alu_pe.io.broadcast_free_valid || jump_unit.io.broadcast_free_valid
+    instruction_dispatch_queue.io.broadcast_free_value :=  Mux(
+        jump_unit.io.broadcast_free_valid,
+        jump_unit.io.broadcast_free_value,
+        Mux(
+            lsu_pe.io.broadcast_free_valid,
+            lsu_pe.io.broadcast_free_value,
+            alu_pe.io.broadcast_free_value
+        )
     )
     instruction_dispatch_queue.io.broadcast_free_register := Mux(
-      lsu_pe.io.broadcast_free_valid,
-      lsu_pe.io.broadcast_free_register,
-      alu_pe.io.broadcast_free_register
+        jump_unit.io.broadcast_free_valid,
+        jump_unit.io.broadcast_free_register,
+        Mux(
+            lsu_pe.io.broadcast_free_valid,
+            lsu_pe.io.broadcast_free_register,
+            alu_pe.io.broadcast_free_register
+        )
     )
     instruction_dispatch_queue.io.jump_unit_ready := jump_unit.io.ready
     instruction_dispatch_queue.io.lsu_ready := lsu_pe.io.ready
@@ -110,7 +120,7 @@ class Core() extends Module {
     when(jump_unit.io.flush) {
         program_pointer := jump_unit.io.target_program_pointer
 
-        // printf("Jumping to %d\n", jump_unit.io.target_program_pointer)
+        printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
     }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
@@ -160,10 +170,10 @@ class Core() extends Module {
 
     io.program_pointer := program_pointer
 
-    // when(io.execute) {
+    when(io.execute) {
     //     printf("\n\n");
 
-    //     printf("Program Pointer: %d\n\n", program_pointer);
+        printf("Program Pointer: %d\n", program_pointer);
 
     //     // printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
     //     // printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
@@ -278,7 +288,7 @@ class Core() extends Module {
     //     printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);
 
     //     printf("\n\n");
-    // }
+    }
 }
 
 object Core extends App {
