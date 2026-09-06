@@ -7,6 +7,7 @@ We aim to develop a synthesizable high performance open source RISC-V core. We h
 2. [Reaching Towards Out Of Order in Our CPU](https://www.outercloud.dev/blogs/riscv-2/) - June 14, 2026
 3. [Running DOOM on our Custom CPU and Going Viral](https://armaangomes.com/blogs/doom/) - July 20, 2026
 4. [Out of Order, on Technicality - RISCV](https://armaangomes.com/blogs/techooo/) - July 26, 2026
+5. [Achieving Out Of Order in My CPU](https://www.outercloud.dev/blogs/riscv-3/) - August 25, 2026
 
 ## Getting Started
 You'll need [xpack-riscv-none-elf-gcc-15.2.0-1](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/tag/v15.2.0-1) install locally in this git repository so that scripts can access it at the path `./xpack-riscv-none-elf-gcc-15.2.0-1/...`
