@@ -19,6 +19,8 @@ class Main() extends Module {
         val program_pointer = Output(UInt(32.W))
 
         val btns = Input(UInt(4.W))
+
+        val debug = Input(Bool())
     })
 
     val memory = Module(new Memory())
@@ -86,6 +88,7 @@ class Main() extends Module {
     io.blanking := vga_controller.io.blanking
 
     core.io.execute := io.execute
+    core.io.debug := io.debug
 
     when(!io.execute) {
         printf("Loading...\n");

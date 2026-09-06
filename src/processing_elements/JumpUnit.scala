@@ -55,7 +55,7 @@ class JumpUnit() extends Module {
                 io.target_program_pointer := jump_target
                 io.source_program_pointer := io.instruction.instruction_pointer
 
-                io.broadcast_free_valid := true.B
+                io.broadcast_free_valid := io.instruction.rd =/= 0.U;
                 io.broadcast_free_register := out.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
             }
@@ -68,7 +68,7 @@ class JumpUnit() extends Module {
                 io.target_program_pointer := jump_target
                 io.source_program_pointer := io.instruction.instruction_pointer
 
-                io.broadcast_free_valid := true.B
+                io.broadcast_free_valid := io.instruction.rd =/= 0.U;
                 io.broadcast_free_register := out.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
             }

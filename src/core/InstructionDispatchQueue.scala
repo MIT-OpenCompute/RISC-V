@@ -33,6 +33,8 @@ class InstructionDispatchQueue() extends Module {
         val flush = Input(Bool())
 
         val ready = Output(Bool())
+
+        val debug = Input(Bool())
     })
 
     val queue = RegInit(VecInit(Seq.fill(8)(0.U.asTypeOf(new QueueEntry))))
@@ -137,7 +139,7 @@ class InstructionDispatchQueue() extends Module {
     io.ready := !full
 
     when(io.valid && !full) {
-        when(io.instruction.write_mode === WriteMode.Register && io.instruction.rd(4,0) =/= 0.U) {
+        when(io.instruction.write_mode === WriteMode.Register) {
             dependence_size(io.instruction.rd(4, 0)) := dependence_size(io.instruction.rd(4, 0)) + 1.U
 
             when(io.broadcast_free_valid && io.instruction.rd === io.broadcast_free_register) {
@@ -200,60 +202,70 @@ class InstructionDispatchQueue() extends Module {
         }
     }
 
-    // for (n <- 0 to 7) {
-    //     when(queue(n.U).valid) {
-    //         printf(
-    //           "%d -> opcode: %b rp: %d ip: %d rd: %d %d rs1: %d %d %d rs2: %d %d %d \n",
-    //           n.U,
-    //           queue(n.U).instruction.opcode,
-    //           queue(n.U).instruction.reorder_pointer,
-    //           queue(n.U).instruction.instruction_pointer,
-    //           queue(n.U).instruction.rd,
-    //           queue(n.U).instruction.rd_dependence_counter,
-    //           queue(n.U).instruction.rs1,
-    //           queue(n.U).instruction.rs1_value,
-    //           queue(n.U).instruction.rs1_dependence_counter,
-    //           queue(n.U).instruction.rs2,
-    //           queue(n.U).instruction.rs2_value,
-    //           queue(n.U).instruction.rs2_dependence_counter
-    //         )
-    //     }.otherwise {
-    //         printf("%d -> \n", n.U)
-    //     }
-    // }
+    when(io.debug) {
+        for (n <- 0 to 7) {
+            when(queue(n.U).valid) {
+                printf(
+                "%d -> opcode: %b rp: %d ip: %d rd: %d %d rs1: %d %d %d rs2: %d %d %d \n",
+                n.U,
+                queue(n.U).instruction.opcode,
+                queue(n.U).instruction.reorder_pointer,
+                queue(n.U).instruction.instruction_pointer,
+                queue(n.U).instruction.rd,
+                queue(n.U).instruction.rd_dependence_counter,
+                queue(n.U).instruction.rs1,
+                queue(n.U).instruction.rs1_value,
+                queue(n.U).instruction.rs1_dependence_counter,
+                queue(n.U).instruction.rs2,
+                queue(n.U).instruction.rs2_value,
+                queue(n.U).instruction.rs2_dependence_counter
+                )
+            }.otherwise {
+                printf("%d -> \n", n.U)
+            }
+        }
 
-    // when(io.jump_unit_out_valid) {
-    //     printf(
-    //       "Dispatching to jump unit! op: %b rp: %d ip: %d\n",
-    //       io.jump_unit_out.opcode,
-    //       io.jump_unit_out.reorder_pointer,
-    //       io.jump_unit_out.instruction_pointer
-    //     )
-    // }
+        for (n <- 0 to 31) {
+            printf(
+                "Register %d Dependency Size: %d\n",
+                n.U,
+                dependence_size(n.U)
+            )
+        }
 
-    // when(io.lsu_out_valid) {
-    //     printf(
-    //       "Dispatching to lsu! op: %b rp: %d ip: %d\n",
-    //       io.lsu_out.opcode,
-    //       io.lsu_out.reorder_pointer,
-    //       io.lsu_out.instruction_pointer
-    //     )
-    // }
+        when(io.jump_unit_out_valid) {
+            printf(
+                "Dispatching to jump unit! op: %b rp: %d ip: %d\n",
+                io.jump_unit_out.opcode,
+                io.jump_unit_out.reorder_pointer,
+                io.jump_unit_out.instruction_pointer
+            )
+        }
 
-    // when(io.alu_out_valid) {
-    //     printf(
-    //       "Dispatching to alu! op: %b rp: %d ip: %d\n",
-    //       io.alu_out.opcode,
-    //       io.alu_out.reorder_pointer,
-    //       io.alu_out.instruction_pointer
-    //     )
-    // }
+        when(io.lsu_out_valid) {
+            printf(
+                "Dispatching to lsu! op: %b rp: %d ip: %d\n",
+                io.lsu_out.opcode,
+                io.lsu_out.reorder_pointer,
+                io.lsu_out.instruction_pointer
+            )
+        }
 
-    // when(io.broadcast_free_valid) {
-    //     printf(
-    //       "Register freed! %d %d\n",
-    //       io.broadcast_free_register,
-    //       io.broadcast_free_value
-    //     )
-    // }
+        when(io.alu_out_valid) {
+            printf(
+                "Dispatching to alu! op: %b rp: %d ip: %d\n",
+                io.alu_out.opcode,
+                io.alu_out.reorder_pointer,
+                io.alu_out.instruction_pointer
+            )
+        }
+
+        when(io.broadcast_free_valid) {
+            printf(
+                "Register freed! %d %d\n",
+                io.broadcast_free_register,
+                io.broadcast_free_value
+            )
+        }
+    }
 }

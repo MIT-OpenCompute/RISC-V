@@ -109,26 +109,46 @@ class DecodeStage() extends Module {
             is("b0110111".U) { // LUI
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0010111".U) { // AUIPC
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0010011".U) { // IMMEDIATE MATH
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0110011".U) { // REGISTER MATH
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0000011".U) { // LOAD
                 pe_type := PeType.Lsu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0100011".U) { // STORE
@@ -139,11 +159,19 @@ class DecodeStage() extends Module {
             is("b1101111".U) { // JAL
                 pe_type := PeType.JumpUnit
                 write_mode := WriteMode.Register
+                
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b1100111".U) { // JALR
                 pe_type := PeType.JumpUnit
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b1100011".U) { // BRANCH

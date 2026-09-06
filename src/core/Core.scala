@@ -25,6 +25,8 @@ class Core() extends Module {
         val data_memory_write_value = Output(UInt(32.W))
         val data_memory_write_ready = Input(Bool())
         val data_memory_write_complete = Input(Bool())
+
+        val debug = Input(Bool())
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -112,6 +114,7 @@ class Core() extends Module {
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
     instruction_dispatch_queue.io.reorder_buffer_tail := reorder_buffer.io.tail
     instruction_dispatch_queue.io.flush := jump_unit.io.flush
+    instruction_dispatch_queue.io.debug := io.debug
 
     jump_unit.io.instruction := instruction_dispatch_queue.io.jump_unit_out
     jump_unit.io.valid := instruction_dispatch_queue.io.jump_unit_out_valid
