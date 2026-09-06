@@ -56,8 +56,10 @@ class JumpUnit() extends Module {
                 io.source_program_pointer := io.instruction.instruction_pointer
 
                 io.broadcast_free_valid := io.instruction.rd =/= 0.U;
-                io.broadcast_free_register := out.rd
+                io.broadcast_free_register := io.instruction.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
+
+                printf("Rd: %d\n", io.instruction.rd)
             }
 
             is("b1100111".U) { // JALR
@@ -69,13 +71,13 @@ class JumpUnit() extends Module {
                 io.source_program_pointer := io.instruction.instruction_pointer
 
                 io.broadcast_free_valid := io.instruction.rd =/= 0.U;
-                io.broadcast_free_register := out.rd
+                io.broadcast_free_register := io.instruction.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
+
+                printf("Rd: %d\n", io.instruction.rd)
             }
 
             is("b1100011".U) {
-                // printf("[JU] branching! func3: %b\n", io.instruction.func3)
-
                 switch(io.instruction.func3) {
                     // BEQ
                     is("b000".U) {
