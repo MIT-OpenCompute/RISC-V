@@ -123,7 +123,7 @@ class Core() extends Module {
     when(jump_unit.io.flush) {
         program_pointer := jump_unit.io.target_program_pointer
 
-        printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
+        // printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
     }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
@@ -176,7 +176,7 @@ class Core() extends Module {
     when(io.execute) {
     //     printf("\n\n");
 
-        printf("Program Pointer: %d\n", program_pointer);
+        // printf("Program Pointer: %d\n", program_pointer);
 
     //     // printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
     //     // printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);

@@ -9,7 +9,7 @@ __attribute__((naked)) void _start(void) {
 #define SCALE 1024
 #define MAX_ITER 32
 
-void draw_mandelbrot(volatile unsigned char* frame, int cx, int cy, int zoom) {
+void draw_mandelbrot(volatile unsigned int* frame, int cx, int cy, int zoom) {
     int x_start = cx - zoom;
     int y_start = cy - (zoom * 240 / 320);
     int x_step = (zoom * 2) / 320;
@@ -46,13 +46,13 @@ void draw_mandelbrot(volatile unsigned char* frame, int cx, int cy, int zoom) {
                 color = (unsigned char)(iter * 7);
             }
 
-            frame[0x4000 * (320 * py + px)] = color;
+            frame[320 * py + px] = (int)color;
         }
     }
 }
 
 int main() {
-    volatile unsigned char* frame = (volatile unsigned char*)0x0;
+    volatile unsigned int* frame = (volatile unsigned int*)0x4000;
 
     int cx = -768;
     int cy = 0;

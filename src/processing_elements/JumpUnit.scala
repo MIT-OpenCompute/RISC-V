@@ -58,8 +58,6 @@ class JumpUnit() extends Module {
                 io.broadcast_free_valid := io.instruction.rd =/= 0.U;
                 io.broadcast_free_register := io.instruction.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
-
-                printf("Rd: %d\n", io.instruction.rd)
             }
 
             is("b1100111".U) { // JALR
@@ -73,8 +71,6 @@ class JumpUnit() extends Module {
                 io.broadcast_free_valid := io.instruction.rd =/= 0.U;
                 io.broadcast_free_register := io.instruction.rd
                 io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
-
-                printf("Rd: %d\n", io.instruction.rd)
             }
 
             is("b1100011".U) {

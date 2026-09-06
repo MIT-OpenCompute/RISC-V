@@ -38,6 +38,6 @@ class BranchPredictor() extends Module {
     when(jump_cache(lookup).jump && jump_cache(lookup).tag === tag) {
         io.predicted_program_pointer := jump_cache(lookup).target
 
-        printf("Predicted jump for instruction at %d to %d\n", io.program_pointer, jump_cache(lookup).target)
+        // printf("Predicted jump for instruction at %d to %d\n", io.program_pointer, jump_cache(lookup).target)
     }
 }
