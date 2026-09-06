@@ -1,5 +1,4 @@
 package RISCV
-
 import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -62,7 +61,6 @@ class DecodeStage() extends Module {
     val func3 = RegInit(0.U(3.W))
     val func7 = RegInit(0.U(7.W))
     val instruction_pointer = RegInit(0.U(32.W))
-    // val reorder_pointer = RegInit(0.U(8.W))
     val write_mode = RegInit(WriteMode.None)
     val pe_type = RegInit(PeType.Alu)
     val valid = RegInit(false.B)
@@ -76,7 +74,6 @@ class DecodeStage() extends Module {
         func3 := decoder.io.func3
         func7 := decoder.io.func7
         instruction_pointer := io.instruction_pointer
-        // reorder_pointer := io.reorder_buffer_head
         valid := io.valid && !io.flush
     }
 
@@ -94,7 +91,6 @@ class DecodeStage() extends Module {
     io.next_instruction.opcode := opcode
     io.next_instruction.func3 := func3
     io.next_instruction.func7 := func7
-    // io.next_instruction.reorder_pointer := reorder_pointer
     io.next_instruction.reorder_pointer := io.reorder_buffer_head
     io.next_instruction.write_mode := write_mode
     io.next_instruction.instruction_pointer := instruction_pointer
@@ -109,26 +105,46 @@ class DecodeStage() extends Module {
             is("b0110111".U) { // LUI
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0010111".U) { // AUIPC
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0010011".U) { // IMMEDIATE MATH
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0110011".U) { // REGISTER MATH
                 pe_type := PeType.Alu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0000011".U) { // LOAD
                 pe_type := PeType.Lsu
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b0100011".U) { // STORE
@@ -139,11 +155,19 @@ class DecodeStage() extends Module {
             is("b1101111".U) { // JAL
                 pe_type := PeType.JumpUnit
                 write_mode := WriteMode.Register
+                
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b1100111".U) { // JALR
                 pe_type := PeType.JumpUnit
                 write_mode := WriteMode.Register
+
+                when(decoder.io.rd === 0.U) {
+                    write_mode := WriteMode.None
+                }
             }
 
             is("b1100011".U) { // BRANCH
