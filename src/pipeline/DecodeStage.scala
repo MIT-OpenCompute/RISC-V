@@ -30,6 +30,7 @@ class InstructionBundle extends Bundle {
     val write_mode = WriteMode()
     val instruction_pointer = UInt(32.W)
     val pe_type = PeType()
+    val inst = UInt(32.W)
 }
 
 class DecodeStage() extends Module {
@@ -95,6 +96,7 @@ class DecodeStage() extends Module {
     io.next_instruction.write_mode := write_mode
     io.next_instruction.instruction_pointer := instruction_pointer
     io.next_instruction.pe_type := pe_type
+    io.next_instruction.inst :=io.instruction
     io.next_valid := valid
 
     when(io.next_ready) {

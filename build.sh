@@ -13,7 +13,7 @@ HEX="/tmp/build_out.hex"
 echo "Compiling $SRC..."
 $GCC -c -O0 -march=rv32i -mabi=ilp32 "$SRC" -o "$OBJ" || exit 1
 echo "Linking..."
-$GCC -march=rv32i_zmmul -mabi=ilp32 -nostdlib \
+$GCC -march=rv32i -mabi=ilp32 -nostdlib \
 -Wl,--section-start=.text=0x0,--entry=_start \
 -o "$ELF" "$OBJ" -lgcc || exit 1
 echo "Converting to binary..."

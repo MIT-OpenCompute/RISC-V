@@ -41,10 +41,18 @@ class Core() extends Module {
 
     io.program_memory_address := program_pointer
     when(jump_unit.io.flush && jump_unit.io.target_program_pointer === 0.U) {
-    printf("FLUSH from ip %d to %d (op %b)\n",
+    printf("FLUSH from ip %d to %d (op %b) inst %x\nimm:%d func3:%d func7 %d rd %d  rs2 %d rs1 %d \n",
       jump_unit.io.instruction.instruction_pointer,
       jump_unit.io.target_program_pointer,
-      jump_unit.io.instruction.opcode)
+      jump_unit.io.instruction.opcode,
+      jump_unit.io.instruction.inst,
+      jump_unit.io.instruction.immediate,
+      jump_unit.io.instruction.func3,
+      jump_unit.io.instruction.func7,
+      jump_unit.io.instruction.rd,
+      jump_unit.io.instruction.rs2,
+      jump_unit.io.instruction.rs1
+      )
 }
     when(io.execute){
 // printf("PP: %d Data: %x Stall %b MV %b MR %b | dec_rdy %b  rob_full %b idq_rdy %b\n",
@@ -154,7 +162,7 @@ class Core() extends Module {
 
     }
     reorder_buffer.io.write_ready := io.dcache_ready
-    reorder_buffer.io.write_complete := false.B
+    reorder_buffer.io.write_complete := io.dcache_valid
     
 
 

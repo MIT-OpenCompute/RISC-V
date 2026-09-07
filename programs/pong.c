@@ -1,3 +1,23 @@
+
+#define IMG_W 320
+#define IMG_H 240
+#define FRAME ((volatile unsigned int*)0x10000000)
+
+#define DBGCH  ((volatile unsigned int*)0x70000000)
+#define DBGNUM ((volatile unsigned int*)0x70000008)
+#define UARTTX ((volatile unsigned char*)0x8000034)
+
+#define BLACK 0x000000
+#define WHITE 0xFFFFFF
+#define RED   0xFF0000
+#define GREEN 0x00FF00
+#define BLUE  0x0000FF
+
+#define ROW_A  20
+#define ROW_B  60
+#define ROW_C 100
+#define ROW_D 140
+
 __attribute__((naked)) void _start(void) {
     __asm__ volatile(
         "li sp, 0x7000000\n"
@@ -6,130 +26,99 @@ __attribute__((naked)) void _start(void) {
     );
 }
 
-#define IMG_W 320
-#define IMG_H 240
+static volatile int failures = 0;
 
-/* Framebuffer words are 0x00RRGGBB. MemoryWrapper keeps only the high
- * nibble of each byte: write_data(23,20) ## write_data(15,12) ## write_data(7,4) */
-#define BLACK 0x000000
-#define WHITE 0xFFFFFF
-#define RED   0xFF0000
-#define BLUE  0x0000FF
+void debug_log(char* c) {
+    while (*c != '\0') { *DBGCH = *c; *UARTTX = *c; c++; }
+}
+
+void debug_num(unsigned int v) { *DBGNUM = v; }
+
+void paint(int slot, int row, unsigned int color) {
+    unsigned int x0 = 8u + ((unsigned)slot << 5);
+    for (unsigned int y = 0; y < 20u; y++) {
+        unsigned int r = (unsigned)row + y;
+        unsigned int b = (r << 8) + (r << 6) + x0;
+        for (unsigned int x = 0; x < 20u; x++) FRAME[b + x] = color;
+    }
+}
+
+void fill(unsigned int color) {
+    for (int i = 0; i < IMG_W * IMG_H; i++) FRAME[i] = color;
+}
+
+void verdict(int slot, int row, char* name, unsigned int got, unsigned int want) {
+    if (got == want) {
+        paint(slot, row, GREEN);
+        debug_log("[ ok ] ");
+        debug_log(name);
+        debug_log(" = ");
+        debug_num(got);
+        debug_log("\n");
+    } else {
+        paint(slot, row, RED);
+        failures++;
+        debug_log("[FAIL] ");
+        debug_log(name);
+        debug_log(" got=");
+        debug_num(got);
+        debug_log(" want=");
+        debug_num(want);
+        debug_log("\n");
+    }
+}
+
+static unsigned int   buf[256];
+static unsigned short hbuf[8];
+static unsigned char  bbuf[8];
 
 int main(void) {
-    volatile unsigned int* frame      = (volatile unsigned int*)0x10000000;
-    volatile unsigned int* timer      = (volatile unsigned int*)0x8000004;
-    // volatile unsigned int* keytracker = (volatile unsigned int*)0x08000008;
+    unsigned int r, r2, r3, r4;
+    unsigned int ok;
 
-    const int W_BIT    = 0x1A;
-    const int S_BIT    = 0x16;
-    const int UP_BIT   = 0x52 - 64;
-    const int DOWN_BIT = 0x51 - 64;
+    fill(BLUE);
+    fill(BLACK);
 
-    const int PADDLE_SPEED = 2;
-    const int PADDLE_MIN   = 22;
-    const int PADDLE_MAX   = 217;
+    debug_log("=== memory hammer ===\n");
 
-    int paddY1 = 120;
-    int paddY2 = 120;
+    debug_log("\n-- word memory --\n");
 
-    int ballX = 160;
-    int ballY = 120;
-    int dX = 1;
-    int dY = 1;
+    paint(0, ROW_A, BLUE);
+    asm volatile("sw %1, 0(%2)\n lw %0, 0(%2)"
+                 : "=&r"(r) : "r"(0xCAFEBABEu), "r"(&buf[0]) : "memory");
+    verdict(0, ROW_A, "sw.lw", r, 0xCAFEBABEu);
 
-    /* Clear to black. */
-    for (int i = 0; i < IMG_W * IMG_H; i++) {
-        frame[i] = BLACK;
-    }
+    paint(1, ROW_A, BLUE);
+    asm volatile(
+        "sw %4, 0(%8)\n  sw %5, 4(%8)\n"
+        "sw %6, 8(%8)\n  sw %7, 12(%8)\n"
+        "lw %0, 0(%8)\n  lw %1, 4(%8)\n"
+        "lw %2, 8(%8)\n  lw %3, 12(%8)\n"
+        : "=&r"(r), "=&r"(r2), "=&r"(r3), "=&r"(r4)
+        : "r"(0x11111111u), "r"(0x22222222u),
+          "r"(0x33333333u), "r"(0x44444444u), "r"(&buf[0])
+        : "memory");
+    ok = (r == 0x11111111u) && (r2 == 0x22222222u)
+      && (r3 == 0x33333333u) && (r4 == 0x44444444u);
+    verdict(1, ROW_A, "four.offsets", ok, 1u);
 
-    /* Top and bottom edges. */
-    for (int x = 0; x < IMG_W; x++) {
-        frame[x] = WHITE;
-        frame[(IMG_H - 1) * IMG_W + x] = WHITE;
-    }
+    paint(2, ROW_A, BLUE);
+    for (unsigned int i = 0; i < 32u; i++) buf[i] = 1u << i;
+    ok = 1;
+    for (unsigned int i = 0; i < 32u; i++)
+        if (buf[i] != (1u << i)) ok = 0;
+    verdict(2, ROW_A, "walking.ones", ok, 1u);
 
-    /* Left and right edges -- IMG_H rows, not IMG_W. */
-    for (int y = 0; y < IMG_H; y++) {
-        frame[IMG_W * y] = WHITE;
-        frame[IMG_W * y + (IMG_W - 1)] = WHITE;
-    }
-
-    while (1) {
-        int ctime = *timer;
-
-        /* Erase ball. */
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                frame[IMG_W * (ballY + y) + ballX + x] = BLACK;
-            }
-        }
-
-        /* Erase paddles. */
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[IMG_W * (paddY1 + y) + 20 + x] = BLACK;
-            }
-        }
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[IMG_W * (paddY2 + y) + 299 + x] = BLACK;
-            }
-        }
-
-        ballX += dX;
-        ballY += dY;
-
-        if (ballX == 319 - 6) dX = -1;
-        if (ballX == 6)       dX =  1;
-        if (ballY == 239 - 6) dY = -1;
-        if (ballY == 6)       dY =  1;
-
-        if (ballX <= 25 && ballX >= 15 &&
-            ballY <= paddY1 + 25 && ballY >= paddY1 - 25) {
-            dX = 1;
-        }
-        if (ballX <= 304 && ballX >= 294 &&
-            ballY <= paddY2 + 25 && ballY >= paddY2 - 25) {
-            dX = -1;
-        }
-
-        /* W/S move the left paddle, Up/Down move the right. */
-        // unsigned int word0 = keytracker[0];
-        // unsigned int word2 = keytracker[2];
-
-        // if ((word0 >> W_BIT)    & 1) paddY1 -= PADDLE_SPEED;
-        // if ((word0 >> S_BIT)    & 1) paddY1 += PADDLE_SPEED;
-        // if ((word2 >> UP_BIT)   & 1) paddY2 -= PADDLE_SPEED;
-        // if ((word2 >> DOWN_BIT) & 1) paddY2 += PADDLE_SPEED;
-
-        if (paddY1 < PADDLE_MIN) paddY1 = PADDLE_MIN;
-        if (paddY1 > PADDLE_MAX) paddY1 = PADDLE_MAX;
-        if (paddY2 < PADDLE_MIN) paddY2 = PADDLE_MIN;
-        if (paddY2 > PADDLE_MAX) paddY2 = PADDLE_MAX;
-
-        /* Draw ball. */
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                frame[IMG_W * (ballY + y) + ballX + x] = WHITE;
-            }
-        }
-
-        /* Draw paddles: left red, right blue. */
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[IMG_W * (paddY1 + y) + 20 + x] = RED;
-            }
-        }
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -20; y <= 20; y++) {
-                frame[IMG_W * (paddY2 + y) + 299 + x] = BLUE;
-            }
-        }
-
-        /* Frame pacing. */
-        while (*timer - ctime < 8000) {
-            __asm__ volatile("nop");
+    paint(3, ROW_A, BLUE);
+    {
+        unsigned int v = 0x12345678u;
+        for (unsigned int i = 0; i < 64u; i++) { buf[i] = v; v += 0x9E3779B9u; }
+        v = 0x12345678u;
+        ok = 1;
+        for (unsigned int i = 0; i < 64u; i++) {
+            if (buf[i] != v) ok = 0;
+            v += 0x9E3779B9u;
         }
     }
+
 }
