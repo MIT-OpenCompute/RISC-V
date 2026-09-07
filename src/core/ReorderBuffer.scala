@@ -38,6 +38,8 @@ class ReorderBuffer() extends Module {
         val write_address = Output(UInt(32.W))
         val write_mode = Output(WriteMode())
 
+        val retire = Output(Bool())
+
         val flush = Input(Bool())
 
         val full = Output(Bool())
@@ -76,6 +78,8 @@ class ReorderBuffer() extends Module {
     //   ).mode =/= WriteMode.Memory)
     // );
 
+    io.retire := false.B
+
     when(
       !empty && (!waiting_on_write || io.write_complete) && buffer(tail).complete && (io.write_ready || buffer(
         tail
@@ -97,6 +101,8 @@ class ReorderBuffer() extends Module {
         }
 
         tail := (tail + 1.U) % 256.U
+
+        io.retire := true.B
     }
 
     when(io.complete_valid) {

@@ -40,6 +40,7 @@ class Core() extends Module {
     val jump_unit = Module(new JumpUnit)
     val reorder_buffer = Module(new ReorderBuffer())
     val branch_predictor = Module(new BranchPredictor())
+    val performance_logger = Module(new PerformanceLogger())
 
     io.program_memory_address := program_pointer
     io.program_memory_requested := fetch_stage.io.memory_read_requested
@@ -172,6 +173,10 @@ class Core() extends Module {
     io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
 
     io.program_pointer := program_pointer
+
+    performance_logger.io.execute := io.execute
+    performance_logger.io.retire := reorder_buffer.io.retire
+    performance_logger.io.flush := jump_unit.io.flush
 
     when(io.execute) {
     //     printf("\n\n");
