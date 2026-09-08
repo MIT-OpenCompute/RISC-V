@@ -75,7 +75,8 @@ class FetchStage() extends Module {
         next_instruction_pointer := 0.U(32.W)
         next_valid := false.B
 
-        ignore_next_response := request_memory
+        ignore_next_response := (memory_request_inflight && !io.memory_read_valid) ||
+  request_memory
     }
 
     // printf("[FETCH]: pointer: %d ignoring? %b valid? %b\n", io.program_pointer, ignore_next_response, io.memory_read_valid)

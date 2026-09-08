@@ -103,10 +103,14 @@ class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int 
 
   val dcache_bypass = io.dcache_start && is_excep
   val bypass_valid  = RegNext(dcache_bypass, false.B)
+  val bypass_rd     = RegNext(io.dcache_rd)
+  val bypass_wen    = RegNext(io.dcache_wen)
 
   io.dcache_valid := mem.io.dcache_valid || bypass_valid
   when(bypass_valid) {
     io.dcache_data := bypass_val
+    io.dcache_rd_out := bypass_rd
+    io.dcache_wen_out := bypass_wen
   }
 
   val keytracker_word = (io.dcache_req.address - KEYTRACKER_BASE)(5, 2)
