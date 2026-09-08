@@ -1,3 +1,5 @@
+package RISCV
+
 import chisel3._
 import _root_.circt.stage.ChiselStage
 import scala.math._
@@ -14,17 +16,17 @@ class Core() extends Module {
         val program_memory_ready = Input(Bool())
         val program_memory_valid = Input(Bool())
 
-        val data_memory_read_requested = Output(Bool())
-        val data_memory_read_address = Output(UInt(32.W))
-        val data_memory_read_value = Input(UInt(32.W))
-        val data_memory_read_ready = Input(Bool())
-        val data_memory_read_valid = Input(Bool())
+        val dcache_req = Output(new MemReq)
+        val dcache_start = Output(Bool())
+        val dcache_ready = Input(Bool())
+        val dcache_valid = Input(Bool())
+        val dcache_data = Input(UInt(32.W))
+        val dcache_rd = Output(UInt(5.W))
+        val dcache_wen = Output(Bool())
 
-        val data_memory_write_requested = Output(Bool())
-        val data_memory_write_address = Output(UInt(32.W))
-        val data_memory_write_value = Output(UInt(32.W))
-        val data_memory_write_ready = Input(Bool())
-        val data_memory_write_complete = Input(Bool())
+        val mem_rd = Input(UInt(5.W))
+        val mem_wen = Input(Bool())
+        val debug = Input(Bool())
     })
 
     val program_pointer = RegInit(0.U(32.W))
@@ -37,8 +39,36 @@ class Core() extends Module {
     val lsu_pe = Module(new Lsu)
     val jump_unit = Module(new JumpUnit)
     val reorder_buffer = Module(new ReorderBuffer())
+    val branch_predictor = Module(new BranchPredictor())
 
     io.program_memory_address := program_pointer
+    when(jump_unit.io.flush && jump_unit.io.target_program_pointer === 0.U) {
+    printf("FLUSH from ip %d to %d (op %b) inst %x\nimm:%d func3:%d func7 %d rd %d  rs2 %d rs1 %d \n",
+      jump_unit.io.instruction.instruction_pointer,
+      jump_unit.io.target_program_pointer,
+      jump_unit.io.instruction.opcode,
+      jump_unit.io.instruction.inst,
+      jump_unit.io.instruction.immediate,
+      jump_unit.io.instruction.func3,
+      jump_unit.io.instruction.func7,
+      jump_unit.io.instruction.rd,
+      jump_unit.io.instruction.rs2,
+      jump_unit.io.instruction.rs1
+      )
+}
+    when(io.execute){
+// printf("PP: %d Data: %x Stall %b MV %b MR %b | dec_rdy %b  rob_full %b idq_rdy %b\n",
+//   program_pointer, io.program_memory_value, fetch_stage.io.ready,
+//   io.program_memory_valid, io.program_memory_requested,
+//   decode_stage.io.ready,
+//   reorder_buffer.io.full, instruction_dispatch_queue.io.ready)    
+//   when(io.execute) {
+//   printf("  LSU: start %b dc_valid %b dc_rdy %b | lsu_rdy %b lsu_out_v %b |  idq_lsu_v %b\n",
+//     lsu_pe.io.dcache_start,io.dcache_valid, io.dcache_ready,
+//     lsu_pe.io.ready, lsu_pe.io.out_valid,
+//      instruction_dispatch_queue.io.lsu_out_valid)
+// }  // printf("R1: %x , R2 %x, R3 %x, R4 %x\n", registers.io.debug_1,registers.io.debug_2,registers.io.debug_3,registers.io.debug_4)
+    }
     io.program_memory_requested := fetch_stage.io.memory_read_requested
 
     registers.io.write_enable := reorder_buffer.io.write_mode === WriteMode.Register
@@ -51,18 +81,25 @@ class Core() extends Module {
     fetch_stage.io.next_ready := decode_stage.io.ready
     fetch_stage.io.execute := io.execute
     fetch_stage.io.program_pointer := program_pointer
+    fetch_stage.io.predicted_program_pointer := branch_predictor.io.predicted_program_pointer
     fetch_stage.io.flush := jump_unit.io.flush
     fetch_stage.io.memory_read_ready := io.program_memory_ready
     fetch_stage.io.memory_read_value := io.program_memory_value
     fetch_stage.io.memory_read_valid := io.program_memory_valid
 
+    branch_predictor.io.program_pointer := program_pointer
+    branch_predictor.io.jump_valid := jump_unit.io.flush
+    branch_predictor.io.jump_instruction_pointer := jump_unit.io.source_program_pointer
+    branch_predictor.io.jump_target := jump_unit.io.target_program_pointer
+
     when(fetch_stage.io.ready) {
-        program_pointer := program_pointer + 4.U
+        program_pointer := branch_predictor.io.predicted_program_pointer
     }
 
     decode_stage.io.next_ready := read_stage.io.ready
     decode_stage.io.instruction := fetch_stage.io.next_instruction
     decode_stage.io.instruction_pointer := fetch_stage.io.next_instruction_pointer
+    decode_stage.io.predicted_instruction_pointer := fetch_stage.io.next_predicted_instruction_pointer
     decode_stage.io.reorder_buffer_head := reorder_buffer.io.head
     decode_stage.io.valid := fetch_stage.io.next_valid
     decode_stage.io.flush := jump_unit.io.flush
@@ -80,22 +117,31 @@ class Core() extends Module {
 
     instruction_dispatch_queue.io.instruction := read_stage.io.next_instruction
     instruction_dispatch_queue.io.valid := read_stage.io.next_valid
-    instruction_dispatch_queue.io.broadcast_free_valid := lsu_pe.io.broadcast_free_valid || alu_pe.io.broadcast_free_valid
-    instruction_dispatch_queue.io.broadcast_free_value := Mux(
-      lsu_pe.io.broadcast_free_valid,
-      lsu_pe.io.broadcast_free_value,
-      alu_pe.io.broadcast_free_value
+    instruction_dispatch_queue.io.broadcast_free_valid := lsu_pe.io.broadcast_free_valid || alu_pe.io.broadcast_free_valid || jump_unit.io.broadcast_free_valid
+    instruction_dispatch_queue.io.broadcast_free_value :=  Mux(
+        jump_unit.io.broadcast_free_valid,
+        jump_unit.io.broadcast_free_value,
+        Mux(
+            lsu_pe.io.broadcast_free_valid,
+            lsu_pe.io.broadcast_free_value,
+            alu_pe.io.broadcast_free_value
+        )
     )
     instruction_dispatch_queue.io.broadcast_free_register := Mux(
-      lsu_pe.io.broadcast_free_valid,
-      lsu_pe.io.broadcast_free_register,
-      alu_pe.io.broadcast_free_register
+        jump_unit.io.broadcast_free_valid,
+        jump_unit.io.broadcast_free_register,
+        Mux(
+            lsu_pe.io.broadcast_free_valid,
+            lsu_pe.io.broadcast_free_register,
+            alu_pe.io.broadcast_free_register
+        )
     )
     instruction_dispatch_queue.io.jump_unit_ready := jump_unit.io.ready
     instruction_dispatch_queue.io.lsu_ready := lsu_pe.io.ready
     instruction_dispatch_queue.io.alu_ready := alu_pe.io.ready
     instruction_dispatch_queue.io.reorder_buffer_tail := reorder_buffer.io.tail
     instruction_dispatch_queue.io.flush := jump_unit.io.flush
+    instruction_dispatch_queue.io.debug := io.debug
 
     jump_unit.io.instruction := instruction_dispatch_queue.io.jump_unit_out
     jump_unit.io.valid := instruction_dispatch_queue.io.jump_unit_out_valid
@@ -104,19 +150,39 @@ class Core() extends Module {
     when(jump_unit.io.flush) {
         program_pointer := jump_unit.io.target_program_pointer
 
-        // printf("Jumping to %d\n", jump_unit.io.target_program_pointer)
+        // printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
     }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
     lsu_pe.io.valid := instruction_dispatch_queue.io.lsu_out_valid
     lsu_pe.io.next_ready := !reorder_buffer.io.full
-    lsu_pe.io.memory_read_value := io.data_memory_read_value
-    lsu_pe.io.memory_read_ready := io.data_memory_read_ready
-    lsu_pe.io.memory_read_valid := io.data_memory_read_valid
     lsu_pe.io.flush := jump_unit.io.flush
 
-    io.data_memory_read_requested := lsu_pe.io.memory_read_requested
-    io.data_memory_read_address := lsu_pe.io.memory_read_address
+    io.dcache_req := lsu_pe.io.dcache_req
+    io.dcache_start := lsu_pe.io.dcache_start || (reorder_buffer.io.write_mode === WriteMode.Memory)
+    io.dcache_rd :=lsu_pe.io.dcache_rd 
+    io.dcache_wen := true.B
+    lsu_pe.io.dcache_data := io.dcache_data
+    lsu_pe.io.dcache_ready := io.dcache_ready && !(reorder_buffer.io.write_mode === WriteMode.Memory)
+    lsu_pe.io.dcache_valid := io.dcache_valid && !(reorder_buffer.io.write_mode === WriteMode.Memory) 
+    lsu_pe.io.dcache_rd_out := io.mem_rd
+    lsu_pe.io.dcache_wen_out := io.mem_wen
+
+
+    when(reorder_buffer.io.write_mode === WriteMode.Memory) {
+      io.dcache_req.op := reorder_buffer.io.dcache_op
+      io.dcache_req.address :=  reorder_buffer.io.write_address
+      io.dcache_req.write_data := reorder_buffer.io.write_value
+      io.dcache_req.read := false.B
+      io.dcache_req.write := true.B
+      io.dcache_rd := 0.U
+      io.dcache_wen := false.B
+
+    }
+    reorder_buffer.io.write_ready := io.dcache_ready
+    reorder_buffer.io.write_complete := io.dcache_valid
+    
+
 
     alu_pe.io.instruction := instruction_dispatch_queue.io.alu_out
     alu_pe.io.valid := instruction_dispatch_queue.io.alu_out_valid
@@ -129,6 +195,7 @@ class Core() extends Module {
     reorder_buffer.io.buffer_entry.program_pointer := decode_stage.io.next_instruction.instruction_pointer
     reorder_buffer.io.buffer_entry.mode := decode_stage.io.next_instruction.write_mode
     reorder_buffer.io.buffer_entry.complete := false.B
+    reorder_buffer.io.buffer_entry.func3 := decode_stage.io.next_instruction.func3
     reorder_buffer.io.valid := decode_stage.io.next_valid && read_stage.io.ready
 
     // printf("Read stage ready: %b\n", read_stage.io.ready)
@@ -145,19 +212,12 @@ class Core() extends Module {
     reorder_buffer.io.complete_valid := jump_unit.io.out_valid || lsu_pe.io.out_valid || alu_pe.io.out_valid
     reorder_buffer.io.flush := jump_unit.io.flush
 
-    reorder_buffer.io.write_ready := io.data_memory_write_ready
-    reorder_buffer.io.write_complete := io.data_memory_write_complete
-
-    io.data_memory_write_value := reorder_buffer.io.write_value
-    io.data_memory_write_address := reorder_buffer.io.write_address
-    io.data_memory_write_requested := reorder_buffer.io.write_mode === WriteMode.Memory
-
     io.program_pointer := program_pointer
 
-    // when(io.execute) {
+    when(io.execute) {
     //     printf("\n\n");
 
-    //     printf("Program Pointer: %d\n\n", program_pointer);
+        // printf("Program Pointer: %d\n", program_pointer);
 
     //     // printf("[Fetch] Next Ready: %b\n", fetch_stage.io.next_ready);
     //     // printf("[Fetch] Execute: %b\n", fetch_stage.io.execute);
@@ -272,7 +332,7 @@ class Core() extends Module {
     //     printf("[IDQ] Broadcast Free Value: %b\n", instruction_dispatch_queue.io.broadcast_free_value);
 
     //     printf("\n\n");
-    // }
+    }
 }
 
 object Core extends App {

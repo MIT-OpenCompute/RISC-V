@@ -1,3 +1,5 @@
+package RISCV
+
 import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -19,6 +21,7 @@ class BufferEntry extends Bundle {
     val program_pointer = UInt(32.W)
     val mode = WriteMode()
     val complete = Bool()
+    val func3 = (UInt(3.W))
 }
 
 class ReorderBuffer() extends Module {
@@ -37,6 +40,8 @@ class ReorderBuffer() extends Module {
         val write_value = Output(UInt(32.W))
         val write_address = Output(UInt(32.W))
         val write_mode = Output(WriteMode())
+        val dcache_op = Output(MemOp())
+ 
 
         val flush = Input(Bool())
 
@@ -59,7 +64,11 @@ class ReorderBuffer() extends Module {
     io.write_value := 0.U
     io.write_address := 0.U
     io.write_mode := WriteMode.None
-
+    io.dcache_op := MuxLookup(buffer(tail).func3, MemOp.SW)(Seq(
+    "b000".U -> MemOp.SB,
+    "b001".U -> MemOp.SH,
+    "b010".U -> MemOp.SW
+    ))
     when(io.write_complete) {
         // printf("[RB] Write Complete!\n");
 
@@ -89,7 +98,7 @@ class ReorderBuffer() extends Module {
         io.write_mode := entry_write_mode
 
         when(entry_write_mode === WriteMode.Memory) {
-            waiting_on_write := true.B
+            waiting_on_write := false.B
         }
 
         when(!io.valid) {

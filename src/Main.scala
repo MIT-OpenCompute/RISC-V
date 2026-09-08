@@ -1,14 +1,15 @@
+package RISCV
+
 import chisel3._
 import _root_.circt.stage.ChiselStage
 import scala.math._
+import chisel3.util._
 
-class Main() extends Module {
+
+class Main(lineWidth: Int = 512)  extends Module {
     val io = IO(new Bundle {
         val execute = Input(Bool())
 
-        val flash = Input(Bool())
-        val flash_address = Input(UInt(32.W))
-        val flash_value = Input(UInt(32.W))
 
         val vga_clk = Input(Clock());
         val hsync = Output(Bool())
@@ -16,65 +17,64 @@ class Main() extends Module {
         val rgb = Output(UInt(12.W))
         val blanking = Output(Bool())
 
+        val mem_req   = Decoupled(new MemLineReq(lineWidth))   
+        val mem_resp  = Input(UInt(lineWidth.W))
+        val mem_valid = Input(Bool()) 
+
+        val rxd = Input(Bool())
+        val txd = Output(Bool())
+
+
         val program_pointer = Output(UInt(32.W))
 
-        val btns = Input(UInt(4.W))
-    })
 
-    val memory = Module(new Memory())
+    })
+    val memory = Module(new MemoryWrapper(lineWidth))
+
+    // val memory2 = Module(new Memory())
     val vga_controller = Module(new VGAController())
     val core = Module(new Core())
 
-    memory.io.btns := io.btns
+    // memory2.io.btns := io.btns
 
-    val memory_requested_1 = RegInit(false.B)
-    when(memory_requested_1) {
-        memory_requested_1 := false.B
-    }
+    // val memory_requested_1 = RegInit(false.B)
+    // when(memory_requested_1) {
+    //     memory_requested_1 := false.B
+    // }
 
-    memory.io.address_1 := core.io.program_memory_address / 4.U
-    memory.io.read_1 := core.io.program_memory_requested
-    memory.io.write_1 := false.B
-    memory.io.write_value_1 := 0.U
-    core.io.program_memory_ready := true.B
-    core.io.program_memory_valid := memory_requested_1
-    core.io.program_memory_value := memory.io.read_value_1
+    memory.io.icache_req.address := core.io.program_memory_address
+    memory.io.icache_req.write_data := 0.U
+    memory.io.icache_req.op := MemOp.LW
+    memory.io.icache_req.read := true.B
+    memory.io.icache_req.write := false.B
+    memory.io.icache_start := core.io.program_memory_requested
+    core.io.program_memory_ready := memory.io.icache_ready
+    core.io.program_memory_valid := memory.io.icache_valid
+    core.io.program_memory_value := memory.io.icache_data
 
-    when(core.io.program_memory_requested) {
-        memory_requested_1 := true.B
-    }
+    // when(core.io.program_memory_requested) {
+    //     memory_requested_1 := true.B
+    // }
 
-    val memory_read_requested_2 = RegInit(false.B)
-    when(memory_read_requested_2) {
-        memory_read_requested_2 := false.B
-    }
 
-    val memory_write_requested_2 = RegInit(false.B)
-    when(memory_write_requested_2) {
-        memory_write_requested_2 := false.B
-    }
+    core.io.dcache_ready := memory.io.dcache_ready
+    core.io.dcache_valid := memory.io.dcache_valid
+    core.io.dcache_data := memory.io.dcache_data
+    core.io.mem_rd := memory.io.dcache_rd_out
+    core.io.mem_wen := memory.io.dcache_wen_out
+    memory.io.dcache_req := core.io.dcache_req
+    memory.io.dcache_start := core.io.dcache_start
+    memory.io.dcache_rd := core.io.dcache_rd
+    memory.io.dcache_wen := core.io.dcache_wen
 
-    memory.io.address_2 := Mux(
-      core.io.data_memory_read_requested,
-      core.io.data_memory_read_address / 4.U,
-      core.io.data_memory_write_address / 4.U
-    )
-    memory.io.read_2 := core.io.data_memory_read_requested
-    memory.io.write_2 := core.io.data_memory_write_requested
-    memory.io.write_value_2 := core.io.data_memory_write_value
-    core.io.data_memory_read_value := memory.io.read_value_2
-    core.io.data_memory_read_ready := true.B
-    core.io.data_memory_read_valid := memory_read_requested_2
-    core.io.data_memory_write_ready := true.B
-    core.io.data_memory_write_complete := memory_write_requested_2
 
-    when(core.io.data_memory_read_requested) {
-        memory_read_requested_2 := true.B
-    }
+    io.mem_req       <> memory.io.mem_req
+    memory.io.mem_resp := io.mem_resp
+    memory.io.mem_valid := io.mem_valid
 
-    when(core.io.data_memory_write_requested) {
-        memory_write_requested_2 := true.B
-    }
+    memory.io.rxd := io.rxd
+    io.txd := memory.io.txd
+
 
     vga_controller.io.address := memory.io.address_vga
     vga_controller.io.write := memory.io.write_vga
@@ -86,17 +86,18 @@ class Main() extends Module {
     io.blanking := vga_controller.io.blanking
 
     core.io.execute := io.execute
+    core.io.debug := 0.U
 
-    when(!io.execute) {
-        printf("Loading...\n");
+    // when(!io.execute) {
+    //     printf("Loading...\n");
 
-        when(io.flash) {
-            memory.io.read_1 := false.B
-            memory.io.write_1 := true.B
-            memory.io.address_1 := io.flash_address
-            memory.io.write_value_1 := io.flash_value
-        }
-    }
+    //     when(io.flash) {
+    //         memory2.io.read_1 := false.B
+    //         memory2.io.write_1 := true.B
+    //         memory2.io.address_1 := io.flash_address
+    //         memory2.io.write_value_1 := io.flash_value
+    //     }
+    // }
 
     io.program_pointer := core.io.program_pointer
 

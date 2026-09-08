@@ -54,6 +54,7 @@
               python3
               jdk21
               which
+              ffmpeg
             ];
           };
         }

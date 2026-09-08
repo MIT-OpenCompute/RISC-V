@@ -1,3 +1,5 @@
+package RISCV
+
 import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -13,7 +15,12 @@ class JumpUnit() extends Module {
         val out_valid = Output(Bool())
 
         val flush = Output(Bool())
+        val source_program_pointer = Output(UInt(32.W))
         val target_program_pointer = Output(UInt(32.W))
+
+        val broadcast_free_valid = Output(Bool())
+        val broadcast_free_register = Output(UInt(5.W))
+        val broadcast_free_value = Output(UInt(32.W))
 
         val ready = Output(Bool())
     })
@@ -31,6 +38,11 @@ class JumpUnit() extends Module {
 
     io.flush := false.B
     io.target_program_pointer := 0.U
+    io.source_program_pointer := 0.U
+
+    io.broadcast_free_valid := false.B
+    io.broadcast_free_register := 0.U
+    io.broadcast_free_value := 0.U
 
     when(io.next_ready && io.valid) {
         out := io.instruction
@@ -38,74 +50,132 @@ class JumpUnit() extends Module {
 
         switch(io.instruction.opcode) {
             is("b1101111".U) { // JAL
-                io.flush := true.B
+                val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
                 out.rd_value := io.instruction.instruction_pointer + 4.U
-                io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                io.target_program_pointer := jump_target
+                io.source_program_pointer := io.instruction.instruction_pointer
+
+                io.broadcast_free_valid := io.instruction.rd =/= 0.U;
+                io.broadcast_free_register := io.instruction.rd
+                io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
             }
 
             is("b1100111".U) { // JALR
-                io.flush := true.B
+                val jump_target = (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
+                io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
                 out.rd_value := io.instruction.instruction_pointer + 4.U
-                io.target_program_pointer := (io.instruction.rs1_value.zext + io.instruction.immediate.asSInt).asUInt & ~1.U(32.W)
+                io.target_program_pointer := jump_target
+                io.source_program_pointer := io.instruction.instruction_pointer
+
+                io.broadcast_free_valid := io.instruction.rd =/= 0.U;
+                io.broadcast_free_register := io.instruction.rd
+                io.broadcast_free_value := io.instruction.instruction_pointer + 4.U
             }
 
             is("b1100011".U) {
-                // printf("[JU] branching! func3: %b\n", io.instruction.func3)
-
                 switch(io.instruction.func3) {
                     // BEQ
                     is("b000".U) {
                         when(io.instruction.rs1_value === io.instruction.rs2_value) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
                     // BNEQ
                     is("b001".U) {
                         when(io.instruction.rs1_value =/= io.instruction.rs2_value) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
                     // BLT
                     is("b100".U) {
                         when(io.instruction.rs1_value.asSInt < io.instruction.rs2_value.asSInt) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
                     // BLTU
                     is("b110".U) {
                         when(io.instruction.rs1_value < io.instruction.rs2_value) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
                     // BGE
                     is("b101".U) {
                         when(io.instruction.rs1_value.asSInt >= io.instruction.rs2_value.asSInt) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
 
                     // BGEU
                     is("b111".U) {
                         when(io.instruction.rs1_value >= io.instruction.rs2_value) {
-                            io.flush := true.B
+                            val jump_target = (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
 
-                            io.target_program_pointer := (io.instruction.instruction_pointer.zext + io.instruction.immediate.asSInt).asUInt
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
+                        }.otherwise {
+                            val jump_target = io.instruction.instruction_pointer + 4.U
+                            io.flush := io.instruction.predicted_instruction_pointer =/= jump_target
+
+                            io.target_program_pointer := jump_target
+                            io.source_program_pointer := io.instruction.instruction_pointer
                         }
                     }
                 }
