@@ -86,7 +86,7 @@ class Main(lineWidth: Int = 512)  extends Module {
     io.blanking := vga_controller.io.blanking
 
     core.io.execute := io.execute
-    core.io.debug := io.debug
+    core.io.debug := 0.U
 
     // when(!io.execute) {
     //     printf("Loading...\n");
