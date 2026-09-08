@@ -125,6 +125,10 @@ class InstructionDispatchQueue() extends Module {
     io.alu_out := queue(first_valid_entry).instruction
     io.alu_out_valid := first_valid_entry_valid && queue(first_valid_entry).instruction.pe_type === PeType.Alu
 
+    when(first_valid_entry_valid) {
+        queue(first_valid_entry).valid := false.B
+    }
+
     // Shifting Instructions
     for (n <- 1 to 7) {
         when(!queue((n - 1).U).valid) {
@@ -154,6 +158,10 @@ class InstructionDispatchQueue() extends Module {
                 ).instruction.rd_dependence_counter > 0.U
             ) {
                 queue((n - 1).U).instruction.rd_dependence_counter := queue(n.U).instruction.rd_dependence_counter - 1.U
+            }
+
+            when(first_valid_entry_valid && first_valid_entry === n.U) {
+                queue((n - 1).U).valid := false.B
             }
         }
 
@@ -228,13 +236,13 @@ class InstructionDispatchQueue() extends Module {
             }
         }
 
-        for (n <- 0 to 31) {
-            printf(
-                "Register %d Dependency Size: %d\n",
-                n.U,
-                dependence_size(n.U)
-            )
-        }
+        // for (n <- 0 to 31) {
+        //     printf(
+        //         "Register %d Dependency Size: %d\n",
+        //         n.U,
+        //         dependence_size(n.U)
+        //     )
+        // }
 
         when(io.jump_unit_out_valid) {
             printf(
