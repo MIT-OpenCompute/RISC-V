@@ -27,6 +27,7 @@ class Main(lineWidth: Int = 512)  extends Module {
 
         val program_pointer = Output(UInt(32.W))
 
+
     })
     val memory = Module(new MemoryWrapper(lineWidth))
 
@@ -85,6 +86,7 @@ class Main(lineWidth: Int = 512)  extends Module {
     io.blanking := vga_controller.io.blanking
 
     core.io.execute := io.execute
+    core.io.debug := io.debug
 
     // when(!io.execute) {
     //     printf("Loading...\n");

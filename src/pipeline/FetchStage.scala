@@ -10,6 +10,7 @@ class FetchStage() extends Module {
 
         val execute = Input(Bool())
         val program_pointer = Input(UInt(32.W))
+        val predicted_program_pointer = Input(UInt(32.W))
 
         val memory_read_requested = Output(Bool())
         val memory_read_ready = Input(Bool())
@@ -18,6 +19,7 @@ class FetchStage() extends Module {
 
         val next_instruction = Output(UInt(32.W))
         val next_instruction_pointer = Output(UInt(32.W))
+        val next_predicted_instruction_pointer = Output(UInt(32.W))
         val next_valid = Output(Bool())
 
         val flush = Input(Bool())
@@ -27,23 +29,28 @@ class FetchStage() extends Module {
 
     val memory_request_inflight = RegInit(false.B)
     val requested_program_pointer = RegInit(0.U(32.W))
+    val predicted_program_pointer = RegInit(0.U(32.W))
 
     val next_instruction = RegInit(0.U(32.W))
     val next_instruction_pointer = RegInit(0.U(32.W))
+    val next_predicted_instruction_pointer = RegInit(0.U(32.W))
     val next_valid = RegInit(false.B)
     val ignore_next_response = RegInit(false.B)
 
     io.next_instruction := next_instruction
     io.next_instruction_pointer := next_instruction_pointer
+    io.next_predicted_instruction_pointer := next_predicted_instruction_pointer
     io.next_valid := next_valid
 
     when(io.memory_read_valid && !ignore_next_response) {
         io.next_instruction := io.memory_read_value
         io.next_instruction_pointer := requested_program_pointer
+        io.next_predicted_instruction_pointer := predicted_program_pointer
         io.next_valid := true.B
 
         next_instruction := io.memory_read_value
         next_instruction_pointer := requested_program_pointer
+        next_predicted_instruction_pointer := predicted_program_pointer
         next_valid := true.B
 
         memory_request_inflight := false.B
@@ -54,6 +61,7 @@ class FetchStage() extends Module {
     io.memory_read_requested := request_memory
     when(request_memory) {
         requested_program_pointer := io.program_pointer
+        predicted_program_pointer := io.predicted_program_pointer
         memory_request_inflight := true.B
     }
 
@@ -69,10 +77,12 @@ class FetchStage() extends Module {
 
     when(io.flush) {
         memory_request_inflight := false.B
-        requested_program_pointer := 0.U(32.W)
+        requested_program_pointer := 0.U
+        predicted_program_pointer := 0.U
 
-        next_instruction := 0.U(32.W)
-        next_instruction_pointer := 0.U(32.W)
+        next_instruction := 0.U
+        next_instruction_pointer := 0.U
+        next_predicted_instruction_pointer := 0.U
         next_valid := false.B
 
         ignore_next_response := (memory_request_inflight && !io.memory_read_valid) ||
