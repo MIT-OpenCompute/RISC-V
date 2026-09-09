@@ -73,27 +73,6 @@ class InstructionDispatchQueue() extends Module {
     val first_valid_entry = first_valid_result._1
     val first_valid_entry_valid = first_valid_result._2
 
-    for (n <- 0 to 7) {
-        when(
-          queue(7.U - n.U).valid && queue(7.U - n.U).instruction.rs1_dependence_counter === 0.U && queue(
-            7.U - n.U
-          ).instruction.rs2_dependence_counter === 0.U && queue(
-            7.U - n.U
-          ).instruction.rd_dependence_counter === 0.U && ((io.alu_ready && queue(
-            7.U - n.U
-          ).instruction.pe_type === PeType.Alu) || (io.lsu_ready && queue(7.U - n.U).instruction.pe_type === PeType.Lsu && queue(
-            7.U - n.U
-          ).instruction.reorder_pointer === io.reorder_buffer_tail) || (io.jump_unit_ready && queue(
-            7.U - n.U
-          ).instruction.pe_type === PeType.JumpUnit && queue(
-            7.U - n.U
-          ).instruction.reorder_pointer === io.reorder_buffer_tail))
-        ) {
-            first_valid_entry := 7.U - n.U
-            first_valid_entry_valid := true.B
-        }
-    }
-
     // Broadcast Free
     when(io.broadcast_free_valid && dependence_size(io.broadcast_free_register) > 0.U) {
         dependence_size(io.broadcast_free_register) := dependence_size(io.broadcast_free_register) - 1.U
