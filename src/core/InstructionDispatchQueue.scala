@@ -104,6 +104,7 @@ class InstructionDispatchQueue() extends Module {
         for (n <- 1 to 7) {
             when(n.U > first_valid_entry) {
                 queue((n - 1).U) := queue(n.U)
+                queue(n.U).valid := false.B
 
                 when(
                   io.broadcast_free_valid && queue(n.U).instruction.rs1 === io.broadcast_free_register && queue(
