@@ -50,31 +50,29 @@ class InstructionDispatchQueue() extends Module {
         val valid = Wire(Bool())
 
         if (high == low) {
+            val queueEntry = queue(low.U)
+
             index := low.U
-            valid := queue(low.U).valid
-            && queue (low.U).instruction.rs1_dependence_counter === 0.U
-            && queue (low.U).instruction.rs2_dependence_counter === 0.U
-            && queue (low.U).instruction.rd_dependence_counter === 0.U
-            &&(
-              (io.alu_ready && queue(low.U).instruction.pe_type === PeType.Alu)
-                  || (io.lsu_ready && queue(low.U).instruction.pe_type === PeType.Lsu && queue(
-                    low.U
-                  ).instruction.reorder_pointer === io.reorder_buffer_tail)
-                  || (io.jump_unit_ready && queue(low.U).instruction.pe_type === PeType.JumpUnit && queue(
-                    low.U
-                  ).instruction.reorder_pointer === io.reorder_buffer_tail)
-            )
+            valid := queueEntry.valid &&
+                queueEntry.instruction.rs1_dependence_counter === 0.U &&
+                queueEntry.instruction.rs2_dependence_counter === 0.U &&
+                queueEntry.instruction.rd_dependence_counter === 0.U &&
+                (
+                  (io.alu_ready && queueEntry.instruction.pe_type === PeType.Alu) ||
+                      (io.lsu_ready && queueEntry.instruction.pe_type === PeType.Lsu && queueEntry.instruction.reorder_pointer === io.reorder_buffer_tail) ||
+                      (io.jump_unit_ready && queueEntry.instruction.pe_type === PeType.JumpUnit && queueEntry.instruction.reorder_pointer === io.reorder_buffer_tail)
+                )
         } else {
             val mid = low + (high - low) / 2
             val lowResult = compare_entry(low, mid)
             val highResult = compare_entry(mid + 1, high)
 
-            when(highResult._2) {
-                index := highResult._1
-                valid := highResult._2
-            }.otherwise {
+            when(lowResult._2) {
                 index := lowResult._1
                 valid := lowResult._2
+            }.otherwise {
+                index := highResult._1
+                valid := highResult._2
             }
         }
 
@@ -156,8 +154,6 @@ class InstructionDispatchQueue() extends Module {
                 queue((n - 1).U).valid := false.B
             }
         }
-
-        queue(7.U).valid := false.B
     }
 
     io.ready := !full
