@@ -30,6 +30,7 @@ class Core() extends Module {
     })
 
     val program_pointer = RegInit(0.U(32.W))
+    val next_program_pointer = WireDefault(program_pointer)
     val registers = Module(new Registers())
     val fetch_stage = Module(new FetchStage())
     val decode_stage = Module(new DecodeStage())
@@ -87,14 +88,18 @@ class Core() extends Module {
     fetch_stage.io.memory_read_value := io.program_memory_value
     fetch_stage.io.memory_read_valid := io.program_memory_valid
 
-    branch_predictor.io.program_pointer := program_pointer
+    branch_predictor.io.program_pointer := next_program_pointer 
     branch_predictor.io.jump_valid := jump_unit.io.flush
     branch_predictor.io.jump_instruction_pointer := jump_unit.io.source_program_pointer
     branch_predictor.io.jump_target := jump_unit.io.target_program_pointer
 
     when(fetch_stage.io.ready) {
-        program_pointer := branch_predictor.io.predicted_program_pointer
+        next_program_pointer := branch_predictor.io.predicted_program_pointer
     }
+    when(jump_unit.io.flush){
+      next_program_pointer := jump_unit.io.target_program_pointer
+    }
+    program_pointer := next_program_pointer
 
     decode_stage.io.next_ready := read_stage.io.ready
     decode_stage.io.instruction := fetch_stage.io.next_instruction
@@ -147,11 +152,11 @@ class Core() extends Module {
     jump_unit.io.valid := instruction_dispatch_queue.io.jump_unit_out_valid
     jump_unit.io.next_ready := !reorder_buffer.io.full
 
-    when(jump_unit.io.flush) {
-        program_pointer := jump_unit.io.target_program_pointer
+    // when(jump_unit.io.flush) {
+    //     program_pointer := jump_unit.io.target_program_pointer
 
-        // printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
-    }
+    //     // printf("Flush jumping from %d to %d\n", jump_unit.io.source_program_pointer, jump_unit.io.target_program_pointer)
+    // }
 
     lsu_pe.io.instruction := instruction_dispatch_queue.io.lsu_out
     lsu_pe.io.valid := instruction_dispatch_queue.io.lsu_out_valid

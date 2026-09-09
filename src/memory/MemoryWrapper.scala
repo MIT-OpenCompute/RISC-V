@@ -6,7 +6,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
 
 
 
-class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 250000000, baud: Int = 6000000) extends Module {
+class MemoryWrapper(lineWidth: Int = 128, clockFreq: Int = 167000000, baud: Int = 6000000) extends Module {
   val io = IO(new Bundle {
     val icache_req = Input(new MemReq)
     val icache_start = Input(Bool())
