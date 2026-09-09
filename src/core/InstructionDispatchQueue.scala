@@ -57,12 +57,12 @@ class InstructionDispatchQueue() extends Module {
             val lowResult = compare_entry(low, mid)
             val highResult = compare_entry(mid + 1, high)
 
-            when(highResult._2) {
-                index := highResult._1
-                valid := highResult._2
-            }.otherwise {
+            when(lowResult._2) {
                 index := lowResult._1
                 valid := lowResult._2
+            }.otherwise {
+                index := highResult._1
+                valid := highResult._2
             }
         }
 
